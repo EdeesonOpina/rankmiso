@@ -55,4 +55,6 @@ Only the theme preference is stored. Full page text is not written to disk. Expo
 
 ## Firefox
 
-The Firefox package is Manifest V3 via `wxt build -b firefox --mv3`. The development id `rankmiso@local.dev` must be replaced before a store submission. Changing it again will make Firefox treat the add-on as a different extension. `data_collection_permissions.required` is `none`.
+The Firefox package is Manifest V3 via `wxt build -b firefox --mv3`. The id is `rankmiso@rankmiso.extension`. The first accepted addons.mozilla.org upload locks it. Changing it after that makes Firefox treat the add-on as a different extension. `data_collection_permissions.required` is `none`.
+
+Optional host permissions stay out of the required set. **Check this site** calls `permissions.request` for the current origin, then fetches headers, robots.txt, the first listed sitemap, and at most 20 public links. Private and local addresses are skipped. PageSpeed Insights is not called. The JSON-LD rich-result row is a local field list and does not change the score, because that category weight is 0.

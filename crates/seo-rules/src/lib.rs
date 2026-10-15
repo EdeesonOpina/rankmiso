@@ -114,6 +114,7 @@ pub fn analyze(
             structured_data: structured,
             performance: snapshot.performance.clone(),
             response: snapshot.response.clone(),
+            site: snapshot.site.clone(),
         },
         source: SourceMetadata {
             collection_method: snapshot.collection.method.clone(),
@@ -200,6 +201,21 @@ fn normalize(snapshot: &PageSnapshot) -> (PageSnapshot, Vec<String>) {
             block.raw = block.raw.chars().take(MAX_STRUCTURED_CHARS).collect();
             limitations.push("STRUCTURED_DATA_BLOCK_TRUNCATED".to_string());
         }
+    }
+    if snapshot.site.robots_body.chars().count() > 80_000 {
+        snapshot.site.robots_body = snapshot.site.robots_body.chars().take(80_000).collect();
+        limitations.push("ROBOTS_TRUNCATED".to_string());
+    }
+    snapshot.site.notes.truncate(12);
+    snapshot.site.sitemap_urls.truncate(8);
+    snapshot.site.redirect_hops.truncate(5);
+    for hop in &mut snapshot.site.redirect_hops {
+        *hop = hop.chars().take(300).collect();
+    }
+    snapshot.response.headers.truncate(40);
+    for header in &mut snapshot.response.headers {
+        header.name = header.name.chars().take(80).collect();
+        header.value = header.value.chars().take(500).collect();
     }
     limitations.sort();
     limitations.dedup();
@@ -537,6 +553,27 @@ mod tests {
             status_of(&audit, "RULE_HTTP_HEADERS"),
             CheckStatus::Unavailable
         );
+        assert_eq!(
+            status_of(&audit, "RULE_ROBOTS_TXT"),
+            CheckStatus::Unavailable
+        );
+        assert_eq!(
+            status_of(&audit, "RULE_BROKEN_LINKS"),
+            CheckStatus::Unavailable
+        );
+        assert_eq!(
+            status_of(&audit, "RULE_PAGESPEED"),
+            CheckStatus::Unavailable
+        );
+    }
+
+    #[test]
+    fn snapshot_without_site_probe_still_parses() {
+        let mut value = serde_json::to_value(PageSnapshot::default()).unwrap();
+        value.as_object_mut().unwrap().remove("site");
+        let snapshot: PageSnapshot = serde_json::from_value(value).unwrap();
+        assert!(!snapshot.site.requested);
+        let audit = analyze(&snapshot, &AnalyzeOptions::default()).unwrap();
         assert_eq!(
             status_of(&audit, "RULE_ROBOTS_TXT"),
             CheckStatus::Unavailable

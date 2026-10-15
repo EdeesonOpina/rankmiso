@@ -21,37 +21,35 @@ Updated: 2026-10-15
 - Repository moved to `/home/lenovo/Projects/Rust/rankmiso`
 - Central brand config, temporary Miso palette, geometric placeholder mark, and `pnpm brand:icons`
 - Dashboard labels moved into `src/locales/en.ts`
+- Optional site check for headers, robots.txt, the first listed sitemap, redirect hops, hreflang return links, and a continuable sample of 20 public links
+- Local JSON-LD field list, an explicit PageSpeed Insights unavailable check, Firefox id `rankmiso@rankmiso.extension`, and a sidebar button for both `sidePanel` and `sidebarAction`
+- Chrome unpacked extension used by the maintainer on a live page, including the side panel
+- Firefox listing text and upload steps in `docs/releases/firefox.md`
 
 ## In progress
 
-- Nothing from the RankMiso migration is left open. The next product work is the carried-forward list below.
+- Firefox submission. The package has not been uploaded. The privacy policy is not on a public URL yet, and the GitHub repository is private.
 
 ## Not started
 
-- Opt-in broken links, header capture, robots.txt, and sitemaps
-- Reciprocal hreflang
-- Rich-result rule validation
+- Official rich-result eligibility. The current row is a local field list only
+- Numeric Largest Contentful Paint, Cumulative Layout Shift, and Interaction to Next Paint. This version shows those cards as Unavailable. The resource count is shown
 - SERP tools and multi-URL comparison
-- PageSpeed Insights
+- PageSpeed Insights. The report says it was not requested
 - Playwright browser-install suite
 - Performance benchmarks
 - Safari signing
-- Store listing assets beyond the generated icons
+- Chrome Web Store upload
 
 ## Test results from this session
 
-- `cargo fmt --all -- --check`: passed
-- `cargo clippy --workspace --all-targets -- -D warnings`: passed
-- `cargo test --workspace`: 18 passed (15 rule tests, 3 scoring tests)
-- `pnpm install --frozen-lockfile`: passed after the package rename
-- `@rankmiso/report-formats` vitest: 4 passed
-- `@rankmiso/extension` vitest: 14 passed
-- `vue-tsc --noEmit`: passed
-- Prettier check and ESLint: passed
-- `wxt build` Chrome MV3: passed. Manifest name is RankMiso. Local WASM asset is included.
-- `wxt build -b firefox --mv3`: passed. Gecko id is `rankmiso@local.dev`. Local WASM asset is included.
+- `cargo fmt --all` and `cargo clippy --workspace --all-targets -- -D warnings`: passed
+- `cargo test --workspace`: 30 passed (27 rule tests, 3 scoring tests)
+- `@rankmiso/extension` vitest: 19 passed
+- `vue-tsc --noEmit` and ESLint: passed
+- `pnpm build:wasm` and `wxt build -b firefox --mv3`: passed. Manifest name is RankMiso. Gecko id is `rankmiso@rankmiso.extension`. Local WASM asset is included.
 
-These builds were not loaded in Chrome or Firefox after the rename. The earlier Firefox review was of the previous SEO Toolkit package.
+The Firefox bundle for this version has not been loaded in a Firefox window. **Check this site** and the Firefox sidebar button are still untested there. Chrome popup and side panel were used by the maintainer on a live page.
 
 ## Blockers
 
