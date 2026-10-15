@@ -1,0 +1,11 @@
+target/
+node_modules/
+.output/
+.wxt/
+dist/
+*.log
+.DS_Store
+apps/extension/src/wasm/pkg/
+coverage/
+playwright-report/
+test-results/

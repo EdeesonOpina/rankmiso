@@ -1,0 +1,15 @@
+[package]
+name = "seo-rules"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+seo-core = { path = "../seo-core" }
+seo-scoring = { path = "../seo-scoring" }
+serde.workspace = true
+serde_json.workspace = true
+unicode-segmentation.workspace = true
+url.workspace = true

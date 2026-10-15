@@ -1,0 +1,41 @@
+{
+  "name": "@rankmiso/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox --mv3",
+    "build:edge": "wxt build -b edge",
+    "prepare": "wxt prepare",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "prettier --check ."
+  },
+  "dependencies": {
+    "@rankmiso/design-tokens": "workspace:*",
+    "@rankmiso/report-formats": "workspace:*",
+    "lucide-vue-next": "^0.544.0",
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@tailwindcss/vite": "^4.1.14",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/test-utils": "^2.4.6",
+    "@wxt-dev/module-vue": "^1.0.2",
+    "eslint": "^9.36.0",
+    "eslint-plugin-vue": "^10.5.0",
+    "globals": "^17.13.0",
+    "jsdom": "^27.0.0",
+    "prettier": "^3.6.2",
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.0",
+    "vitest": "^3.2.4",
+    "vue-tsc": "^3.1.0",
+    "wxt": "^0.21.4"
+  }
+}

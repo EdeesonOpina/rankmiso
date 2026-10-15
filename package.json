@@ -1,0 +1,20 @@
+{
+  "name": "rankmiso",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.27.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
+  "scripts": {
+    "build:wasm": "bash scripts/build-wasm.sh",
+    "icons": "bash scripts/generate-icons.sh",
+    "brand:icons": "bash scripts/brand-icons.sh",
+    "test": "cargo test --workspace && pnpm -r test",
+    "test:rust": "cargo test --workspace",
+    "test:js": "pnpm -r test",
+    "lint": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm --filter @rankmiso/extension lint && pnpm --filter @rankmiso/extension format",
+    "build": "pnpm build:wasm && pnpm --filter @rankmiso/extension build",
+    "dev": "pnpm --filter @rankmiso/extension dev"
+  }
+}
