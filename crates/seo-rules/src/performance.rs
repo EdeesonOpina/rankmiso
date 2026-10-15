@@ -25,7 +25,19 @@ pub fn checks(performance: &PerformanceSnapshot) -> Vec<CheckResult> {
             "ms",
             "INP needs interaction entries. If the browser did not expose a value, the metric is unavailable and is not treated as a pass.",
         ),
+        pagespeed(),
     ]
+}
+
+fn pagespeed() -> CheckResult {
+    crate::support::check(
+        "RULE_PAGESPEED",
+        Category::Performance,
+        CheckStatus::Unavailable,
+        1,
+        "PageSpeed Insights was not requested",
+        "RankMiso does not call the PageSpeed Insights API and does not invent a lab or field score. LCP, CLS, and INP above are this browser's observations for the current page load, or unavailable.",
+    )
 }
 
 fn metric(id: &str, label: &str, value: Option<f64>, unit: &str, explanation: &str) -> CheckResult {

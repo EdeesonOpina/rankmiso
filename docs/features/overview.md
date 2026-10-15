@@ -20,7 +20,7 @@ The popup is 420 pixels wide. An underline row switches between Overview, JSON-L
 
 ## Full report
 
-The dashboard repeats the score, lists priority findings, and shows the measurement limits from the snapshot. Opening the report from a popup tab selects the matching section.
+The dashboard repeats the score, lists priority findings, and shows the measurement limits from the snapshot. Opening the report from a popup tab selects the matching section. The technical section can run **Check this site** after you allow that origin. The popup and the report can open the sidebar when the browser exposes it. Performance shows the resource count for this page load. Largest Contentful Paint, Cumulative Layout Shift, and Interaction to Next Paint stay Unavailable.
 
 Tables for links, repeated terms, and hreflang can be resized from the header edge. Empty sections use a short title and one sentence, instead of a bare line of text.
 

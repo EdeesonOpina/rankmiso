@@ -28,7 +28,7 @@ pub fn checks(
         language(metadata),
         hreflang_syntax(hreflang),
         hreflang_duplicates(hreflang),
-        reciprocal(),
+        reciprocal(snapshot, hreflang),
         self_reference(snapshot, hreflang),
     ]
 }
@@ -168,15 +168,64 @@ fn hreflang_duplicates(links: &[HreflangLink]) -> CheckResult {
     }
 }
 
-fn reciprocal() -> CheckResult {
-    crate::support::check(
-        "RULE_HREFLANG_RECIPROCAL",
-        Category::International,
-        CheckStatus::Unavailable,
-        1,
-        "Reciprocal hreflang was not checked",
-        "Confirming that alternate pages point back requires a network request. That request is not part of local analysis, so this check is not a pass.",
-    )
+fn reciprocal(snapshot: &PageSnapshot, links: &[HreflangLink]) -> CheckResult {
+    if links.is_empty() {
+        return crate::support::check(
+            "RULE_HREFLANG_RECIPROCAL",
+            Category::International,
+            CheckStatus::NotApplicable,
+            1,
+            "Reciprocal hreflang was not evaluated",
+            "No hreflang links were collected.",
+        );
+    }
+    if !snapshot.site.requested {
+        return crate::support::check(
+            "RULE_HREFLANG_RECIPROCAL",
+            Category::International,
+            CheckStatus::Unavailable,
+            1,
+            "Reciprocal hreflang was not checked",
+            "Confirming that alternate pages point back runs with the optional site check. Until then this is not a pass.",
+        );
+    }
+    if snapshot.site.hreflang_checked == 0 {
+        return crate::support::check(
+            "RULE_HREFLANG_RECIPROCAL",
+            Category::International,
+            CheckStatus::Unavailable,
+            1,
+            "Alternate pages were not fetched",
+            "Hreflang links were collected, but the optional fetch did not return a page to compare. This is not a pass.",
+        );
+    }
+    if snapshot.site.hreflang_missing > 0 {
+        let mut check = crate::support::check(
+            "RULE_HREFLANG_RECIPROCAL",
+            Category::International,
+            CheckStatus::Warning,
+            1,
+            "An alternate does not point back",
+            format!(
+                "{} of {} fetched alternates did not link back to this URL. At most eight alternates are requested.",
+                snapshot.site.hreflang_missing, snapshot.site.hreflang_checked
+            ),
+        );
+        check.evidence.push(crate::support::evidence(
+            "missing return links",
+            snapshot.site.hreflang_missing.to_string(),
+        ));
+        check
+    } else {
+        crate::support::check(
+            "RULE_HREFLANG_RECIPROCAL",
+            Category::International,
+            CheckStatus::Pass,
+            1,
+            "The fetched alternates point back",
+            "Each fetched alternate included a link back to this page. At most eight alternates are requested.",
+        )
+    }
 }
 
 fn self_reference(snapshot: &PageSnapshot, links: &[HreflangLink]) -> CheckResult {
@@ -242,4 +291,32 @@ fn same_url(href: &str, page: &str) -> bool {
     href.host_str() == page.host_str()
         && href.path().trim_end_matches('/') == page.path().trim_end_matches('/')
         && href.query() == page.query()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use seo_core::{AnalyzeOptions, CheckStatus, LinkRel};
+
+    #[test]
+    fn a_missing_return_link_is_a_warning_after_the_site_check() {
+        let mut snapshot = PageSnapshot::default();
+        snapshot.links_rel.push(LinkRel {
+            rel: "alternate".to_string(),
+            href: "https://example.com/fr".to_string(),
+            hreflang: Some("fr".to_string()),
+            media: None,
+        });
+        snapshot.site.requested = true;
+        snapshot.site.hreflang_checked = 1;
+        snapshot.site.hreflang_missing = 1;
+        let audit = crate::analyze(&snapshot, &AnalyzeOptions::default()).unwrap();
+        let status = audit
+            .checks
+            .iter()
+            .find(|check| check.id == "RULE_HREFLANG_RECIPROCAL")
+            .unwrap()
+            .status;
+        assert_eq!(status, CheckStatus::Warning);
+    }
 }
