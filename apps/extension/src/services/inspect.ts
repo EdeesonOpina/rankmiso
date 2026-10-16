@@ -8,10 +8,25 @@ export interface InspectedTab {
   title?: string;
 }
 
-export async function activeTab(): Promise<InspectedTab | null> {
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) return null;
+function inspected(tab: { id?: number; url?: string; title?: string }): InspectedTab | null {
+  if (!tab.id) return null;
   return { id: tab.id, url: tab.url, title: tab.title };
+}
+
+export async function activeTab(): Promise<InspectedTab | null> {
+  const focused = await browser.windows
+    .getLastFocused({ populate: true, windowTypes: ["normal"] })
+    .catch(() => null);
+  const current = focused?.tabs?.find((tab) => tab.active);
+  const found = current ? inspected(current) : null;
+  if (found) return found;
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  return tab ? inspected(tab) : null;
+}
+
+export async function tabById(tabId: number): Promise<InspectedTab> {
+  const tab = await browser.tabs.get(tabId);
+  return inspected(tab) ?? { id: tabId };
 }
 
 export async function inspectTab(tabId: number): Promise<PageSnapshot> {

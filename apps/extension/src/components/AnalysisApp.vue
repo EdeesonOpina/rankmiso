@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { Braces, Languages, Link2, TextSearch } from "lucide-vue-next";
-import { browser } from "wxt/browser";
+import { Braces, Languages, Link2, LoaderCircle, TextSearch } from "lucide-vue-next";
 import { brandConfig } from "../config/brand.config";
+import { themeConfig } from "../config/theme.config";
 import { navigationConfig } from "../config/navigation.config";
 import { availableNavigation } from "../config/features.config";
 import { appConfig } from "../config/app.config";
@@ -20,6 +20,7 @@ import {
   exportLinksCsv,
 } from "../services/export";
 import { resolveShareImage } from "../services/share-preview";
+import { openSidebar, sidebarAvailable } from "../services/sidebar";
 import type { Category, CheckResult } from "../types/audit";
 import BrandMark from "./BrandMark.vue";
 import DataTable from "./DataTable.vue";
@@ -28,6 +29,7 @@ import ScoreBlock from "./ScoreBlock.vue";
 import CheckTable from "./CheckTable.vue";
 import ShareCards from "./ShareCards.vue";
 import JsonBlock from "./JsonBlock.vue";
+import LoadingStatus from "./LoadingStatus.vue";
 
 const props = withDefaults(
   defineProps<{ layout: "dashboard" | "sidepanel"; tabId?: number; initialSection?: string }>(),
@@ -35,9 +37,22 @@ const props = withDefaults(
 );
 const { t, n } = useI18n();
 const { preference, setPreference } = useTheme();
-const { status, error, audit, tab, stale, refresh, checkFreshness } = useAudit(props.tabId);
+const {
+  status,
+  error,
+  audit,
+  tab,
+  stale,
+  probing,
+  probeMessage,
+  refresh,
+  runSiteProbe,
+  checkFreshness,
+} = useAudit(props.tabId);
+const canOpenSidebar = sidebarAvailable();
 const section = ref(props.initialSection);
 const linkFilter = ref("all");
+const probeKind = ref<"site" | "more" | null>(null);
 
 function imageLabel(image: { altPresent: boolean; altValue: string }): string {
   if (!image.altPresent) return t("value.altMissing");
@@ -100,9 +115,18 @@ async function clearMarks() {
   await clearHighlights(tab.value.id);
 }
 
+async function startSiteProbe(more = false) {
+  probeKind.value = more ? "more" : "site";
+  try {
+    await runSiteProbe(more);
+  } finally {
+    probeKind.value = null;
+  }
+}
+
 async function openSidePanel() {
-  if (!tab.value?.id || !browser.sidePanel?.open) return;
-  await browser.sidePanel.open({ tabId: tab.value.id });
+  if (!tab.value?.id) return;
+  await openSidebar(tab.value.id);
 }
 
 const pendingExport = ref<string | null>(null);
@@ -131,7 +155,7 @@ function confirmExport() {
 
 async function resetSettings() {
   await clearStoredSettings();
-  await setPreference("system");
+  await setPreference(themeConfig.defaultPreference);
   settingsNote.value = t("settings.cleared");
 }
 
@@ -146,11 +170,12 @@ function host(url: string) {
 
 <template>
   <div
-    class="min-h-screen bg-background text-foreground"
-    :class="layout === 'sidepanel' ? 'text-[13px]' : ''"
+    class="bg-background text-foreground"
+    :class="layout === 'sidepanel' ? 'min-h-full text-[13px]' : 'min-h-screen'"
   >
     <div
-      class="grid min-h-screen"
+      class="grid"
+      :class="layout === 'sidepanel' ? 'min-h-full' : 'min-h-screen'"
       :style="
         layout === 'dashboard' ? { gridTemplateColumns: 'var(--sidebar-width) 1fr' } : undefined
       "
@@ -180,8 +205,15 @@ function host(url: string) {
           </button>
         </nav>
       </aside>
-      <main class="min-w-0 p-6">
-        <header class="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <main class="min-w-0" :class="layout === 'sidepanel' ? 'px-4 pb-6' : 'p-6'">
+        <header
+          class="flex justify-between gap-3"
+          :class="
+            layout === 'sidepanel'
+              ? 'sticky top-0 z-10 -mx-4 mb-4 items-center border-b border-border bg-background px-4 py-3'
+              : 'mb-6 flex-wrap items-start gap-4'
+          "
+        >
           <div class="min-w-0">
             <p class="m-0 flex items-center gap-2 text-[12px] text-muted">
               <BrandMark />
@@ -197,18 +229,25 @@ function host(url: string) {
           <div class="flex gap-2">
             <button
               type="button"
-              class="h-9 shrink-0 whitespace-nowrap rounded-panel border border-border bg-surface px-3 text-[13px]"
+              class="inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-panel border border-border bg-surface px-3 text-[13px] disabled:opacity-60"
+              :disabled="status === 'loading'"
+              :aria-busy="status === 'loading'"
               @click="refresh"
             >
+              <LoaderCircle
+                v-if="status === 'loading'"
+                class="h-3.5 w-3.5 animate-spin"
+                aria-hidden="true"
+              />
               {{ t("action.refresh") }}
             </button>
             <button
-              v-if="browser.sidePanel"
+              v-if="canOpenSidebar && layout !== 'sidepanel'"
               type="button"
               class="h-9 shrink-0 whitespace-nowrap rounded-panel border border-border bg-surface px-3 text-[13px]"
               @click="openSidePanel"
             >
-              {{ t("action.sidePanel") }}
+              {{ t("action.sidebar") }}
             </button>
           </div>
         </header>
@@ -234,14 +273,19 @@ function host(url: string) {
             {{ t(item.labelKey as "nav.overview") }}
           </button>
         </div>
-        <p role="status" aria-live="polite" class="text-[13px]">
-          <span v-if="status === 'loading'">{{ t("state.loading") }}</span>
-          <span v-else-if="status === 'error'" class="text-danger">{{ error }}</span>
-          <span v-else-if="stale" class="text-warning">{{ t("state.stale") }}</span>
+        <LoadingStatus v-if="status === 'loading'" class="mb-4" :label="t('state.loading')" />
+        <p
+          v-else-if="status === 'error' || stale"
+          role="status"
+          aria-live="polite"
+          class="mb-4 text-[13px]"
+        >
+          <span v-if="status === 'error'" class="text-danger">{{ error }}</span>
+          <span v-else class="text-warning">{{ t("state.stale") }}</span>
         </p>
 
         <template v-if="audit && metadata">
-          <section v-show="section === 'overview'" class="space-y-4">
+          <section v-show="section === 'overview'" class="space-y-6">
             <ScoreBlock :score="audit.score" />
             <h2 class="text-[15px]">{{ t("overview.priority") }}</h2>
             <CheckTable :checks="actionable" />
@@ -251,7 +295,7 @@ function host(url: string) {
             </ul>
           </section>
 
-          <section v-show="section === 'metadata'" class="space-y-4">
+          <section v-show="section === 'metadata'" class="space-y-6">
             <div class="rounded-panel border border-border bg-surface p-4">
               <div class="mb-3 flex gap-2">
                 <button
@@ -341,7 +385,7 @@ function host(url: string) {
             <CheckTable :checks="checks('metadata')" />
           </section>
 
-          <section v-show="section === 'content'" class="space-y-3">
+          <section v-show="section === 'content'" class="space-y-6">
             <p class="text-[13px] text-muted">{{ t("content.note") }}</p>
             <dl class="grid grid-cols-2 gap-3 text-[13px]">
               <div class="rounded-panel border border-border bg-surface p-3">
@@ -453,7 +497,7 @@ function host(url: string) {
             <CheckTable :checks="checks('headings')" />
           </section>
 
-          <section v-show="section === 'links'" class="space-y-3">
+          <section v-show="section === 'links'" class="space-y-6">
             <p class="text-[13px]">
               {{
                 t("popup.linkSplit", {
@@ -545,7 +589,7 @@ function host(url: string) {
             <CheckTable :checks="checks('links')" />
           </section>
 
-          <section v-show="section === 'images'" class="space-y-3">
+          <section v-show="section === 'images'" class="space-y-6">
             <div class="flex gap-2">
               <button
                 type="button"
@@ -608,16 +652,62 @@ function host(url: string) {
             <CheckTable :checks="checks('images')" />
           </section>
 
-          <section v-show="section === 'technical'" class="space-y-3">
-            <p class="text-[13px] text-muted">{{ t("technical.note") }}</p>
-            <dl class="text-[13px]">
+          <section v-show="section === 'technical'" class="space-y-6">
+            <p class="m-0 text-[13px] leading-relaxed text-muted">{{ t("technical.note") }}</p>
+            <div class="space-y-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  class="inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-panel bg-primary px-3 text-[13px] text-primary-contrast disabled:opacity-60"
+                  :disabled="probing"
+                  :aria-busy="probing && probeKind === 'site'"
+                  @click="startSiteProbe()"
+                >
+                  <LoaderCircle
+                    v-if="probing && probeKind === 'site'"
+                    class="h-3.5 w-3.5 animate-spin"
+                    aria-hidden="true"
+                  />
+                  {{ t("technical.siteCheck") }}
+                </button>
+                <button
+                  v-if="
+                    (audit.details.site?.linksTotal ?? 0) > (audit.details.site?.linksChecked ?? 0)
+                  "
+                  type="button"
+                  class="inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-panel border border-border bg-surface px-3 text-[13px] disabled:opacity-60"
+                  :disabled="probing"
+                  :aria-busy="probing && probeKind === 'more'"
+                  @click="startSiteProbe(true)"
+                >
+                  <LoaderCircle
+                    v-if="probing && probeKind === 'more'"
+                    class="h-3.5 w-3.5 animate-spin"
+                    aria-hidden="true"
+                  />
+                  {{ t("technical.siteMore") }}
+                </button>
+              </div>
+              <LoadingStatus
+                v-if="probing"
+                :label="
+                  probeKind === 'more'
+                    ? t('technical.siteCheckingMore')
+                    : t('technical.siteChecking')
+                "
+              />
+              <p v-else-if="probeMessage" class="m-0 text-[13px] leading-relaxed text-muted">
+                {{ probeMessage }}
+              </p>
+            </div>
+            <dl class="space-y-4 text-[13px]">
               <div>
                 <dt class="font-medium">{{ t("field.status") }}</dt>
-                <dd>{{ audit.details.response.status ?? t("value.notExposed") }}</dd>
+                <dd class="mt-2">{{ audit.details.response.status ?? t("value.notExposed") }}</dd>
               </div>
               <div>
                 <dt class="font-medium">{{ t("field.redirects") }}</dt>
-                <dd>
+                <dd class="mt-2">
                   {{
                     audit.details.response.redirectCount == null
                       ? t("value.notExposed")
@@ -627,9 +717,33 @@ function host(url: string) {
               </div>
               <div>
                 <dt class="font-medium">{{ t("field.contentType") }}</dt>
-                <dd>{{ audit.details.response.contentType || t("value.unknown") }}</dd>
+                <dd class="mt-2">{{ audit.details.response.contentType || t("value.unknown") }}</dd>
               </div>
             </dl>
+            <div v-if="audit.details.response.headersAvailable" class="space-y-4">
+              <h2 class="m-0 text-[13px] font-semibold">{{ t("technical.headers") }}</h2>
+              <ul class="space-y-3">
+                <li
+                  v-for="header in audit.details.response.headers"
+                  :key="header.name"
+                  class="rounded-panel border border-border bg-surface px-4 py-3"
+                >
+                  <p class="m-0 text-[12px] font-semibold">{{ header.name }}</p>
+                  <p class="mb-0 mt-2 break-all text-[12px] leading-relaxed text-muted">
+                    {{ header.value }}
+                  </p>
+                </li>
+              </ul>
+            </div>
+            <div v-if="audit.details.site?.redirectHops.length" class="space-y-3">
+              <h2 class="m-0 text-[13px] font-semibold">{{ t("technical.hops") }}</h2>
+              <ul class="space-y-2 text-[13px] text-muted">
+                <li v-for="hop in audit.details.site.redirectHops" :key="hop">{{ hop }}</li>
+              </ul>
+            </div>
+            <ul v-if="audit.details.site?.notes.length" class="space-y-2 text-[13px] text-muted">
+              <li v-for="note in audit.details.site.notes" :key="note">{{ note }}</li>
+            </ul>
             <CheckTable :checks="checks('technical')" />
           </section>
 
@@ -663,7 +777,7 @@ function host(url: string) {
             <CheckTable :checks="checks('social')" />
           </section>
 
-          <section v-show="section === 'performance'" class="space-y-3">
+          <section v-show="section === 'performance'" class="space-y-6">
             <p class="text-[13px] text-muted">{{ t("performance.note") }}</p>
             <dl class="grid grid-cols-2 gap-3 text-[13px]">
               <div class="rounded-panel border bg-surface p-3">
@@ -713,7 +827,7 @@ function host(url: string) {
             <CheckTable :checks="checks('performance')" />
           </section>
 
-          <section v-show="section === 'international'" class="space-y-3">
+          <section v-show="section === 'international'" class="space-y-6">
             <p class="text-[13px]">
               {{ t("international.documentLanguage") }}:
               {{ metadata.language || t("international.notDeclared") }}
@@ -755,12 +869,12 @@ function host(url: string) {
             <CheckTable :checks="checks('international')" />
           </section>
 
-          <section v-show="section === 'accessibility'" class="space-y-3">
+          <section v-show="section === 'accessibility'" class="space-y-6">
             <p class="text-[13px] text-muted">{{ t("a11y.note") }}</p>
             <CheckTable :checks="checks('accessibility')" />
           </section>
 
-          <section v-show="section === 'reports'" class="max-w-xl space-y-4">
+          <section v-show="section === 'reports'" class="max-w-xl space-y-6">
             <div v-for="item in reportActions" :key="item[0]" class="space-y-2">
               <button
                 type="button"
@@ -789,7 +903,7 @@ function host(url: string) {
             </div>
           </section>
 
-          <section v-show="section === 'settings'" class="space-y-3">
+          <section v-show="section === 'settings'" class="space-y-6">
             <fieldset class="space-y-2">
               <legend class="text-[14px] font-medium">{{ t("settings.theme") }}</legend>
               <label
@@ -824,11 +938,20 @@ function host(url: string) {
             </button>
             <p role="status" class="text-[13px]">{{ settingsNote }}</p>
             <p class="text-[13px] text-muted">{{ t("settings.privacy") }}</p>
-            <p class="text-[12px] text-muted">
-              {{
-                t("settings.version", { version: appConfig.version, rules: audit.rulesetVersion })
-              }}
-            </p>
+            <div class="space-y-2">
+              <p class="m-0 text-[16px] font-semibold">{{ brandConfig.identity.name }}</p>
+              <p class="m-0 text-[13px] leading-relaxed text-muted">
+                {{ t("settings.ecosystem", { ecosystem: brandConfig.identity.ecosystem }) }}
+              </p>
+              <p class="m-0 text-[12px] text-muted">
+                {{
+                  t("settings.version", {
+                    version: appConfig.version,
+                    rules: audit.rulesetVersion,
+                  })
+                }}
+              </p>
+            </div>
           </section>
         </template>
       </main>

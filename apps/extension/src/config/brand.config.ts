@@ -28,7 +28,7 @@ export const brandConfig: BrandConfig = {
     name: "RankMiso",
     shortName: "RankMiso",
     slug: "rankmiso",
-    ecosystem: "Miso",
+    ecosystem: "Miso Ecosystem",
     tagline: "Every page. Every detail.",
     description: "A free, open-source SEO browser extension.",
   },
@@ -44,6 +44,6 @@ export const brandConfig: BrandConfig = {
     icon: "/brand/icon.png",
   },
   browser: {
-    geckoId: "rankmiso@local.dev",
+    geckoId: "rankmiso@rankmiso.extension",
   },
 };

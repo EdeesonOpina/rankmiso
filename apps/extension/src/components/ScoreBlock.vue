@@ -1,9 +1,18 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { ScoreSummary } from "../types/audit";
 import { useI18n } from "../composables/useI18n";
 
-defineProps<{ score: ScoreSummary }>();
+const props = defineProps<{ score: ScoreSummary }>();
 const { t, n } = useI18n();
+
+const markClass = computed(() => {
+  const value = props.score.available ? props.score.value : null;
+  if (value == null) return "border-border text-muted";
+  if (value >= 90) return "border-success text-success";
+  if (value >= 50) return "border-warning text-warning";
+  return "border-danger text-danger";
+});
 </script>
 
 <template>
@@ -13,7 +22,8 @@ const { t, n } = useI18n();
   >
     <div class="flex items-center gap-4">
       <p
-        class="m-0 grid h-16 w-16 place-items-center rounded-full border-2 border-primary text-xl font-semibold"
+        class="m-0 grid h-16 w-16 place-items-center rounded-full border-2 text-xl font-semibold"
+        :class="markClass"
         aria-hidden="true"
       >
         {{ score.available && score.value != null ? n(score.value) : "–" }}

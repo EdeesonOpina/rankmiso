@@ -15,13 +15,17 @@ RankMiso looks at the page you chose to inspect, and it does that work in your b
 - No analytics or advertising.
 - No sale or transfer of browsing data.
 - No background crawl of your history.
-- No request to robots.txt, sitemaps, other pages, or PageSpeed Insights.
+- No request to PageSpeed Insights, Chrome UX Report, or any other speed-score service.
+- Largest Contentful Paint, Cumulative Layout Shift, and Interaction to Next Paint are not collected. The report can show how many resources the current page load requested, from this browser only.
+- No request to robots.txt, sitemaps, or other pages unless you press **Check this site** and allow that origin.
 
 ## Network
 
 Core analysis does not contact a server. Loading an image thumbnail in the report can request that image from the site you already opened. Highlighting and extraction stay on the page.
 
-Future optional checks, such as broken links or a PageSpeed request, must stay off until you start them, and the interface must say when data leaves the browser. Those checks are not implemented.
+**Check this site** asks for permission for that origin only, then fetches the page headers, `/robots.txt`, the first sitemap listed in that file, up to eight hreflang alternates, and public links 20 at a time. Cookies are not sent. Local and private addresses are skipped. The results stay in this browser. PageSpeed Insights is not called.
+
+Opening RankMiso reads the page you invoked it on. Changing to another site closes that access. **Refresh analysis** can ask to read the new site. If the browser hides that address, it can also ask once for permission to see tab addresses, and then uses that only to name the tab you are analyzing. It does not keep a browsing history.
 
 ## Clearing data
 
