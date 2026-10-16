@@ -27,6 +27,7 @@ export default defineConfig({
       ...permissionsConfig.required.map((permission) => permission.name),
       ...(browser === "firefox" ? [] : ["sidePanel"]),
     ],
+    optional_permissions: ["tabs"],
     optional_host_permissions: [...permissionsConfig.optionalHosts],
     content_security_policy: {
       extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
@@ -36,7 +37,7 @@ export default defineConfig({
         ? {
             gecko: {
               id: brandConfig.browser.geckoId,
-              strict_min_version: "128.0",
+              strict_min_version: "140.0",
               data_collection_permissions: {
                 required: ["none"],
               },

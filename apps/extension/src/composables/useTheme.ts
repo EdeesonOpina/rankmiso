@@ -1,7 +1,7 @@
 import { onMounted, onUnmounted, ref } from "vue";
 import { readThemePreference, writeThemePreference } from "../adapters/storage";
 import { appConfig } from "../config/app.config";
-import type { ThemePreference } from "../config/theme.config";
+import { themeConfig, type ThemePreference } from "../config/theme.config";
 
 function storedPreference(): ThemePreference {
   try {
@@ -10,7 +10,7 @@ function storedPreference(): ThemePreference {
   } catch {
     // localStorage is unavailable in some restricted pages.
   }
-  return "system";
+  return themeConfig.defaultPreference;
 }
 
 function resolvedTheme(value: ThemePreference): "light" | "dark" {
