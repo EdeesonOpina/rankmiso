@@ -18,7 +18,7 @@ Updated: 2026-10-15
 - Readable JSON-LD fields, share-card previews, horizontal image rows, copy actions, and confirmed exports
 - Light and dark color pairing: white text on the light-mode primary button, hairline borders in both themes
 - Firefox temporary add-on used on live pages by the maintainer before the RankMiso move
-- Repository moved to `/home/lenovo/Projects/Rust/rankmiso`
+- Repository moved to The project is this repository.
 - Central brand config, temporary Miso palette, geometric placeholder mark, and `pnpm brand:icons`
 - Dashboard labels moved into `src/locales/en.ts`
 - Optional site check for headers, robots.txt, the first listed sitemap, redirect hops, hreflang return links, and a continuable sample of 20 public links

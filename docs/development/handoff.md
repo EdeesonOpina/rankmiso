@@ -4,9 +4,9 @@ Date: 2026-10-15
 
 ## Repository
 
-`/home/lenovo/Projects/Rust/rankmiso`
+The project is this repository.
 
-The directory was renamed from `/home/lenovo/Projects/Rust/seo-toolkit` on the same filesystem. The old path no longer exists. The git remote is `https://github.com/EdeesonOpina/rankmiso.git` on branch `develop`. That GitHub repository is private. Do not commit, push, or change visibility unless the maintainer asks.
+The directory was renamed from `seo-toolkit`. The old directory no longer exists. The git remote is `https://github.com/EdeesonOpina/rankmiso.git` on branch `develop`. That GitHub repository is private. Do not commit, push, or change visibility unless the maintainer asks.
 
 ## Product identity
 
