@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { Braces, Languages, Link2, LoaderCircle, TextSearch } from "lucide-vue-next";
 import { brandConfig } from "../config/brand.config";
+import { themeConfig } from "../config/theme.config";
 import { navigationConfig } from "../config/navigation.config";
 import { availableNavigation } from "../config/features.config";
 import { appConfig } from "../config/app.config";
@@ -154,7 +155,7 @@ function confirmExport() {
 
 async function resetSettings() {
   await clearStoredSettings();
-  await setPreference("system");
+  await setPreference(themeConfig.defaultPreference);
   settingsNote.value = t("settings.cleared");
 }
 
@@ -169,11 +170,12 @@ function host(url: string) {
 
 <template>
   <div
-    class="min-h-screen bg-background text-foreground"
-    :class="layout === 'sidepanel' ? 'text-[13px]' : ''"
+    class="bg-background text-foreground"
+    :class="layout === 'sidepanel' ? 'min-h-full text-[13px]' : 'min-h-screen'"
   >
     <div
-      class="grid min-h-screen"
+      class="grid"
+      :class="layout === 'sidepanel' ? 'min-h-full' : 'min-h-screen'"
       :style="
         layout === 'dashboard' ? { gridTemplateColumns: 'var(--sidebar-width) 1fr' } : undefined
       "
@@ -203,8 +205,15 @@ function host(url: string) {
           </button>
         </nav>
       </aside>
-      <main class="min-w-0 p-6">
-        <header class="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <main class="min-w-0" :class="layout === 'sidepanel' ? 'px-4 pb-6' : 'p-6'">
+        <header
+          class="flex justify-between gap-3"
+          :class="
+            layout === 'sidepanel'
+              ? 'sticky top-0 z-10 -mx-4 mb-4 items-center border-b border-border bg-background px-4 py-3'
+              : 'mb-6 flex-wrap items-start gap-4'
+          "
+        >
           <div class="min-w-0">
             <p class="m-0 flex items-center gap-2 text-[12px] text-muted">
               <BrandMark />
