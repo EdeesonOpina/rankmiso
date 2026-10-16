@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- The repository is RankMiso, at `/home/lenovo/Projects/Rust/rankmiso`.
+- The repository is RankMiso, at The project is this repository..
 - Product name, tagline, and asset paths come from one brand configuration.
 - Temporary palette, geometric mark, and generated extension icons are in place. The final mascot is not.
 - Remaining dashboard labels use the existing English message catalog.
