@@ -1,5 +1,5 @@
 export const themeConfig = {
-  defaultPreference: "system",
+  defaultPreference: "light",
   preferences: ["system", "light", "dark"],
   popupWidth: "380px",
   popupMinHeight: "560px",
