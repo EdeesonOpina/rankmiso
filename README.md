@@ -6,7 +6,7 @@ RankMiso is a free, open-source SEO browser extension for developers, marketers,
 
 It belongs to the Miso ecosystem. The idea is simple: powerful tools, less overhead. No account. No subscription. No telemetry. No ads. No backend.
 
-Version 0.1.0 is a working local analysis slice. It is ready to try on your own machine. It is not a store release yet.
+Version 0.1.0 is the build prepared for Firefox. The steps, listing text, and reviewer notes are in [docs/releases/firefox.md](docs/releases/firefox.md). The privacy policy has to be on a public HTTPS page before that listing can point at it. The Chrome Web Store is a later upload.
 
 ## What you see
 
@@ -29,7 +29,11 @@ The number is a weighted summary of the checks that ran. Errors, warnings, and p
 
 RankMiso will not invent search volume, keyword difficulty, traffic, backlinks, or index status. A missing measurement is shown as unavailable. The result includes a disclaimer: this is not a Google ranking.
 
-Still ahead: response headers, redirect hops, robots.txt, XML sitemaps, reciprocal hreflang, broken-link requests, rich-result eligibility, and comparisons across URLs. See [progress](docs/development/progress.md).
+The full report can check one site after you allow it: response headers, robots.txt for the Googlebot group or `*`, whether the open URL is in the first sitemap, redirect hops, hreflang return links, and public links 20 at a time. Those requests stay off until you start them. Local and private addresses are skipped.
+
+The Performance section shows how many resources this page load requested. Largest Contentful Paint, Cumulative Layout Shift, and Interaction to Next Paint stay Unavailable in this version.
+
+Still not measured: search rankings, traffic, backlinks, index coverage, PageSpeed Insights, official rich-result eligibility, and comparisons across URLs. See [progress](docs/development/progress.md).
 
 ## Try it
 

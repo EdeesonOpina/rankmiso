@@ -1,6 +1,6 @@
 import { browser } from "wxt/browser";
 import { appConfig } from "../config/app.config";
-import type { ThemePreference } from "../config/theme.config";
+import { themeConfig, type ThemePreference } from "../config/theme.config";
 
 const allowed: ThemePreference[] = ["system", "light", "dark"];
 
@@ -15,7 +15,7 @@ export async function readThemePreference(): Promise<ThemePreference> {
     const fallback = localStorage.getItem(appConfig.themeKey);
     if (fallback === "light" || fallback === "dark" || fallback === "system") return fallback;
   }
-  return "system";
+  return themeConfig.defaultPreference;
 }
 
 export async function writeThemePreference(preference: ThemePreference): Promise<void> {

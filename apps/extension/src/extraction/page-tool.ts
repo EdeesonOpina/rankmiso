@@ -256,7 +256,7 @@ export function runPageTool(command: string, arg?: string): unknown {
   function extract() {
     const limitations: string[] = [
       "Microdata and RDFa were not extracted.",
-      "Response headers, robots.txt, and sitemaps were not requested.",
+      "Response headers, robots.txt, and sitemaps stay off until the optional site check.",
       "Interaction to Next Paint was not measured.",
     ];
     const text = visibleText();
