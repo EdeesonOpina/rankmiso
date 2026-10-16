@@ -10,6 +10,6 @@ Spacing uses a 4px scale. Panels use a 10px radius. Borders use the `--border` h
 
 The popup is 420px wide. The dashboard sidebar is 232px.
 
-Theme preference is `system`, `light`, or `dark`, stored locally. `system` follows `prefers-color-scheme`.
+Theme preference is `light`, `dark`, or `system`, stored locally. The default is light. `system` follows `prefers-color-scheme`.
 
 In light mode the primary button is deep green with white text. In dark mode it is a lighter green with near-black text. Those pairings come from `--primary` and `--primary-contrast`. Button text color is left to those utilities so a later rule does not force the page text color onto the fill.

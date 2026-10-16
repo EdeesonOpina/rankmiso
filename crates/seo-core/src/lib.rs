@@ -110,6 +110,9 @@ pub struct PageSnapshot {
     pub accessibility: AccessibilitySnapshot,
     pub performance: PerformanceSnapshot,
     pub response: ResponseMetadata,
+    /// Optional fetches the user started. Missing on older snapshots.
+    #[serde(default)]
+    pub site: SiteProbe,
     pub collection: CollectionInfo,
 }
 
@@ -130,6 +133,7 @@ impl Default for PageSnapshot {
             accessibility: AccessibilitySnapshot::default(),
             performance: PerformanceSnapshot::default(),
             response: ResponseMetadata::default(),
+            site: SiteProbe::default(),
             collection: CollectionInfo::default(),
         }
     }
@@ -257,6 +261,35 @@ pub struct ResponseMetadata {
 pub struct HeaderPair {
     pub name: String,
     pub value: String,
+}
+
+/// Results of a user-started fetch for one origin. Absent means the check was not run.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct SiteProbe {
+    pub requested: bool,
+    pub robots_status: Option<u16>,
+    pub robots_body: String,
+    pub sitemap_urls: Vec<String>,
+    pub sitemap_status: Option<u16>,
+    pub sitemap_url_count: Option<u32>,
+    pub links_checked: u32,
+    pub links_total: u32,
+    pub links_broken: u32,
+    pub links_unreachable: u32,
+    pub links_blocked: u32,
+    /// True when the open URL appeared in the fetched sitemap portion.
+    #[serde(default)]
+    pub sitemap_contains_page: Option<bool>,
+    #[serde(default)]
+    pub sitemap_truncated: bool,
+    #[serde(default)]
+    pub redirect_hops: Vec<String>,
+    #[serde(default)]
+    pub hreflang_checked: u32,
+    #[serde(default)]
+    pub hreflang_missing: u32,
+    pub notes: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -453,6 +486,7 @@ pub struct AuditDetails {
     pub structured_data: Vec<StructuredDataView>,
     pub performance: PerformanceSnapshot,
     pub response: ResponseMetadata,
+    pub site: SiteProbe,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]

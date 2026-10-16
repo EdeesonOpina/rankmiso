@@ -6,13 +6,13 @@ Date: 2026-10-15
 
 The project is this repository.
 
-The directory was renamed from `seo-toolkit`. The old directory no longer exists. The project is not a git repository and has no remote. Do not commit, push, or create a remote unless the maintainer asks.
+The directory was renamed from `seo-toolkit`. The old directory no longer exists. The git remote is `https://github.com/EdeesonOpina/rankmiso.git` on branch `develop`. That GitHub repository is private. Do not commit, push, or change visibility unless the maintainer asks.
 
 ## Product identity
 
 RankMiso, in the Miso ecosystem. Tagline: “Every page. Every detail.”
 
-`apps/extension/src/config/brand.config.ts` is the only brand source. The manifest name, description, and Firefox id `rankmiso@local.dev` come from it. `packages/design-tokens/src/tokens.css` holds `--miso-color-*` and `--miso-font-*`. Existing Tailwind names alias those tokens.
+`apps/extension/src/config/brand.config.ts` is the only brand source. The manifest name, description, and Firefox id `rankmiso@rankmiso.extension` come from it. `packages/design-tokens/src/tokens.css` holds `--miso-color-*` and `--miso-font-*`. Existing Tailwind names alias those tokens.
 
 The toolbar icon and header mark are the supplied fox sticker, saved as a transparent 8-bit PNG. `pnpm icons` would replace it with the geometric M. Replacement steps are in `docs/branding/asset-replacement.md`.
 
@@ -39,28 +39,27 @@ The analysis slice is unchanged: popup tabs (Overview, JSON-LD, Headings, Links,
 
 ## Verified on 2026-10-15 after the move
 
-- Rust format, Clippy, and 18 tests passed.
-- Frozen pnpm install passed.
-- Report-format tests: 4 passed. Extension tests: 14 passed.
-- `vue-tsc`, Prettier, and ESLint passed.
-- Chrome MV3 and Firefox MV3 production builds passed and include the local WASM file, brand PNGs, and 16/32/48/128 icons.
-- Built manifest name is RankMiso. Firefox id is `rankmiso@local.dev`.
+- Rust format, Clippy, and 26 tests passed (23 rules, 3 scoring).
+- Extension tests: 17 passed. `vue-tsc` and ESLint passed.
+- Firefox MV3 production build passed and includes the local WASM file. Gecko id is `rankmiso@rankmiso.extension`.
+- Chrome was not rebuilt in this pass.
 
 ## Not verified
 
-- Chrome, Edge, or Firefox after this rename. A compiled bundle is not a browser test.
-- Chrome side panel and Firefox sidebar on a live window.
+- Firefox with id `rankmiso@rankmiso.extension`, including the sidebar button and **Check this site**.
+- Edge after this rename.
 - Highlight and clear on a live page.
 - Whether every remote share image loads inside the extension page.
+
+The maintainer loaded the Chrome unpacked extension and used the popup and side panel on a live page.
 
 Reload the extension after rebuilding. Firefox temporary add-ons disappear when Firefox quits. Load `apps/extension/.output/firefox-mv3/manifest.json` from `about:debugging`.
 
 ## Next tasks
 
-1. Add a Playwright test that loads the built extension only after the manual path stays stable.
-2. Design the opt-in network client for broken links before implementing it. Include timeouts, concurrency, scheme limits, and private-network blocking.
-3. Re-check the Chrome side panel and Firefox sidebar on a live window.
-4. Replace `rankmiso@local.dev` before any store submission.
+1. Follow `docs/releases/firefox.md`. Load the Firefox build, then submit only after `PRIVACY.md` is on a public HTTPS page.
+2. Add a Playwright test that loads the built extension only after the manual path stays stable.
+3. Chrome Web Store upload stays in `docs/releases/chrome.md` until Firefox is submitted.
 
 ## Do not
 

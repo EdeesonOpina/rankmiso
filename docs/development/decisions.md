@@ -34,7 +34,7 @@ Default permissions are `storage`, `activeTab`, and `scripting`. The extension i
 
 Visual tokens live in `packages/design-tokens/src/tokens.css`. `--miso-color-*` and `--miso-font-*` are the configurable values. Existing `--background`, `--primary`, and related names alias those tokens so current Tailwind utilities keep working. The palette and the geometric M mark are temporary. They are not the final Miso identity.
 
-Inter and JetBrains Mono are named first in the font stacks. The extension does not download webfonts. If those families are not installed, the system UI and monospace fonts are used.
+Light type names Nunito first. Dark type names Inter first. JetBrains Mono is first for monospace. The extension does not download webfonts. If those families are not installed, the system UI and monospace fonts are used.
 
 HTML `<title>` tags in the extension entrypoints are static copies of the product name. WXT does not import the TypeScript brand module into those HTML files, so a name change must update both places.
 
@@ -55,4 +55,6 @@ Only the theme preference is stored. Full page text is not written to disk. Expo
 
 ## Firefox
 
-The Firefox package is Manifest V3 via `wxt build -b firefox --mv3`. The development id `rankmiso@local.dev` must be replaced before a store submission. Changing it again will make Firefox treat the add-on as a different extension. `data_collection_permissions.required` is `none`.
+The Firefox package is Manifest V3 via `wxt build -b firefox --mv3`. The id is `rankmiso@rankmiso.extension`. The first accepted addons.mozilla.org upload locks it. Changing it after that makes Firefox treat the add-on as a different extension. `data_collection_permissions.required` is `none`.
+
+Optional host permissions stay out of the required set. **Check this site** calls `permissions.request` for the current origin, then fetches headers, robots.txt, the first listed sitemap, and at most 20 public links. Private and local addresses are skipped. PageSpeed Insights is not called. The JSON-LD rich-result row is a local field list and does not change the score, because that category weight is 0.

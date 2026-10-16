@@ -196,6 +196,7 @@ export interface AuditResult {
       headersAvailable: boolean;
       headers: Array<{ name: string; value: string }>;
     };
+    site: SiteProbeResult;
   };
   source: {
     collectionMethod: string;
@@ -206,9 +207,39 @@ export interface AuditResult {
   analyzedAt: string;
 }
 
+export interface SiteProbeResult {
+  requested: boolean;
+  robotsStatus: number | null;
+  robotsBody: string;
+  sitemapUrls: string[];
+  sitemapStatus: number | null;
+  sitemapUrlCount: number | null;
+  sitemapContainsPage: boolean | null;
+  sitemapTruncated: boolean;
+  linksChecked: number;
+  linksTotal: number;
+  linksBroken: number;
+  linksUnreachable: number;
+  linksBlocked: number;
+  redirectHops: string[];
+  hreflangChecked: number;
+  hreflangMissing: number;
+  notes: string[];
+}
+
 export interface PageSnapshot {
   schemaVersion: number;
   url: string;
   collectedAt: string;
   collection: { method: string; domGeneration: number; limitations: string[] };
+  links?: Array<{ href: string; resolvedUrl?: string | null }>;
+  linksRel?: Array<{ rel: string; href: string; hreflang?: string | null }>;
+  response?: {
+    status: number | null;
+    redirectCount: number | null;
+    contentType: string | null;
+    headersAvailable: boolean;
+    headers: Array<{ name: string; value: string }>;
+  };
+  site?: SiteProbeResult;
 }

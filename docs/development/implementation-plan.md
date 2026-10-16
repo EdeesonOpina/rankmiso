@@ -43,11 +43,11 @@ Not started. SERP reading, URL comparison, and selector helpers need their own a
 
 ## Phase 5 — Performance and hardening
 
-Browser-observed LCP, CLS, navigation timing, and resource count are shown when present. INP is unavailable. PageSpeed Insights is not integrated. Security review beyond the current export and permission choices is still open.
+The report shows the resource count for the current page load. Largest Contentful Paint, Cumulative Layout Shift, and Interaction to Next Paint stay Unavailable. PageSpeed Insights is not integrated. Security review beyond the current export and permission choices is still open.
 
 ## Phase 6 — Public release
 
-Not started. Store listings, signed Safari packaging, and a stable tag wait until the gaps above are closed.
+Firefox listing text is drafted in `docs/releases/firefox.md`. The add-on has not been uploaded. A public privacy URL is still required. Signed Safari packaging and a stable tag are not started.
 
 ## Acceptance for the current slice
 
