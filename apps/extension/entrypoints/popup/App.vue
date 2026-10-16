@@ -58,6 +58,7 @@ async function openReport() {
       `/dashboard.html?tabId=${tab.value.id}&section=${reportSection[pane.value]}`,
     ),
   });
+  window.close();
 }
 
 const topFindings = () =>
@@ -166,7 +167,7 @@ const topFindings = () =>
       <ShareCards v-else :audit="audit" />
       <button
         type="button"
-        class="mt-4 w-full rounded-panel border border-border bg-surface px-3 py-2.5 text-[13px]"
+        class="mt-4 w-full rounded-panel bg-primary px-3 py-2.5 text-[13px] text-primary-contrast"
         @click="openReport"
       >
         {{ t("action.openReport") }}

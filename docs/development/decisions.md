@@ -34,7 +34,7 @@ Default permissions are `storage`, `activeTab`, and `scripting`. The extension i
 
 Visual tokens live in `packages/design-tokens/src/tokens.css`. `--miso-color-*` and `--miso-font-*` are the configurable values. Existing `--background`, `--primary`, and related names alias those tokens so current Tailwind utilities keep working. The palette and the geometric M mark are temporary. They are not the final Miso identity.
 
-Inter and JetBrains Mono are named first in the font stacks. The extension does not download webfonts. If those families are not installed, the system UI and monospace fonts are used.
+Light type names Nunito first. Dark type names Inter first. JetBrains Mono is first for monospace. The extension does not download webfonts. If those families are not installed, the system UI and monospace fonts are used.
 
 HTML `<title>` tags in the extension entrypoints are static copies of the product name. WXT does not import the TypeScript brand module into those HTML files, so a name change must update both places.
 
