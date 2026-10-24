@@ -6,7 +6,9 @@ import { useI18n } from "../composables/useI18n";
 import EmptyState from "./EmptyState.vue";
 import StatusBadge from "./StatusBadge.vue";
 
-const props = defineProps<{ checks: CheckResult[] }>();
+const props = withDefaults(defineProps<{ checks: CheckResult[]; title?: string }>(), {
+  title: "",
+});
 const { t } = useI18n();
 const filter = ref<"all" | CheckStatus>("all");
 const query = ref("");
@@ -30,25 +32,31 @@ const filters = [
 </script>
 
 <template>
-  <div class="space-y-5">
-    <div class="flex flex-wrap gap-2">
-      <button
-        v-for="item in filters"
-        :key="item[0]"
-        type="button"
-        class="rounded-full border border-border px-3 py-1 text-[12px]"
-        :class="
-          filter === item[0] ? 'bg-primary text-primary-contrast border-primary' : 'bg-surface'
-        "
-        :aria-pressed="filter === item[0]"
-        @click="filter = item[0]"
-      >
-        {{ t(item[1]) }}
-      </button>
+  <div class="check-table">
+    <div class="check-table-heading">
+      <h2>{{ props.title || t("checks.heading") }}</h2>
+      <span>{{ t("checks.count", { count: props.checks.length }) }}</span>
     </div>
-    <label class="block text-[13px] text-muted">
-      {{ t("search.checks") }}
-      <span class="relative mt-3 block">
+    <div class="check-filter-scroll">
+      <div class="check-filter-row">
+        <button
+          v-for="item in filters"
+          :key="item[0]"
+          type="button"
+          class="rounded-full border border-border px-3 py-1 text-[12px]"
+          :class="
+            filter === item[0] ? 'bg-primary text-primary-contrast border-primary' : 'bg-surface'
+          "
+          :aria-pressed="filter === item[0]"
+          @click="filter = item[0]"
+        >
+          {{ t(item[1]) }}
+        </button>
+      </div>
+    </div>
+    <label class="check-search">
+      <span>{{ t("search.checks") }}</span>
+      <span class="check-search-field">
         <Search
           class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
           aria-hidden="true"

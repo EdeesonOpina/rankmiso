@@ -8,6 +8,12 @@ export interface InspectedTab {
   title?: string;
 }
 
+export interface InpCaptureSnapshot {
+  supported: boolean;
+  active: boolean;
+  interactions: Array<[number, number]>;
+}
+
 function inspected(tab: { id?: number; url?: string; title?: string }): InspectedTab | null {
   if (!tab.id) return null;
   return { id: tab.id, url: tab.url, title: tab.title };
@@ -38,15 +44,54 @@ export async function inspectTab(tabId: number): Promise<PageSnapshot> {
       args: ["marker"],
     })
     .catch(() => undefined);
+  const [captureResult] = await browser.scripting
+    .executeScript({
+      target: { tabId },
+      world: "MAIN",
+      func: runPageTool,
+      args: ["readInpCapture"],
+    })
+    .catch(() => []);
+  const capture = captureResult?.result as InpCaptureSnapshot | undefined;
   const [extracted] = await browser.scripting.executeScript({
     target: { tabId },
     func: runPageTool,
-    args: ["extract"],
+    args: ["extract", capture ? JSON.stringify(capture) : ""],
   });
   if (!extracted?.result || typeof extracted.result !== "object") {
     throw new Error("The page did not return an SEO snapshot.");
   }
   return extracted.result as PageSnapshot;
+}
+
+export async function readInpCapture(tabId: number): Promise<InpCaptureSnapshot> {
+  const [result] = await browser.scripting.executeScript({
+    target: { tabId },
+    world: "MAIN",
+    func: runPageTool,
+    args: ["readInpCapture"],
+  });
+  return result?.result as InpCaptureSnapshot;
+}
+
+export async function startInpCapture(tabId: number): Promise<InpCaptureSnapshot> {
+  const [result] = await browser.scripting.executeScript({
+    target: { tabId },
+    world: "MAIN",
+    func: runPageTool,
+    args: ["startInpCapture"],
+  });
+  return result?.result as InpCaptureSnapshot;
+}
+
+export async function stopInpCapture(tabId: number): Promise<InpCaptureSnapshot> {
+  const [result] = await browser.scripting.executeScript({
+    target: { tabId },
+    world: "MAIN",
+    func: runPageTool,
+    args: ["stopInpCapture"],
+  });
+  return result?.result as InpCaptureSnapshot;
 }
 
 export async function readGeneration(tabId: number): Promise<{ url: string; generation: number }> {
