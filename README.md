@@ -6,7 +6,8 @@ RankMiso is a free, open-source SEO browser extension for developers, marketers,
 
 It belongs to the Miso ecosystem. The idea is simple: powerful tools, less overhead. No account. No subscription. No telemetry. No ads. No backend.
 
-Version 0.1.0 is the build prepared for Firefox. The steps, listing text, and reviewer notes are in [docs/releases/firefox.md](docs/releases/firefox.md). The privacy policy has to be on a public HTTPS page before that listing can point at it. The Chrome Web Store is a later upload.
+RankMiso is available in the Chrome Web Store and Firefox Add-ons. Edge builds are available for sideloading. Release maintenance notes are in [docs/releases](docs/releases/).
+Version 0.2.0 is in build preparation and has not yet been submitted to either store. MCP integration is a documented future plan; no MCP server or browser bridge is included in this release.
 
 ## What you see
 
@@ -31,9 +32,9 @@ RankMiso will not invent search volume, keyword difficulty, traffic, backlinks, 
 
 The full report can check one site after you allow it: response headers, robots.txt for the Googlebot group or `*`, whether the open URL is in the first sitemap, redirect hops, hreflang return links, and public links 20 at a time. Those requests stay off until you start them. Local and private addresses are skipped.
 
-The Performance section shows how many resources this page load requested. Largest Contentful Paint, Cumulative Layout Shift, and Interaction to Next Paint stay Unavailable in this version.
+The Performance section shows browser-observed LCP and CLS when available, plus an INP estimate from exposed event entries. These are not field data. An optional mobile PageSpeed Insights check sends the page URL and a user-provided API key to Google only after explicit consent; its lab results do not affect RankMiso's score.
 
-Still not measured: search rankings, traffic, backlinks, index coverage, PageSpeed Insights, official rich-result eligibility, and comparisons across URLs. See [progress](docs/development/progress.md).
+Reports can save comparison fields locally after you choose to save them. RankMiso still does not measure search rankings, traffic, backlinks, index coverage, or official rich-result eligibility. See [progress](docs/development/progress.md).
 
 ## Try it
 
@@ -74,12 +75,12 @@ pnpm dev
 
 The Rust crates stay named `seo-core`, `seo-rules`, `seo-scoring`, and `seo-wasm`. They own the rules. Vue owns the screen.
 
-| | |
-| --- | --- |
-| Product name, tagline, assets | `apps/extension/src/config/brand.config.ts` |
-| Colors and type | `packages/design-tokens/src/tokens.css` |
-| Interface copy | `apps/extension/src/locales/en.ts` |
-| Replace the icon | [docs/branding/asset-replacement.md](docs/branding/asset-replacement.md) |
+|                               |                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| Product name, tagline, assets | `apps/extension/src/config/brand.config.ts`                              |
+| Colors and type               | `packages/design-tokens/src/tokens.css`                                  |
+| Interface copy                | `apps/extension/src/locales/en.ts`                                       |
+| Replace the icon              | [docs/branding/asset-replacement.md](docs/branding/asset-replacement.md) |
 
 ```bash
 pnpm brand:icons
@@ -94,6 +95,7 @@ That reads `apps/extension/public/brand/icon.png` and writes the 16, 32, 48, and
 - [Brand and the fox mark](docs/branding/overview.md)
 - [Privacy](PRIVACY.md)
 - [Contributing](CONTRIBUTING.md)
+- [Implementation plan, including MCP roadmap](docs/development/implementation-plan.md)
 
 ## License
 

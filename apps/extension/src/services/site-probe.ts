@@ -146,10 +146,18 @@ export function alternatePointsBack(html: string, pageUrl: string): boolean {
 
 export async function probeSite(
   snapshot: PageSnapshot,
-  options: { linkOffset?: number; linksOnly?: boolean } = {},
+  options: {
+    linkOffset?: number;
+    linksOnly?: boolean;
+    onLinkProgress?: (checked: number, total: number) => void;
+  } = {},
 ): Promise<PageSnapshot> {
   if (options.linksOnly && snapshot.site?.requested) {
-    return continueLinks(snapshot, options.linkOffset ?? snapshot.site.linksChecked);
+    return continueLinks(
+      snapshot,
+      options.linkOffset ?? snapshot.site.linksChecked,
+      options.onLinkProgress,
+    );
   }
   const notes: string[] = [];
   const site = emptySiteProbe();
@@ -216,7 +224,9 @@ export async function probeSite(
   if (publicLinks.length > candidates.length) {
     notes.push("Only the first 20 public http(s) links were requested.");
   }
-  const outcomes = await mapPool(candidates, 3, classifyLink);
+  const outcomes = await mapPool(candidates, 3, classifyLink, (checked) =>
+    options.onLinkProgress?.(checked, candidates.length),
+  );
   site.linksChecked = outcomes.length;
   site.linksBroken = outcomes.filter((item) => item === "broken").length;
   site.linksUnreachable = outcomes.filter((item) => item === "unreachable").length;
@@ -226,13 +236,19 @@ export async function probeSite(
   return { ...snapshot, response, site };
 }
 
-async function continueLinks(snapshot: PageSnapshot, offset: number): Promise<PageSnapshot> {
+async function continueLinks(
+  snapshot: PageSnapshot,
+  offset: number,
+  onLinkProgress?: (checked: number, total: number) => void,
+): Promise<PageSnapshot> {
   const site = { ...(snapshot.site ?? emptySiteProbe()) };
   const notes = [...site.notes];
   const publicLinks = listPublicLinks(snapshot.links ?? [], snapshot.url);
   site.linksTotal = publicLinks.length;
   const candidates = publicLinks.slice(offset, offset + LINK_SAMPLE);
-  const outcomes = await mapPool(candidates, 3, classifyLink);
+  const outcomes = await mapPool(candidates, 3, classifyLink, (checked) =>
+    onLinkProgress?.(checked, candidates.length),
+  );
   site.linksChecked += outcomes.length;
   site.linksBroken += outcomes.filter((item) => item === "broken").length;
   site.linksUnreachable += outcomes.filter((item) => item === "unreachable").length;
@@ -331,9 +347,11 @@ async function mapPool<T, R>(
   items: T[],
   limit: number,
   task: (item: T) => Promise<R>,
+  onProgress?: (completed: number) => void,
 ): Promise<R[]> {
   const results = new Array<R>(items.length);
   let cursor = 0;
+  let completed = 0;
   const workers = Math.min(limit, items.length);
   async function worker() {
     while (cursor < items.length) {
@@ -342,6 +360,8 @@ async function mapPool<T, R>(
       const item = items[current];
       if (item === undefined) return;
       results[current] = await task(item);
+      completed += 1;
+      onProgress?.(completed);
     }
   }
   if (workers === 0) return [];

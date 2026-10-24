@@ -153,10 +153,15 @@ export function useAudit(explicitTabId?: number) {
         probeMessage.value = translate("technical.siteDenied");
         return;
       }
-      const next = await probeSite(
-        page,
-        continueLinks ? { linksOnly: true, linkOffset: page.site?.linksChecked ?? 0 } : {},
-      );
+      const next = await probeSite(page, {
+        ...(continueLinks ? { linksOnly: true, linkOffset: page.site?.linksChecked ?? 0 } : {}),
+        onLinkProgress: (checked, total) => {
+          probeMessage.value = translate(
+            continueLinks ? "technical.siteMoreProgress" : "technical.siteProgress",
+            { checked, total },
+          );
+        },
+      });
       snapshot.value = next;
       audit.value = await analyzeSnapshot(next);
       probeMessage.value = translate(
