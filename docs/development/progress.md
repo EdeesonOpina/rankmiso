@@ -37,6 +37,7 @@ Release target: v0.2.0. Branch `release/v0.2.0` is being prepared; Chrome and Fi
 - Refined report spacing, responsive controls, empty states, and action styling across the dashboard and popup
 - Page-scoped INP capture with explicit start/stop controls; capture persists while the popup is closed and is read into the next report refresh
 - Google Rich Results Test is presented as a prominent external validation action; RankMiso does not claim eligibility itself
+- Firefox builds disable PageSpeed Insights and optional site requests, omit optional host permissions, and retain the no-data-collection manifest declaration; Chromium keeps the explicit opt-in requests
 
 ## In progress
 

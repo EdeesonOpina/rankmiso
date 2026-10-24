@@ -30,9 +30,9 @@ The number is a weighted summary of the checks that ran. Errors, warnings, and p
 
 RankMiso will not invent search volume, keyword difficulty, traffic, backlinks, or index status. A missing measurement is shown as unavailable. The result includes a disclaimer: this is not a Google ranking.
 
-The full report can check one site after you allow it: response headers, robots.txt for the Googlebot group or `*`, whether the open URL is in the first sitemap, redirect hops, hreflang return links, and public links 20 at a time. Those requests stay off until you start them. Local and private addresses are skipped.
+Chromium builds can check one site after you allow it: response headers, robots.txt for the Googlebot group or `*`, whether the open URL is in the first sitemap, redirect hops, hreflang return links, and public links 20 at a time. Those requests stay off until you start them. Local and private addresses are skipped. Firefox keeps these optional external checks disabled and requests no optional host permissions.
 
-The Performance section shows browser-observed LCP and CLS when available, plus an INP estimate from exposed event entries. These are not field data. An optional mobile PageSpeed Insights check sends the page URL and a user-provided API key to Google only after explicit consent; its lab results do not affect RankMiso's score.
+The Performance section shows browser-observed LCP and CLS when available, plus an INP estimate from exposed event entries. These are not field data. Chromium builds offer an optional mobile PageSpeed Insights check that sends the page URL and a user-provided API key to Google only after explicit consent; its lab results do not affect RankMiso's score. Firefox omits this external check.
 
 Reports can save comparison fields locally after you choose to save them. RankMiso still does not measure search rankings, traffic, backlinks, index coverage, or official rich-result eligibility. See [progress](docs/development/progress.md).
 
