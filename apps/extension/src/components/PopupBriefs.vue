@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { Braces, Heading, ImageOff, Link2 } from "lucide-vue-next";
+import { Braces, ChevronDown, Heading, ImageOff, Link2 } from "lucide-vue-next";
 import { headingLevelCounts } from "../services/popup-summary";
 import { resolveShareImage } from "../services/share-preview";
 import type { AuditResult } from "../types/audit";
@@ -18,10 +18,28 @@ const { t, n } = useI18n();
 
 const levels = computed(() => headingLevelCounts(props.audit.details.headings));
 const outline = computed(() => props.audit.details.headings.slice(0, 8));
-const linkSample = computed(() => props.audit.details.links.slice(0, 6));
-const nofollowCount = computed(
-  () => props.audit.details.links.filter((link) => link.nofollow).length,
-);
+const linkGroups = computed(() => {
+  const all = props.audit.details.links;
+  const groups = [
+    {
+      id: "internal",
+      label: t("links.internal"),
+      links: all.filter((link) => link.classification === "internal"),
+    },
+    {
+      id: "external",
+      label: t("links.external"),
+      links: all.filter((link) => link.classification === "external"),
+    },
+    { id: "nofollow", label: t("popup.nofollowLabel"), links: all.filter((link) => link.nofollow) },
+  ];
+  return groups.map((group) => ({
+    ...group,
+    count: group.links.length,
+    sample: group.links.slice(0, 6),
+    remaining: Math.max(0, group.links.length - 6),
+  }));
+});
 const imageSample = computed(() => props.audit.details.images.slice(0, 8));
 const extraImages = computed(() =>
   Math.max(0, props.audit.details.images.length - imageSample.value.length),
@@ -45,7 +63,9 @@ function altLabel(image: AuditResult["details"]["images"][number]): string {
 <template>
   <section v-if="kind === 'jsonld'" class="space-y-6" aria-labelledby="popup-jsonld-heading">
     <h2 id="popup-jsonld-heading" class="sr-only">{{ t("popup.jsonld") }}</h2>
-    <p class="m-0 text-[13px] leading-relaxed text-muted">{{ t("schema.note") }}</p>
+    <p class="jsonld-popup-note m-0 text-[13px] leading-relaxed text-muted">
+      {{ t("schema.note") }}
+    </p>
     <EmptyState
       v-if="audit.details.structuredData.length === 0"
       :title="t('empty.schemaTitle')"
@@ -104,62 +124,62 @@ function altLabel(image: AuditResult["details"]["images"][number]): string {
 
   <section v-else-if="kind === 'links'" class="space-y-4" aria-labelledby="popup-links-heading">
     <h2 id="popup-links-heading" class="sr-only">{{ t("popup.linkSample") }}</h2>
-    <dl class="grid grid-cols-3 gap-3">
-      <div class="rounded-panel border border-border bg-surface px-3 py-3">
-        <dt class="text-[12px] text-muted">{{ t("links.internal") }}</dt>
-        <dd class="m-0 mt-1 text-[15px] font-semibold">
-          {{ n(audit.metrics.counts.internalLinks) }}
-        </dd>
-      </div>
-      <div class="rounded-panel border border-border bg-surface px-3 py-3">
-        <dt class="text-[12px] text-muted">{{ t("links.external") }}</dt>
-        <dd class="m-0 mt-1 text-[15px] font-semibold">
-          {{ n(audit.metrics.counts.externalLinks) }}
-        </dd>
-      </div>
-      <div class="rounded-panel border border-border bg-surface px-3 py-3">
-        <dt class="text-[12px] text-muted">{{ t("popup.nofollowLabel") }}</dt>
-        <dd class="m-0 mt-1 text-[15px] font-semibold">{{ n(nofollowCount) }}</dd>
-      </div>
-    </dl>
     <EmptyState
-      v-if="linkSample.length === 0"
+      v-if="audit.details.links.length === 0"
       :title="t('empty.linksTitle')"
       :description="t('empty.linksBody')"
     >
       <Link2 class="h-4 w-4" />
     </EmptyState>
-    <ul v-else class="m-0 list-none space-y-3 p-0">
-      <li
-        v-for="(link, index) in linkSample"
-        :key="`${link.href}-${index}`"
-        class="flex items-start gap-2 rounded-panel border border-border bg-surface px-4 py-3"
+    <div v-else class="popup-link-groups">
+      <details
+        v-for="group in linkGroups"
+        :key="group.id"
+        class="popup-link-group"
+        :open="group.id === 'internal' && group.count > 0"
       >
-        <div class="min-w-0 flex-1">
-          <p class="m-0 text-[13px] leading-relaxed">
-            {{ link.accessibleName || t("metadata.missing") }}
-          </p>
-          <a
-            v-if="linkAddress(link)"
-            :href="linkAddress(link) ?? undefined"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="mb-0 mt-2 block truncate text-[12px] leading-relaxed underline"
-            :title="linkAddress(link) ?? undefined"
+        <summary class="popup-link-summary">
+          <span>{{ group.label }}</span>
+          <span class="popup-link-count">{{ n(group.count) }}</span>
+          <ChevronDown class="popup-link-chevron h-4 w-4" aria-hidden="true" />
+        </summary>
+        <ul v-if="group.count" class="popup-link-list">
+          <li
+            v-for="(link, index) in group.sample"
+            :key="`${link.href}-${index}`"
+            class="popup-link-row"
           >
-            {{ linkAddress(link) }}
-          </a>
-          <p
-            v-else
-            class="mb-0 mt-2 truncate text-[12px] leading-relaxed text-muted"
-            :title="link.href"
-          >
-            {{ link.href }}
-          </p>
-        </div>
-        <CopyButton v-if="link.href" :value="link.resolvedUrl || link.href" />
-      </li>
-    </ul>
+            <div class="min-w-0 flex-1">
+              <p class="m-0 text-[13px] leading-relaxed">
+                {{ link.accessibleName || t("metadata.missing") }}
+              </p>
+              <a
+                v-if="linkAddress(link)"
+                :href="linkAddress(link) ?? undefined"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="mb-0 mt-2 block truncate text-[12px] leading-relaxed underline"
+                :title="linkAddress(link) ?? undefined"
+              >
+                {{ linkAddress(link) }}
+              </a>
+              <p
+                v-else
+                class="mb-0 mt-2 truncate text-[12px] leading-relaxed text-muted"
+                :title="link.href"
+              >
+                {{ link.href }}
+              </p>
+            </div>
+            <CopyButton v-if="link.href" :value="link.resolvedUrl || link.href" />
+          </li>
+          <li v-if="group.remaining" class="popup-link-more">
+            {{ t("popup.moreLinks", { count: group.remaining }) }}
+          </li>
+        </ul>
+        <p v-else class="popup-link-empty">{{ t("popup.noLinksInGroup") }}</p>
+      </details>
+    </div>
   </section>
 
   <section v-else class="space-y-4" aria-labelledby="popup-images-heading">

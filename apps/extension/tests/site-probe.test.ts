@@ -1,11 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   alternatePointsBack,
   collectHeaders,
   isBlockedProbeHost,
   pageListedInSitemap,
+  probeSite,
   sitemapUrlsFromRobots,
 } from "../src/services/site-probe";
+import type { PageSnapshot } from "../src/types/audit";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("site probe guards", () => {
   it("skips local and private hosts", () => {
@@ -56,5 +60,33 @@ describe("site probe guards", () => {
       { name: "content-type", value: "text/html" },
       { name: "x-robots-tag", value: "noindex" },
     ]);
+  });
+
+  it("reports progress while checking each public link", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input));
+      if (url.pathname === "/robots.txt") return new Response("", { status: 404 });
+      if (init?.method === "HEAD") return new Response("", { status: 404 });
+      return new Response("<html></html>", {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const progress: Array<[number, number]> = [];
+    const snapshot = {
+      schemaVersion: 1,
+      url: "https://example.com/page",
+      links: [{ href: "https://other.example/missing" }],
+      linksRel: [],
+      response: { status: 200, redirectCount: 0, contentType: "text/html" },
+    } as unknown as PageSnapshot;
+
+    const result = await probeSite(snapshot, {
+      onLinkProgress: (checked, total) => progress.push([checked, total]),
+    });
+
+    expect(progress).toEqual([[1, 1]]);
+    expect(result.site?.linksBroken).toBe(1);
   });
 });
