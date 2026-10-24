@@ -7,5 +7,6 @@ export const appConfig = {
   rulesetVersion: "1.0.0",
   storagePrefix: "seoToolkit",
   themeKey: "seoToolkit.theme",
-  maxStoredReports: 0,
+  pageSpeedKey: "rankmiso.pageSpeedApiKey",
+  maxStoredReports: 20,
 } as const;

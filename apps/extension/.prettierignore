@@ -1,3 +1,5 @@
 src/wasm/pkg
 .output
 .wxt
+test-results
+playwright-report

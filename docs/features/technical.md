@@ -13,6 +13,10 @@ Meta refresh is a warning. HTTPS is checked from the page URL. The index-status 
 - Public http(s) links, 20 at a time. The report shows how many exist and how many were requested. **Check 20 more links** continues the list. A clean result changes the technical score only after every requested public link has a result. 4xx and 5xx (except 401, 403, and 429) are warnings.
 - Up to eight hreflang alternates, to see whether each page links back.
 
-Local and private addresses are skipped. PageSpeed Insights is not called.
+Local and private addresses are skipped.
+
+The Performance section can optionally request mobile lab data from Google PageSpeed Insights. The user supplies and may store an API key locally, explicitly allows `www.googleapis.com`, and starts each request. RankMiso sends the current page URL and key to Google. The returned Lighthouse score and lab metrics are displayed separately and do not affect the local audit score.
+
+Browser LCP and CLS values come from the current page's performance timeline when exposed. INP is estimated from Event Timing entries, grouping event entries by interaction and using the high-percentile interaction duration used by the INP definition. Users can start explicit INP capture from the Performance section. It observes only the current page load, continues while the popup is closed, and ends when stopped or when the page reloads or closes. The estimate is local browser data, not field data; browsers that do not expose interaction IDs, and pages with no qualifying interactions, show it as unavailable.
 
 Client-side redirects are not fully detected. The history marker only tells the UI that the document changed.
