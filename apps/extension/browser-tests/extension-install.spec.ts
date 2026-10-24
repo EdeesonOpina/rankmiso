@@ -27,11 +27,29 @@ test("built extension loads and renders its popup", async () => {
 test("Firefox package includes its add-on id and local WASM asset", async () => {
   const extensionPath = resolve(".output/firefox-mv3");
   const manifest = JSON.parse(await readFile(join(extensionPath, "manifest.json"), "utf8")) as {
-    browser_specific_settings?: { gecko?: { id?: string } };
+    browser_specific_settings?: {
+      gecko?: { id?: string; data_collection_permissions?: { required?: string[] } };
+    };
+    optional_host_permissions?: string[];
   };
   const assets = await readdir(join(extensionPath, "assets"));
+  const chunks = await readdir(join(extensionPath, "chunks"));
+  const builtCode = (
+    await Promise.all(
+      chunks
+        .filter((chunk) => chunk.endsWith(".js"))
+        .map((chunk) => readFile(join(extensionPath, "chunks", chunk), "utf8")),
+    )
+  ).join("\n");
 
   expect(manifest.browser_specific_settings?.gecko?.id).toBe("rankmiso@rankmiso.extension");
+  expect(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.required).toEqual([
+    "none",
+  ]);
+  expect(manifest.optional_host_permissions).toBeUndefined();
+  expect(builtCode).not.toContain("pagespeedonline/v5/runPagespeed");
+  expect(builtCode).not.toContain("https://www.googleapis.com");
+  expect(builtCode).not.toContain("/robots.txt");
   expect(assets.some((asset) => asset.endsWith(".wasm"))).toBe(true);
   await expect(access(join(extensionPath, "popup.html"))).resolves.toBeUndefined();
 });

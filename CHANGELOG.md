@@ -10,6 +10,7 @@
 - Improve technical checks with fresh optional requests for response headers, robots.txt, the first listed sitemap, redirect hops, reciprocal hreflang, and public links in batches of 20.
 - Add Playwright coverage for the built Chromium popup and Firefox package integrity, plus a Rust SEO rules benchmark baseline.
 - Keep permission requests and network checks opt-in. Core analysis remains in-browser, with no account, telemetry, or backend.
+- Keep PageSpeed Insights and optional technical requests in Chromium builds only; the Firefox build omits both and declares no optional host permissions or data collection.
 
 This branch is prepared for v0.2.0 builds. Store packages have not been submitted as v0.2.0.
 

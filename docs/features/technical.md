@@ -4,7 +4,7 @@ When navigation timing exposes a status, HTTP 4xx and 5xx are errors. A missing 
 
 Meta refresh is a warning. HTTPS is checked from the page URL. The index-status check states that this tool cannot know whether a search engine has indexed the URL.
 
-**Check this site** is optional. It asks for that origin, then fetches:
+**Check this site** is optional and available in Chromium builds only. It asks for that origin, then fetches:
 
 - A short allowlist of response headers, including `x-robots-tag`, cache, and content type. Values are truncated. This is a new request, not the original navigation.
 - `/robots.txt`, compared with the current path. A `Googlebot` group is used when one matches. Otherwise the check uses `User-agent: *`. The report names the group. HTTP 404 is reported as “no file”, not as a pass that the file exists.
@@ -15,7 +15,7 @@ Meta refresh is a warning. HTTPS is checked from the page URL. The index-status 
 
 Local and private addresses are skipped.
 
-The Performance section can optionally request mobile lab data from Google PageSpeed Insights. The user supplies and may store an API key locally, explicitly allows `www.googleapis.com`, and starts each request. RankMiso sends the current page URL and key to Google. The returned Lighthouse score and lab metrics are displayed separately and do not affect the local audit score.
+Chromium builds can optionally request mobile lab data from Google PageSpeed Insights. The user supplies and may store an API key locally, explicitly allows `www.googleapis.com`, and starts each request. RankMiso sends the current page URL and key to Google. The returned Lighthouse score and lab metrics are displayed separately and do not affect the local audit score. Firefox builds omit PageSpeed Insights and optional site requests, and declare no optional host permissions or data collection.
 
 Browser LCP and CLS values come from the current page's performance timeline when exposed. INP is estimated from Event Timing entries, grouping event entries by interaction and using the high-percentile interaction duration used by the INP definition. Users can start explicit INP capture from the Performance section. It observes only the current page load, continues while the popup is closed, and ends when stopped or when the page reloads or closes. The estimate is local browser data, not field data; browsers that do not expose interaction IDs, and pages with no qualifying interactions, show it as unavailable.
 

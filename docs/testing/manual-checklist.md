@@ -25,3 +25,4 @@ Use an unpacked build and a local HTML file, not only a production website.
 - On a browser exposing Event Timing interaction IDs, start INP capture, close the popup, interact with the page, reopen or refresh the report, and verify the estimate updates. Stop capture and verify it ends; reload the page and verify capture does not persist across page loads. Verify unsupported browsers and pages with no qualifying interactions remain clearly unavailable.
 - System, light, and dark appearance all keep text readable.
 - The side panel opens on Chrome. On a browser without the API, the button is absent and the dashboard still works.
+- In Firefox, verify the Technical section shows the local-only notice and has no optional site-check buttons; verify the Performance section has no PageSpeed key/request controls. Invoke RankMiso on a different page and confirm the extension can still read it through `activeTab` without an optional origin prompt.
