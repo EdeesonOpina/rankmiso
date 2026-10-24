@@ -7,6 +7,8 @@ export interface FeatureDefinition {
   summaryKey: string;
 }
 
+export const supportsOptionalExternalChecks = !import.meta.env.FIREFOX;
+
 export const featuresConfig: FeatureDefinition[] = [
   { id: "overview", status: "available", phase: 2, summaryKey: "features.overview" },
   { id: "metadata", status: "available", phase: 2, summaryKey: "features.metadata" },
