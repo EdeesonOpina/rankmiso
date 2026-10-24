@@ -1,12 +1,12 @@
 # Handoff
 
-Date: 2026-10-15
+Date: 2026-10-24
 
 ## Repository
 
 The project is this repository.
 
-The directory was renamed from `seo-toolkit`. The old directory no longer exists. The git remote is `https://github.com/EdeesonOpina/rankmiso.git` on branch `develop`. That GitHub repository is private. Do not commit, push, or change visibility unless the maintainer asks.
+The directory was renamed from `seo-toolkit`. The old directory no longer exists. The git remote is `https://github.com/EdeesonOpina/rankmiso.git` and is private. The v0.2.0 release-preparation branch is `release/v0.2.0`, based on the current `master` branch. Do not commit, push, or change visibility unless the maintainer asks.
 
 ## Product identity
 
@@ -44,22 +44,27 @@ The analysis slice is unchanged: popup tabs (Overview, JSON-LD, Headings, Links,
 - Firefox MV3 production build passed and includes the local WASM file. Gecko id is `rankmiso@rankmiso.extension`.
 - Chrome was not rebuilt in this pass.
 
+## Release status
+
+RankMiso is available in both the Chrome Web Store and Firefox Add-ons. Version 0.2.0 is being prepared on `release/v0.2.0`; it has not been submitted or published. Follow `docs/releases/chrome.md` and `docs/releases/firefox.md` for build and store preparation. The verification notes above describe earlier builds and are historical; verify the currently published versions before relying on them for browser-specific behavior.
+
 ## Not verified
 
-- Firefox with id `rankmiso@rankmiso.extension`, including the sidebar button and **Check this site**.
-- Edge after this rename.
+- Firefox runtime installation and Edge installation automation. Playwright checks the Firefox package metadata and assets but loads only the Chromium extension.
 - Highlight and clear on a live page.
 - Whether every remote share image loads inside the extension page.
 
-The maintainer loaded the Chrome unpacked extension and used the popup and side panel on a live page.
+Chrome and Firefox are published. The maintainer previously loaded the unpacked Chrome extension and used its popup and side panel on a live page.
 
 Reload the extension after rebuilding. Firefox temporary add-ons disappear when Firefox quits. Load `apps/extension/.output/firefox-mv3/manifest.json` from `about:debugging`.
 
-## Next tasks
+## Remaining product work
 
-1. Follow `docs/releases/firefox.md`. Load the Firefox build, then submit only after `PRIVACY.md` is on a public HTTPS page.
-2. Add a Playwright test that loads the built extension only after the manual path stays stable.
-3. Chrome Web Store upload stays in `docs/releases/chrome.md` until Firefox is submitted.
+1. Decide whether Firefox and Edge need automated install coverage beyond manual checks.
+2. Continue SERP work carefully: the current metadata preview is approximate and editable, and does not simulate location or report rankings.
+3. Compare local benchmark results on the same machine before drawing performance conclusions.
+4. The local schema field list remains informational. The existing Google validator link is the official eligibility handoff.
+5. MCP is planned only. Review Phase 7 in `docs/development/implementation-plan.md`; no MCP server or extension bridge exists yet.
 
 ## Do not
 
