@@ -16,6 +16,7 @@ import {
   webOrigin,
 } from "../services/page-access";
 import { isBlockedProbeHost, probeSite } from "../services/site-probe";
+import { supportsOptionalExternalChecks } from "../config/features.config";
 import type { AuditResult, PageSnapshot } from "../types/audit";
 import { formatNumber, translate } from "./useI18n";
 
@@ -69,6 +70,13 @@ export function useAudit(explicitTabId?: number) {
     previousUrl: string | undefined,
   ): Promise<{ tab: InspectedTab; again: boolean; site: string }> {
     let tab = await withUrl(current);
+    if (!supportsOptionalExternalChecks) {
+      if (!tab.url) {
+        const granted = await browser.permissions.request({ permissions: ["tabs"] });
+        if (granted) tab = await withUrl(tab);
+      }
+      return { tab, again: false, site: "" };
+    }
     let askedForTabs = false;
     let request = await requestFor(tab.url, previousUrl);
     if (request.type === "tabs") {
@@ -117,7 +125,9 @@ export function useAudit(explicitTabId?: number) {
       return await inspectTab(current.id);
     } catch (caught) {
       const origin = webOrigin(current.url);
-      if (!origin || !isHostPermissionError(caught)) throw caught;
+      if (!supportsOptionalExternalChecks || !origin || !isHostPermissionError(caught)) {
+        throw caught;
+      }
       const allowed = await requestOrigin(origin);
       if (allowed === "again") {
         throw new Error(translate("state.refreshAgain", { site: new URL(origin).host }));
@@ -128,6 +138,10 @@ export function useAudit(explicitTabId?: number) {
   }
 
   async function runSiteProbe(continueLinks = false) {
+    if (!supportsOptionalExternalChecks) {
+      probeMessage.value = translate("technical.firefoxChecksDisabled");
+      return;
+    }
     const page = snapshot.value;
     if (!page || probing.value) return;
     probeMessage.value = "";
