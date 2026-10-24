@@ -21,7 +21,7 @@ import {
 import { brandConfig } from "../config/brand.config";
 import { themeConfig } from "../config/theme.config";
 import { navigationConfig } from "../config/navigation.config";
-import { availableNavigation } from "../config/features.config";
+import { availableNavigation, supportsOptionalExternalChecks } from "../config/features.config";
 import { appConfig } from "../config/app.config";
 import { useI18n } from "../composables/useI18n";
 import { useTheme } from "../composables/useTheme";
@@ -125,9 +125,11 @@ const nav = navigationConfig.filter((item) => available.has(item.id));
 onMounted(() => {
   void refresh();
   void loadSavedReports();
-  void readPageSpeedApiKey()
-    .then((key) => (pageSpeedApiKey.value = key))
-    .catch(() => undefined);
+  if (supportsOptionalExternalChecks) {
+    void readPageSpeedApiKey()
+      .then((key) => (pageSpeedApiKey.value = key))
+      .catch(() => undefined);
+  }
   window.addEventListener("focus", () => void checkFreshness());
 });
 
@@ -209,6 +211,7 @@ async function removeAllSavedReports() {
 }
 
 async function savePageSpeedKey() {
+  if (!supportsOptionalExternalChecks) return;
   try {
     await savePageSpeedApiKey(pageSpeedApiKey.value);
     pageSpeedMessage.value = t("performance.psiSaved");
@@ -218,6 +221,7 @@ async function savePageSpeedKey() {
 }
 
 async function runPageSpeed() {
+  if (!supportsOptionalExternalChecks) return;
   if (!audit.value || pageSpeedStatus.value === "loading") return;
   pageSpeedMessage.value = "";
   pageSpeedResult.value = null;
@@ -294,6 +298,7 @@ async function clearMarks() {
 }
 
 async function startSiteProbe(more = false) {
+  if (!supportsOptionalExternalChecks) return;
   probeKind.value = more ? "more" : "site";
   try {
     await runSiteProbe(more);
@@ -901,7 +906,7 @@ function host(url: string) {
                 <span>{{ t("score.warnings", { count: technicalScore.warnings }) }}</span>
                 <span>{{ t("score.passed", { count: technicalScore.passed }) }}</span>
               </div>
-              <div class="technical-score-actions">
+              <div v-if="supportsOptionalExternalChecks" class="technical-score-actions">
                 <button
                   type="button"
                   class="inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-panel bg-primary px-3 text-[13px] text-primary-contrast disabled:opacity-60"
@@ -934,6 +939,9 @@ function host(url: string) {
                   {{ t("technical.siteMore") }}
                 </button>
               </div>
+              <p v-else class="m-0 text-[12px] leading-relaxed text-muted" role="note">
+                {{ t("technical.firefoxChecksDisabled") }}
+              </p>
               <LoadingStatus
                 v-if="probing"
                 :label="
@@ -1234,7 +1242,10 @@ function host(url: string) {
               <li v-for="note in audit.details.performance.notes" :key="note">{{ note }}</li>
             </ul>
             <CheckTable :checks="checks('performance')" />
-            <div class="space-y-3 rounded-panel border border-border bg-surface p-4">
+            <div
+              v-if="supportsOptionalExternalChecks"
+              class="space-y-3 rounded-panel border border-border bg-surface p-4"
+            >
               <h2 class="m-0 text-[15px] font-semibold">{{ t("performance.psiTitle") }}</h2>
               <p class="m-0 text-[13px] text-muted">{{ t("performance.psiPrivacy") }}</p>
               <label class="block space-y-1 text-[13px]">
@@ -1300,6 +1311,9 @@ function host(url: string) {
                 <p class="m-0 text-[12px] text-muted">{{ t("performance.psiAttribution") }}</p>
               </div>
             </div>
+            <p v-else class="report-note" role="note">
+              {{ t("performance.firefoxPsiDisabled") }}
+            </p>
           </section>
 
           <section v-show="section === 'international'" class="report-section">
