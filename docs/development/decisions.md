@@ -22,7 +22,7 @@ Ahrefs, SEOquake, and similar products show domain rating, traffic, keyword volu
 
 ## Permissions
 
-Default permissions are `storage`, `activeTab`, and `scripting`. The extension injects a page tool when the user opens it. It does not register a content script for every site. Optional host access is requested only when the user starts **Check this site** or PageSpeed Insights.
+Default permissions are `storage`, `activeTab`, and `scripting`. The extension injects a page tool when the user opens it. It does not register a content script for every site. Chromium builds request optional host access only when the user starts **Run optional checks** or PageSpeed Insights. Firefox has no optional host permissions and omits both external-request features; its manifest declares `data_collection_permissions.required: ["none"]`.
 
 ## MCP remains optional and local
 
@@ -61,4 +61,4 @@ The theme preference and optional PageSpeed API key can be stored locally. Compa
 
 The Firefox package is Manifest V3 via `wxt build -b firefox --mv3`. The id is `rankmiso@rankmiso.extension`. The first accepted addons.mozilla.org upload locks it. Changing it after that makes Firefox treat the add-on as a different extension. `data_collection_permissions.required` is `none`.
 
-Optional host permissions stay out of the required set. **Check this site** requests the current origin, then fetches headers, robots.txt, the first listed sitemap, and at most 20 public links per batch. Private and local addresses are skipped. PageSpeed Insights requires an explicit user action and Google host permission; it sends the selected page URL and user-provided key to Google. Its results stay separate from the local score. The JSON-LD rich-result row is a local field list and does not change the score, because that category weight is 0.
+Chromium optional host permissions stay out of the required set. **Run optional checks** requests the current origin, then fetches headers, robots.txt, the first listed sitemap, and at most 20 public links per batch. Private and local addresses are skipped. Chromium PageSpeed Insights requires an explicit user action and Google host permission; it sends the selected page URL and user-provided key to Google. Its results stay separate from the local score. Firefox ships neither external request feature, requests no optional host access, and declares no data collection. The JSON-LD rich-result row is a local field list and does not change the score, because that category weight is 0.
