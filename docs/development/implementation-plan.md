@@ -2,7 +2,7 @@
 
 ## v0.2.0 — release preparation
 
-The current release branch consolidates the completed report improvements, saved comparisons, editable snippet drafts, optional PageSpeed Insights lab results, optional technical probes, browser performance observations, and explicit page-scoped INP capture. Version 0.2.0 is being prepared for Chrome and Firefox builds; store submission and publication remain separate release actions.
+The current release branch consolidates the completed report improvements, saved comparisons, editable snippet drafts, Chromium-only optional PageSpeed Insights lab results and technical probes, browser performance observations, and explicit page-scoped INP capture. Firefox builds omit those external requests and retain the no-data-collection declaration. Version 0.2.0 is being prepared for Chrome and Firefox builds; store submission and publication remain separate release actions.
 
 ## Phase 0 — Research
 
@@ -37,7 +37,7 @@ Dashboard field labels now go through `src/locales/en.ts`. The product identity 
 
 ## Phase 3 — Advanced inspection
 
-Implemented in part: JSON-LD syntax and a local field list, social metadata, and opt-in technical probes for headers, redirects, robots.txt, the first listed sitemap, hreflang return links, and public link responses.
+Implemented in part: JSON-LD syntax and a local field list, social metadata, and Chromium-only opt-in technical probes for headers, redirects, robots.txt, the first listed sitemap, hreflang return links, and public link responses.
 
 Still unbuilt: official rich-result eligibility, Microdata and RDFa extraction, a comprehensive raw-versus-rendered comparison, and a full crawl. Google Rich Results Test remains an external, user-initiated validation tool.
 
@@ -47,7 +47,7 @@ Partially implemented. Reports save local comparison summaries, and the metadata
 
 ## Phase 5 — Performance and hardening
 
-Implemented in part: browser-observed LCP/CLS and an INP estimate where Event Timing data is exposed. Users can explicitly start page-scoped INP capture; capture runs in the inspected page while the popup is closed and ends when the page reloads or closes. Optional mobile PageSpeed Insights results require a user-provided API key and explicit Google access; they remain outside the local audit score.
+Implemented in part: browser-observed LCP/CLS and an INP estimate where Event Timing data is exposed. Users can explicitly start page-scoped INP capture; capture runs in the inspected page while the popup is closed and ends when the page reloads or closes. Chromium-only mobile PageSpeed Insights results require a user-provided API key and explicit Google access; they remain outside the local audit score. Firefox omits PageSpeed Insights and external technical probes.
 
 Still unbuilt: broader cross-browser interaction measurement validation, automated runtime installation in Firefox and Edge, and a dedicated security review beyond the current export and permission choices.
 
@@ -87,5 +87,6 @@ Initial spike deliverable: a threat model and a small transport prototype over f
 - Chrome MV3 and Firefox MV3 builds emit a local `.wasm` asset
 - The report distinguishes measured issues from checks that did not run
 - Chrome MV3 and Firefox MV3 package versions are 0.2.0
+- Firefox MV3 declares no optional host permissions and cannot invoke PageSpeed Insights or optional site probes; Chromium retains those explicit opt-in features
 - INP capture is explicit, remains page-scoped, and has start, running, unsupported, stop, and no-interactions states
 - MCP remains documented as planned and is not represented as an available feature

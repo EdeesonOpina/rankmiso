@@ -110,6 +110,8 @@ export const messages = {
   "performance.captureUnsupported":
     "This browser does not expose the interaction data required to estimate INP.",
   "performance.captureFailed": "Could not start interaction capture on this page.",
+  "performance.firefoxPsiDisabled":
+    "PageSpeed Insights is not included in this Firefox build because it sends the page URL and API key to Google. The browser measurements above remain local.",
   "performance.psiTitle": "Optional PageSpeed Insights",
   "performance.psiPrivacy":
     "Running this check sends the page URL and your API key to Google PageSpeed Insights. The request is separate from the local report.",
@@ -141,6 +143,8 @@ export const messages = {
   "technical.siteMoreProgress": "Checked {checked} of {total} links in this batch.",
   "technical.siteDenied": "Permission was not granted, so those checks stayed off.",
   "technical.siteDone": "Optional checks complete.",
+  "technical.firefoxChecksDisabled":
+    "Optional requests to other websites are disabled in this Firefox build. The on-page technical checks still run locally.",
   "technical.siteFailed": "The site check did not finish.",
   "technical.sitePrivate": "Site checks stay off for local and private addresses.",
   "technical.siteUnsupported": "Site checks only run on http and https pages.",

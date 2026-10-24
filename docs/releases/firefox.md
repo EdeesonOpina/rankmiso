@@ -26,7 +26,7 @@ Confirm `apps/extension/.output/firefox-mv3/manifest.json` before you zip it:
 - `browser_specific_settings.gecko.strict_min_version` is 140.0
 - `browser_specific_settings.gecko.data_collection_permissions.required` is `["none"]`
 - required permissions are only `storage`, `activeTab`, and `scripting`
-- `optional_host_permissions` are `http://*/*` and `https://*/*`
+- `optional_host_permissions` is absent; Firefox does not include PageSpeed Insights or optional technical requests to other websites
 - a `.wasm` file is present under the output
 
 Zip the files inside the output folder, so `manifest.json` is at the root of the archive:
@@ -38,7 +38,7 @@ zip -r -FS "$OLDPWD/rankmiso-0.2.0-firefox.zip" . -x '*.git*'
 
 Load that same folder once as a temporary add-on before you upload. In Firefox, open `about:debugging` → **This Firefox** → **Load Temporary Add-on**, and select `manifest.json` inside `apps/extension/.output/firefox-mv3`. Choose the file, not the folder. If an older temporary add-on with `rankmiso@local.dev` is still listed, remove it first. The new id is a different add-on. After a rebuild, click **Reload** on that entry. The temporary add-on disappears when Firefox quits.
 
-On a normal `https` page, open the toolbar button, open the sidebar, and open the full report. On the Technical section, press **Run optional checks** and both allow and deny the permission once. In Performance, start INP capture, close the popup, interact with the page, reopen the report, then stop capture. Performance values are browser observations, not field data. The optional PageSpeed Insights request sends the URL and user-provided API key to Google only after the user starts it and grants access.
+On a normal `https` page, open the toolbar button, open the sidebar, and open the full report. Confirm the Firefox Technical section explains that optional external checks are disabled and shows no site-check buttons. Confirm Performance shows browser measurements and INP capture but no PageSpeed Insights key or request controls. Start INP capture, close the popup, interact with the page, reopen the report, then stop capture. Performance values are browser observations, not field data.
 
 ## Source archive for review
 
@@ -71,16 +71,16 @@ Included:
 - Approximate social cards
 - Browser-observed LCP and CLS, an INP estimate when the browser exposes interaction timing, and an explicit page-scoped INP capture control
 - A resource count from this browser’s timeline for the current page load
-- Optional checks you start yourself, for one site: response headers, robots.txt, whether this URL is in the first listed sitemap, redirect hops, hreflang return links, and public links 20 at a time
 
 Not included:
 
+- PageSpeed Insights or optional technical requests to other websites
 - Chrome UX Report field data
 - Search rankings, traffic, backlinks, or index coverage
 - Official rich-result eligibility. The JSON-LD row is a local field list
 - A crawl of your browsing history
 
-Optional checks ask for permission for that site only. They are off until you press Check this site. Analysis stays in the browser. No account, no telemetry, no ads.
+Analysis stays in the browser. This Firefox build does not include PageSpeed Insights or optional requests to other websites. No account, no telemetry, no ads.
 
 **Category:** Search Tools
 
@@ -105,7 +105,7 @@ Permission notes, if the form asks:
 - `activeTab` reads the tab where you opened RankMiso. A domain change closes that access.
 - `scripting` injects the page reader and the highlighter into that tab.
 - Optional `tabs` is requested only if a domain change hides the open address. It is used to name that tab. Browsing history is not saved.
-- Optional host access is requested for one origin when you press **Check this site**, or when **Refresh analysis** needs the site you just opened. Cookies are not sent. Local and private addresses are skipped by the site check. Results stay in the browser.
+- Page access uses `activeTab` when you invoke RankMiso on the current page. No optional host access is declared in the Firefox build.
 
 Add at least one screenshot of the popup and one of the full report on a normal page.
 
