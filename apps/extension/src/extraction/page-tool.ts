@@ -8,6 +8,97 @@ export function runPageTool(command: string, arg?: string): unknown {
   const root = document.documentElement;
   const markAttribute = "data-seo-toolkit-mark";
   const styleId = "seo-toolkit-highlight";
+  const inpCaptureKey = "__rankmiso_inp_capture_v1";
+
+  type InpCaptureState = {
+    supported: boolean;
+    active: boolean;
+    interactions: Map<number, number>;
+    observers: PerformanceObserver[];
+    flush: () => void;
+  };
+
+  type InpCaptureSnapshot = {
+    supported: boolean;
+    active: boolean;
+    interactions: Array<[number, number]>;
+  };
+
+  function inpSupport(): boolean {
+    if (
+      typeof PerformanceObserver === "undefined" ||
+      !PerformanceObserver.supportedEntryTypes?.includes("event")
+    ) {
+      return false;
+    }
+    const entryType = Reflect.get(globalThis, "PerformanceEventTiming") as
+      { prototype?: object } | undefined;
+    return Boolean(entryType?.prototype && "interactionId" in entryType.prototype);
+  }
+
+  function captureSnapshot(): InpCaptureSnapshot {
+    const state = Reflect.get(globalThis, inpCaptureKey) as InpCaptureState | undefined;
+    if (!state) return { supported: inpSupport(), active: false, interactions: [] };
+    state.flush();
+    return {
+      supported: state.supported,
+      active: state.active,
+      interactions: [...state.interactions.entries()],
+    };
+  }
+
+  function startInpCapture(): InpCaptureSnapshot {
+    const current = Reflect.get(globalThis, inpCaptureKey) as InpCaptureState | undefined;
+    if (current?.active) return captureSnapshot();
+    if (!inpSupport()) return { supported: false, active: false, interactions: [] };
+
+    const interactions = current?.interactions ?? new Map<number, number>();
+    const observers: PerformanceObserver[] = [];
+    const addEntries = (entries: PerformanceEntry[]) => {
+      for (const entry of entries as Array<PerformanceEntry & { interactionId?: number }>) {
+        if (!entry.interactionId || entry.duration <= 0) continue;
+        interactions.set(
+          entry.interactionId,
+          Math.max(interactions.get(entry.interactionId) ?? 0, entry.duration),
+        );
+      }
+    };
+    try {
+      const events = new PerformanceObserver((list) => addEntries(list.getEntries()));
+      events.observe({
+        type: "event",
+        buffered: true,
+        durationThreshold: 16,
+      } as PerformanceObserverInit);
+      observers.push(events);
+      if (PerformanceObserver.supportedEntryTypes.includes("first-input")) {
+        const firstInput = new PerformanceObserver((list) => addEntries(list.getEntries()));
+        firstInput.observe({ type: "first-input", buffered: true } as PerformanceObserverInit);
+        observers.push(firstInput);
+      }
+    } catch {
+      observers.forEach((observer) => observer.disconnect());
+      return { supported: false, active: false, interactions: [] };
+    }
+    const state: InpCaptureState = {
+      supported: true,
+      active: true,
+      interactions,
+      observers,
+      flush: () => observers.forEach((observer) => addEntries(observer.takeRecords())),
+    };
+    Reflect.set(globalThis, inpCaptureKey, state);
+    return captureSnapshot();
+  }
+
+  function stopInpCapture(): InpCaptureSnapshot {
+    const state = Reflect.get(globalThis, inpCaptureKey) as InpCaptureState | undefined;
+    if (!state) return captureSnapshot();
+    state.flush();
+    state.observers.forEach((observer) => observer.disconnect());
+    state.active = false;
+    return captureSnapshot();
+  }
 
   function clean(value: string | null | undefined): string {
     return (value || "").replace(/\s+/g, " ").trim();
@@ -216,29 +307,119 @@ export function runPageTool(command: string, arg?: string): unknown {
     };
   }
 
-  function performanceSnapshot() {
+  async function bufferedEntries(
+    type: string,
+    options: { durationThreshold?: number } = {},
+  ): Promise<PerformanceEntry[]> {
+    if (
+      typeof PerformanceObserver === "undefined" ||
+      !PerformanceObserver.supportedEntryTypes?.includes(type)
+    ) {
+      return performance.getEntriesByType(type);
+    }
+
+    const entries: PerformanceEntry[] = [];
+    let observer: PerformanceObserver | null = null;
+    try {
+      observer = new PerformanceObserver((list) => entries.push(...list.getEntries()));
+      observer.observe({
+        type,
+        buffered: true,
+        ...options,
+      } as PerformanceObserverInit);
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      entries.push(...observer.takeRecords());
+      observer.disconnect();
+      return [...new Set(entries)];
+    } catch {
+      observer?.disconnect();
+      return performance.getEntriesByType(type);
+    }
+  }
+
+  async function performanceSnapshot(capture: InpCaptureSnapshot | null = null) {
     const notes = [
       "Values come from this browser's performance timeline for the current page load.",
       "They are not Chrome UX Report field data and they are not a lab run from PageSpeed Insights.",
     ];
+    const supportedEntryTypes =
+      typeof PerformanceObserver === "undefined"
+        ? []
+        : (PerformanceObserver.supportedEntryTypes ?? []);
+    const layoutShiftSupported = supportedEntryTypes.includes("layout-shift");
+    const eventTimingSupported = inpSupport();
     const navigation = performance.getEntriesByType("navigation")[0] as
       (PerformanceNavigationTiming & { responseStatus?: number }) | undefined;
-    const lcp = performance.getEntriesByType("largest-contentful-paint").at(-1);
-    const shifts = performance.getEntriesByType("layout-shift") as Array<
+    const [lcpEntries, shiftEntries, eventEntries, firstInputEntries] = await Promise.all([
+      bufferedEntries("largest-contentful-paint"),
+      bufferedEntries("layout-shift"),
+      bufferedEntries("event", { durationThreshold: 16 }),
+      bufferedEntries("first-input"),
+    ]);
+    const lcp = lcpEntries.at(-1);
+    const shifts = shiftEntries as Array<
       PerformanceEntry & { value?: number; hadRecentInput?: boolean }
     >;
-    const cls = shifts.length
-      ? Math.round(
-          shifts
-            .filter((entry) => !entry.hadRecentInput)
-            .reduce((sum, entry) => sum + (entry.value || 0), 0) * 1000,
-        ) / 1000
+    let clsValue = 0;
+    let sessionValue = 0;
+    let sessionStart = 0;
+    let previousShiftTime = 0;
+    for (const shift of shifts) {
+      if (shift.hadRecentInput) continue;
+      if (
+        sessionStart === 0 ||
+        shift.startTime - previousShiftTime >= 1000 ||
+        shift.startTime - sessionStart >= 5000
+      ) {
+        sessionStart = shift.startTime;
+        sessionValue = shift.value || 0;
+      } else {
+        sessionValue += shift.value || 0;
+      }
+      previousShiftTime = shift.startTime;
+      clsValue = Math.max(clsValue, sessionValue);
+    }
+    const cls = layoutShiftSupported ? Math.round(clsValue * 1000) / 1000 : null;
+    const interactions = new Map<number, number>();
+    for (const [id, duration] of capture?.interactions ?? []) {
+      interactions.set(id, Math.max(interactions.get(id) ?? 0, duration));
+    }
+    for (const entry of [...eventEntries, ...firstInputEntries] as Array<
+      PerformanceEntry & { interactionId?: number }
+    >) {
+      if (entry.interactionId && entry.duration > 0) {
+        interactions.set(
+          entry.interactionId,
+          Math.max(interactions.get(entry.interactionId) || 0, entry.duration),
+        );
+      }
+    }
+    const interactionDurations = [...interactions.values()].sort((left, right) => left - right);
+    const inpIndex = Math.max(
+      0,
+      interactionDurations.length - 1 - Math.floor(interactionDurations.length / 50),
+    );
+    const inpMs = interactionDurations.length
+      ? Math.round(interactionDurations[inpIndex] || 0)
       : null;
+    if (!layoutShiftSupported) {
+      notes.push("CLS is unavailable because this browser does not expose layout-shift entries.");
+    }
+    if (!eventTimingSupported) {
+      notes.push("INP is unavailable because this browser does not expose Event Timing entries.");
+    } else if (inpMs == null) {
+      notes.push("INP is unavailable because no qualifying page interaction entries were exposed.");
+    }
+    if (capture?.active) {
+      notes.push(
+        `Explicit INP capture is active and has observed ${capture.interactions.length} interactions so far.`,
+      );
+    }
     return {
       snapshot: {
         lcpMs: lcp ? Math.round(lcp.startTime) : null,
         cls,
-        inpMs: null,
+        inpMs,
         domContentLoadedMs: navigation ? Math.round(navigation.domContentLoadedEventEnd) : null,
         loadEventMs: navigation ? Math.round(navigation.loadEventEnd) : null,
         transferSize: navigation && navigation.transferSize > 0 ? navigation.transferSize : null,
@@ -253,15 +434,21 @@ export function runPageTool(command: string, arg?: string): unknown {
     };
   }
 
-  function extract() {
+  async function extract(captureInput?: string) {
     const limitations: string[] = [
       "Microdata and RDFa were not extracted.",
       "Response headers, robots.txt, and sitemaps stay off until the optional site check.",
-      "Interaction to Next Paint was not measured.",
+      "Interaction timing is based on event entries available in this browser session; it is not field data.",
     ];
     const text = visibleText();
     if (text.truncated) limitations.push("TEXT_TRUNCATED");
-    const timing = performanceSnapshot();
+    let capture: InpCaptureSnapshot | null = null;
+    try {
+      capture = captureInput ? (JSON.parse(captureInput) as InpCaptureSnapshot) : null;
+    } catch {
+      capture = null;
+    }
+    const timing = await performanceSnapshot(capture);
     const htmlLength = document.documentElement ? document.documentElement.outerHTML.length : 0;
     const contentMeta = (name: string) =>
       document
@@ -399,7 +586,10 @@ export function runPageTool(command: string, arg?: string): unknown {
     return { highlighted: count };
   }
 
-  if (command === "extract") return extract();
+  if (command === "extract") return extract(arg);
+  if (command === "startInpCapture") return startInpCapture();
+  if (command === "readInpCapture") return captureSnapshot();
+  if (command === "stopInpCapture") return stopInpCapture();
   if (command === "marker") return installMarker();
   if (command === "generation") return generation();
   if (command === "highlight") return highlight(arg || "");

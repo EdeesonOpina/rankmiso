@@ -14,7 +14,7 @@ The disclaimer is part of the result: the number is not a ranking score.
 
 ## Unavailable means not measured
 
-Missing HTTP headers, robots.txt, sitemaps, reciprocal hreflang, rich-result eligibility, index status, and INP are explicit unavailable checks. A page is not rewarded for measurements we did not attempt.
+Missing HTTP headers, robots.txt, sitemaps, reciprocal hreflang, rich-result eligibility, index status, and browser interaction timing when the API exposes no entries are explicit unavailable checks. A page is not rewarded for measurements we did not attempt. Browser performance observations and optional PageSpeed lab results are not field data and do not affect the score.
 
 ## No proprietary substitutes
 
@@ -22,7 +22,11 @@ Ahrefs, SEOquake, and similar products show domain rating, traffic, keyword volu
 
 ## Permissions
 
-Default permissions are `storage`, `activeTab`, and `scripting`. The extension injects a page tool when the user opens it. It does not register a content script for every site. Optional host permissions are declared for later opt-in fetches and are unused.
+Default permissions are `storage`, `activeTab`, and `scripting`. The extension injects a page tool when the user opens it. It does not register a content script for every site. Optional host access is requested only when the user starts **Check this site** or PageSpeed Insights.
+
+## MCP remains optional and local
+
+MCP integration is planned, not implemented. Any future MCP surface must consume the same versioned audit produced by the extension and Rust engine; it must not introduce a second rules engine, hosted backend, telemetry, or silent page access. A local stdio companion and an explicit extension-to-host bridge are candidates, not settled architecture. See Phase 7 in `implementation-plan.md` for the investigation, proposed read-only tools, and acceptance requirements.
 
 ## WebAssembly packaging
 
@@ -51,10 +55,10 @@ Interface strings use `en.ts`. Rule identifiers stay stable. English rule senten
 
 ## Storage
 
-Only the theme preference is stored. Full page text is not written to disk. Exports are user-initiated downloads.
+The theme preference and optional PageSpeed API key can be stored locally. Comparison summaries are stored only after an explicit save action, capped at 20, and exclude full page text, links, and complete audit details. Exports are user-initiated downloads.
 
 ## Firefox
 
 The Firefox package is Manifest V3 via `wxt build -b firefox --mv3`. The id is `rankmiso@rankmiso.extension`. The first accepted addons.mozilla.org upload locks it. Changing it after that makes Firefox treat the add-on as a different extension. `data_collection_permissions.required` is `none`.
 
-Optional host permissions stay out of the required set. **Check this site** calls `permissions.request` for the current origin, then fetches headers, robots.txt, the first listed sitemap, and at most 20 public links. Private and local addresses are skipped. PageSpeed Insights is not called. The JSON-LD rich-result row is a local field list and does not change the score, because that category weight is 0.
+Optional host permissions stay out of the required set. **Check this site** requests the current origin, then fetches headers, robots.txt, the first listed sitemap, and at most 20 public links per batch. Private and local addresses are skipped. PageSpeed Insights requires an explicit user action and Google host permission; it sends the selected page URL and user-provided key to Google. Its results stay separate from the local score. The JSON-LD rich-result row is a local field list and does not change the score, because that category weight is 0.

@@ -1,6 +1,23 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { Braces, Languages, Link2, LoaderCircle, TextSearch } from "lucide-vue-next";
+import { computed, onMounted, ref, watch } from "vue";
+import { browser } from "wxt/browser";
+import {
+  Braces,
+  ExternalLink,
+  FileCode2,
+  FileImage,
+  FileJson2,
+  FileSpreadsheet,
+  Eraser,
+  History,
+  Languages,
+  Link2,
+  ListTree,
+  LoaderCircle,
+  TextSearch,
+  Paintbrush,
+  Target,
+} from "lucide-vue-next";
 import { brandConfig } from "../config/brand.config";
 import { themeConfig } from "../config/theme.config";
 import { navigationConfig } from "../config/navigation.config";
@@ -9,8 +26,24 @@ import { appConfig } from "../config/app.config";
 import { useI18n } from "../composables/useI18n";
 import { useTheme } from "../composables/useTheme";
 import { useAudit } from "../composables/useAudit";
-import { clearStoredSettings } from "../adapters/storage";
-import { clearHighlights, highlightElements } from "../services/inspect";
+import { clearStoredSettings, readPageSpeedApiKey, savePageSpeedApiKey } from "../adapters/storage";
+import {
+  clearSavedReports,
+  compareAudits,
+  deleteSavedReport,
+  MAX_SAVED_REPORTS,
+  readSavedReports,
+  saveAudit,
+  type SavedReport,
+} from "../services/saved-reports";
+import {
+  clearHighlights,
+  highlightElements,
+  readInpCapture,
+  startInpCapture,
+  stopInpCapture,
+  type InpCaptureSnapshot,
+} from "../services/inspect";
 import {
   exportAuditJson,
   exportChecksCsv,
@@ -20,6 +53,7 @@ import {
   exportLinksCsv,
 } from "../services/export";
 import { resolveShareImage } from "../services/share-preview";
+import { requestPageSpeedInsights, type PageSpeedResult } from "../services/pagespeed";
 import { openSidebar, sidebarAvailable } from "../services/sidebar";
 import type { Category, CheckResult } from "../types/audit";
 import BrandMark from "./BrandMark.vue";
@@ -72,17 +106,161 @@ function linkFilterLabel(kind: string) {
   return t("links.filter.all");
 }
 const serpMode = ref<"desktop" | "mobile">("desktop");
+const previewTitle = ref("");
+const previewDescription = ref("");
 const copied = ref("");
 const settingsNote = ref("");
+const savedReports = ref<SavedReport[]>([]);
+const selectedReportId = ref("");
+const reportMessage = ref("");
+const pageSpeedApiKey = ref("");
+const pageSpeedResult = ref<PageSpeedResult | null>(null);
+const pageSpeedStatus = ref<"idle" | "loading" | "error">("idle");
+const pageSpeedMessage = ref("");
+const inpCaptureState = ref<InpCaptureSnapshot | null>(null);
+const inpCaptureMessage = ref("");
 const available = availableNavigation();
 const nav = navigationConfig.filter((item) => available.has(item.id));
 
 onMounted(() => {
   void refresh();
+  void loadSavedReports();
+  void readPageSpeedApiKey()
+    .then((key) => (pageSpeedApiKey.value = key))
+    .catch(() => undefined);
   window.addEventListener("focus", () => void checkFreshness());
 });
 
+watch(
+  tab,
+  (current) => {
+    inpCaptureState.value = null;
+    inpCaptureMessage.value = "";
+    if (current?.id) {
+      void readInpCapture(current.id)
+        .then((capture) => (inpCaptureState.value = capture))
+        .catch(() => undefined);
+    }
+  },
+  { immediate: true },
+);
+
+async function toggleInpCapture() {
+  const tabId = tab.value?.id;
+  if (!tabId) return;
+  try {
+    const capture = inpCaptureState.value?.active
+      ? await stopInpCapture(tabId)
+      : await startInpCapture(tabId);
+    inpCaptureState.value = capture;
+    if (!capture.supported) {
+      inpCaptureMessage.value = t("performance.captureUnsupported");
+    } else if (capture.active) {
+      inpCaptureMessage.value = t("performance.captureStarted");
+    } else {
+      inpCaptureMessage.value = t("performance.captureStopped");
+      await refresh();
+    }
+  } catch {
+    inpCaptureMessage.value = t("performance.captureFailed");
+  }
+}
+
+const selectedSavedReport = computed(
+  () => savedReports.value.find((report) => report.id === selectedReportId.value) ?? null,
+);
+const reportDifferences = computed(() =>
+  audit.value && selectedSavedReport.value
+    ? compareAudits(selectedSavedReport.value.comparison, audit.value)
+    : [],
+);
+
+async function loadSavedReports() {
+  try {
+    savedReports.value = await readSavedReports();
+  } catch {
+    savedReports.value = [];
+  }
+}
+
+async function saveCurrentReport() {
+  if (!audit.value) return;
+  try {
+    const saved = await saveAudit(audit.value);
+    savedReports.value = [saved, ...savedReports.value].slice(0, MAX_SAVED_REPORTS);
+    selectedReportId.value = saved.id;
+    reportMessage.value = t("reports.saved");
+  } catch {
+    reportMessage.value = t("reports.saveFailed");
+  }
+}
+
+async function removeSavedReport(id: string) {
+  await deleteSavedReport(id);
+  savedReports.value = savedReports.value.filter((report) => report.id !== id);
+  if (selectedReportId.value === id) selectedReportId.value = "";
+}
+
+async function removeAllSavedReports() {
+  await clearSavedReports();
+  savedReports.value = [];
+  selectedReportId.value = "";
+  reportMessage.value = t("reports.cleared");
+}
+
+async function savePageSpeedKey() {
+  try {
+    await savePageSpeedApiKey(pageSpeedApiKey.value);
+    pageSpeedMessage.value = t("performance.psiSaved");
+  } catch {
+    pageSpeedMessage.value = t("performance.psiFailed");
+  }
+}
+
+async function runPageSpeed() {
+  if (!audit.value || pageSpeedStatus.value === "loading") return;
+  pageSpeedMessage.value = "";
+  pageSpeedResult.value = null;
+  if (!pageSpeedApiKey.value.trim()) {
+    pageSpeedStatus.value = "error";
+    pageSpeedMessage.value = t("performance.psiNeedsKey");
+    return;
+  }
+  try {
+    const granted = await browser.permissions.request({
+      origins: ["https://www.googleapis.com/*"],
+    });
+    if (!granted) {
+      pageSpeedStatus.value = "error";
+      pageSpeedMessage.value = t("performance.psiPermission");
+      return;
+    }
+    pageSpeedStatus.value = "loading";
+    pageSpeedResult.value = await requestPageSpeedInsights(
+      audit.value.page.url,
+      pageSpeedApiKey.value.trim(),
+    );
+  } catch {
+    pageSpeedStatus.value = "error";
+    pageSpeedMessage.value = t("performance.psiFailed");
+  } finally {
+    if (pageSpeedStatus.value === "loading") pageSpeedStatus.value = "idle";
+  }
+}
+
 const metadata = computed(() => audit.value?.details.metadata);
+const siteProbe = computed(() => audit.value?.details.site ?? null);
+const technicalScore = computed(
+  () => audit.value?.score.categories.find((category) => category.category === "technical") ?? null,
+);
+watch(
+  audit,
+  (current) => {
+    previewTitle.value = current?.details.metadata.title || "";
+    previewDescription.value = current?.details.metadata.description || "";
+  },
+  { immediate: true },
+);
 const actionable = computed(() =>
   (audit.value?.checks ?? []).filter(
     (check) => check.status === "ERROR" || check.status === "WARNING",
@@ -132,12 +310,12 @@ async function openSidePanel() {
 const pendingExport = ref<string | null>(null);
 
 const reportActions = [
-  ["json", "action.exportJson"],
-  ["checks", "action.exportChecks"],
-  ["links", "action.exportLinks"],
-  ["headings", "action.exportHeadings"],
-  ["images", "action.exportImages"],
-  ["html", "action.exportHtml"],
+  ["json", "action.exportJson", FileJson2],
+  ["checks", "action.exportChecks", FileSpreadsheet],
+  ["links", "action.exportLinks", Link2],
+  ["headings", "action.exportHeadings", ListTree],
+  ["images", "action.exportImages", FileImage],
+  ["html", "action.exportHtml", FileCode2],
 ] as const;
 
 function confirmExport() {
@@ -196,7 +374,9 @@ function host(url: string) {
             type="button"
             class="mb-1 block w-full rounded-panel px-3 py-2 text-left text-[13px]"
             :class="
-              section === item.id ? 'bg-primary text-primary-contrast' : 'hover:bg-background'
+              section === item.id
+                ? 'bg-primary/10 font-semibold text-primary'
+                : 'text-muted hover:bg-background hover:text-foreground'
             "
             :aria-current="section === item.id ? 'page' : undefined"
             @click="section = item.id"
@@ -253,7 +433,7 @@ function host(url: string) {
         </header>
         <div
           v-if="layout === 'sidepanel'"
-          class="mb-5 flex gap-5 overflow-x-auto border-b border-border"
+          class="report-tabs mb-5 flex gap-1.5 overflow-x-auto border-b border-border pb-2"
           role="tablist"
         >
           <button
@@ -261,11 +441,11 @@ function host(url: string) {
             :key="item.id"
             type="button"
             role="tab"
-            class="shrink-0 whitespace-nowrap border-b-2 pb-2 pt-1 text-[13px]"
+            class="shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-[13px] transition-colors"
             :class="
               section === item.id
-                ? 'border-primary font-medium text-foreground'
-                : 'border-transparent text-muted'
+                ? 'report-tab-active font-semibold'
+                : 'border-transparent text-muted hover:bg-surface'
             "
             :aria-selected="section === item.id"
             @click="section = item.id"
@@ -285,18 +465,44 @@ function host(url: string) {
         </p>
 
         <template v-if="audit && metadata">
-          <section v-show="section === 'overview'" class="space-y-6">
+          <section v-show="section === 'overview'" class="report-section">
             <ScoreBlock :score="audit.score" />
-            <h2 class="text-[15px]">{{ t("overview.priority") }}</h2>
-            <CheckTable :checks="actionable" />
+            <CheckTable :checks="actionable" :title="t('overview.priority')" />
             <h2 class="text-[15px]">{{ t("limitations.title") }}</h2>
             <ul class="text-[13px] text-muted">
               <li v-for="item in audit.source.limitations" :key="item">{{ item }}</li>
             </ul>
           </section>
 
-          <section v-show="section === 'metadata'" class="space-y-6">
+          <section v-show="section === 'metadata'" class="report-section">
             <div class="rounded-panel border border-border bg-surface p-4">
+              <div class="mb-3 grid gap-3">
+                <label class="space-y-1 text-[13px]">
+                  <span>{{ t("serp.editTitle") }}</span>
+                  <input
+                    v-model="previewTitle"
+                    class="block w-full rounded-panel border border-border bg-background px-3 py-2"
+                  />
+                </label>
+                <label class="space-y-1 text-[13px]">
+                  <span>{{ t("serp.editDescription") }}</span>
+                  <textarea
+                    v-model="previewDescription"
+                    rows="3"
+                    class="block w-full rounded-panel border border-border bg-background px-3 py-2"
+                  />
+                </label>
+                <button
+                  type="button"
+                  class="justify-self-start rounded-panel border border-border px-3 py-1.5 text-[12px]"
+                  @click="
+                    previewTitle = metadata.title || '';
+                    previewDescription = metadata.description || '';
+                  "
+                >
+                  {{ t("serp.resetPreview") }}
+                </button>
+              </div>
               <div class="mb-3 flex gap-2">
                 <button
                   type="button"
@@ -321,71 +527,74 @@ function host(url: string) {
               >
                 <p class="m-0 text-[12px] text-success">{{ host(audit.page.url) }}</p>
                 <p class="m-0 text-[18px] text-info">
-                  {{ metadata.title || t("metadata.untitled") }}
+                  {{ previewTitle || t("metadata.untitled") }}
                 </p>
                 <p class="mb-0 text-[13px] text-muted">
-                  {{ metadata.description || t("metadata.noDescription") }}
+                  {{ previewDescription || t("metadata.noDescription") }}
                 </p>
               </div>
               <p class="mb-0 mt-2 text-[12px] text-muted">{{ t("serp.disclaimer") }}</p>
+              <button
+                v-if="metadata.title"
+                type="button"
+                class="metadata-copy-button mt-3 w-full"
+                @click="copy(metadata.title || '', 'title')"
+              >
+                {{ copied === "title" ? t("action.copied") : t("action.copyTitle") }}
+              </button>
             </div>
-            <dl class="grid gap-2 text-[13px]">
-              <div>
-                <dt class="font-medium">{{ t("field.titleLength") }}</dt>
-                <dd>
-                  {{
-                    t("content.titleLengthDetail", {
-                      count: metadata.titleLength,
-                      pixels: metadata.titlePixelEstimate,
-                    })
-                  }}
-                </dd>
-              </div>
-              <div>
-                <dt class="font-medium">{{ t("field.pixelEstimate") }}</dt>
-                <dd class="text-muted">{{ metadata.titlePixelBasis }}</dd>
-              </div>
-              <div>
-                <dt class="font-medium">{{ t("field.descriptionLength") }}</dt>
-                <dd>{{ n(metadata.descriptionLength) }} {{ t("content.charactersUnit") }}</dd>
-              </div>
-              <div>
-                <dt class="font-medium">{{ t("field.robots") }}</dt>
-                <dd>{{ metadata.robots.join(", ") || t("metadata.none") }}</dd>
-              </div>
-              <div>
-                <dt class="font-medium">{{ t("field.googlebot") }}</dt>
-                <dd>{{ metadata.googlebot.join(", ") || t("metadata.none") }}</dd>
-              </div>
-              <div>
-                <dt class="font-medium">{{ t("field.canonical") }}</dt>
-                <dd class="break-all">{{ metadata.canonicals.join(" ") || t("value.none") }}</dd>
-              </div>
-              <div>
-                <dt class="font-medium">{{ t("field.language") }}</dt>
-                <dd>{{ metadata.language || t("international.notDeclared") }}</dd>
-              </div>
-              <div>
-                <dt class="font-medium">{{ t("field.charset") }}</dt>
-                <dd>{{ metadata.charset || t("value.charsetMissing") }}</dd>
-              </div>
-              <div>
-                <dt class="font-medium">{{ t("field.viewport") }}</dt>
-                <dd>{{ metadata.viewport || t("metadata.missing") }}</dd>
-              </div>
-            </dl>
-            <button
-              v-if="metadata.title"
-              type="button"
-              class="rounded-panel border border-border px-3 py-2 text-[13px]"
-              @click="copy(metadata.title || '', 'title')"
-            >
-              {{ copied === "title" ? t("action.copied") : t("action.copyTitle") }}
-            </button>
+            <div class="metadata-details">
+              <h2>{{ t("metadata.details") }}</h2>
+              <dl class="metadata-grid">
+                <div>
+                  <dt class="font-medium">{{ t("field.titleLength") }}</dt>
+                  <dd>
+                    {{
+                      t("content.titleLengthDetail", {
+                        count: metadata.titleLength,
+                        pixels: metadata.titlePixelEstimate,
+                      })
+                    }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="font-medium">{{ t("field.pixelEstimate") }}</dt>
+                  <dd class="text-muted">{{ metadata.titlePixelBasis }}</dd>
+                </div>
+                <div>
+                  <dt class="font-medium">{{ t("field.descriptionLength") }}</dt>
+                  <dd>{{ n(metadata.descriptionLength) }} {{ t("content.charactersUnit") }}</dd>
+                </div>
+                <div class="metadata-detail metadata-detail-wide">
+                  <dt class="font-medium">{{ t("field.robots") }}</dt>
+                  <dd>{{ metadata.robots.join(", ") || t("metadata.none") }}</dd>
+                </div>
+                <div class="metadata-detail metadata-detail-wide">
+                  <dt class="font-medium">{{ t("field.googlebot") }}</dt>
+                  <dd>{{ metadata.googlebot.join(", ") || t("metadata.none") }}</dd>
+                </div>
+                <div class="metadata-detail metadata-detail-wide">
+                  <dt class="font-medium">{{ t("field.canonical") }}</dt>
+                  <dd class="break-all">{{ metadata.canonicals.join(" ") || t("value.none") }}</dd>
+                </div>
+                <div>
+                  <dt class="font-medium">{{ t("field.language") }}</dt>
+                  <dd>{{ metadata.language || t("international.notDeclared") }}</dd>
+                </div>
+                <div>
+                  <dt class="font-medium">{{ t("field.charset") }}</dt>
+                  <dd>{{ metadata.charset || t("value.charsetMissing") }}</dd>
+                </div>
+                <div class="metadata-detail metadata-detail-wide">
+                  <dt class="font-medium">{{ t("field.viewport") }}</dt>
+                  <dd>{{ metadata.viewport || t("metadata.missing") }}</dd>
+                </div>
+              </dl>
+            </div>
             <CheckTable :checks="checks('metadata')" />
           </section>
 
-          <section v-show="section === 'content'" class="space-y-6">
+          <section v-show="section === 'content'" class="report-section">
             <p class="text-[13px] text-muted">{{ t("content.note") }}</p>
             <dl class="grid grid-cols-2 gap-3 text-[13px]">
               <div class="rounded-panel border border-border bg-surface p-3">
@@ -459,27 +668,30 @@ function host(url: string) {
             <CheckTable :checks="checks('content')" />
           </section>
 
-          <section v-show="section === 'headings'" class="space-y-6">
-            <div class="flex gap-2">
+          <section v-show="section === 'headings'" class="report-section">
+            <div class="flex flex-wrap gap-2" role="group" :aria-label="t('action.headingActions')">
               <button
                 type="button"
-                class="rounded-panel border px-3 py-2 text-[13px]"
+                class="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-primary bg-primary px-4 py-2 text-[13px] font-semibold text-primary-contrast shadow-sm transition hover:brightness-95 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 @click="highlight('headings')"
               >
+                <Paintbrush :size="15" aria-hidden="true" />
                 {{ t("action.highlightHeadings") }}
               </button>
               <button
                 type="button"
-                class="rounded-panel border px-3 py-2 text-[13px]"
+                class="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-primary/40 bg-surface px-4 py-2 text-[13px] font-semibold text-foreground shadow-sm transition hover:border-primary hover:bg-primary/5 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 @click="highlight('h1')"
               >
+                <Target :size="15" aria-hidden="true" />
                 {{ t("action.highlightH1") }}
               </button>
               <button
                 type="button"
-                class="rounded-panel border px-3 py-2 text-[13px]"
+                class="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-[13px] font-semibold text-foreground shadow-sm transition hover:border-muted hover:bg-surface active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 @click="clearMarks"
               >
+                <Eraser :size="15" aria-hidden="true" />
                 {{ t("action.clearHighlights") }}
               </button>
             </div>
@@ -497,8 +709,8 @@ function host(url: string) {
             <CheckTable :checks="checks('headings')" />
           </section>
 
-          <section v-show="section === 'links'" class="space-y-6">
-            <p class="text-[13px]">
+          <section v-show="section === 'links'" class="report-section">
+            <p class="report-summary">
               {{
                 t("popup.linkSplit", {
                   internal: audit.metrics.counts.internalLinks,
@@ -506,44 +718,60 @@ function host(url: string) {
                 })
               }}
             </p>
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="kind in ['all', 'internal', 'external', 'nofollow']"
-                :key="kind"
-                type="button"
-                class="rounded-full border px-3 py-1 text-[12px]"
-                @click="linkFilter = kind"
-              >
-                {{ linkFilterLabel(kind) }}
-              </button>
-              <button
-                type="button"
-                class="rounded-panel border px-3 py-1 text-[12px]"
-                @click="highlight('internal')"
-              >
-                {{ t("action.highlightInternal") }}
-              </button>
-              <button
-                type="button"
-                class="rounded-panel border px-3 py-1 text-[12px]"
-                @click="highlight('external')"
-              >
-                {{ t("action.highlightExternal") }}
-              </button>
-              <button
-                type="button"
-                class="rounded-panel border px-3 py-1 text-[12px]"
-                @click="highlight('nofollow')"
-              >
-                {{ t("action.highlightNofollow") }}
-              </button>
-              <button
-                type="button"
-                class="rounded-panel border px-3 py-1 text-[12px]"
-                @click="clearMarks"
-              >
-                {{ t("action.clearHighlights") }}
-              </button>
+            <div class="link-controls">
+              <div class="link-control-group">
+                <span>{{ t("links.filters") }}</span>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="kind in ['all', 'internal', 'external', 'nofollow']"
+                    :key="kind"
+                    type="button"
+                    class="rounded-full border border-border px-3 py-1 text-[12px] transition-colors"
+                    :class="
+                      linkFilter === kind
+                        ? 'border-primary bg-primary text-primary-contrast'
+                        : 'bg-surface text-muted hover:text-foreground'
+                    "
+                    :aria-pressed="linkFilter === kind"
+                    @click="linkFilter = kind"
+                  >
+                    {{ linkFilterLabel(kind) }}
+                  </button>
+                </div>
+              </div>
+              <div class="link-control-group">
+                <span>{{ t("links.actions") }}</span>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    class="rounded-panel border px-3 py-1 text-[12px]"
+                    @click="highlight('internal')"
+                  >
+                    {{ t("action.highlightInternal") }}
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-panel border px-3 py-1 text-[12px]"
+                    @click="highlight('external')"
+                  >
+                    {{ t("action.highlightExternal") }}
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-panel border px-3 py-1 text-[12px]"
+                    @click="highlight('nofollow')"
+                  >
+                    {{ t("action.highlightNofollow") }}
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-panel border px-3 py-1 text-[12px]"
+                    @click="clearMarks"
+                  >
+                    {{ t("action.clearHighlights") }}
+                  </button>
+                </div>
+              </div>
             </div>
             <EmptyState
               v-if="links.length === 0"
@@ -589,7 +817,7 @@ function host(url: string) {
             <CheckTable :checks="checks('links')" />
           </section>
 
-          <section v-show="section === 'images'" class="space-y-6">
+          <section v-show="section === 'images'" class="report-section">
             <div class="flex gap-2">
               <button
                 type="button"
@@ -652,10 +880,28 @@ function host(url: string) {
             <CheckTable :checks="checks('images')" />
           </section>
 
-          <section v-show="section === 'technical'" class="space-y-6">
-            <p class="m-0 text-[13px] leading-relaxed text-muted">{{ t("technical.note") }}</p>
-            <div class="space-y-3">
-              <div class="flex flex-wrap items-center gap-2">
+          <section v-show="section === 'technical'" class="report-section">
+            <div v-if="technicalScore" class="report-panel technical-score-card">
+              <div class="technical-score-heading">
+                <div>
+                  <h2>{{ t("technical.scoreTitle") }}</h2>
+                  <p>{{ t("technical.scoreNote") }}</p>
+                </div>
+                <p class="technical-score-value">
+                  {{
+                    technicalScore.available && technicalScore.value != null
+                      ? n(technicalScore.value)
+                      : "–"
+                  }}
+                  <span>/100</span>
+                </p>
+              </div>
+              <div class="technical-score-counts">
+                <span>{{ t("score.errors", { count: technicalScore.errors }) }}</span>
+                <span>{{ t("score.warnings", { count: technicalScore.warnings }) }}</span>
+                <span>{{ t("score.passed", { count: technicalScore.passed }) }}</span>
+              </div>
+              <div class="technical-score-actions">
                 <button
                   type="button"
                   class="inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-panel bg-primary px-3 text-[13px] text-primary-contrast disabled:opacity-60"
@@ -691,63 +937,171 @@ function host(url: string) {
               <LoadingStatus
                 v-if="probing"
                 :label="
-                  probeKind === 'more'
+                  probeMessage ||
+                  (probeKind === 'more'
                     ? t('technical.siteCheckingMore')
-                    : t('technical.siteChecking')
+                    : t('technical.siteChecking'))
                 "
               />
-              <p v-else-if="probeMessage" class="m-0 text-[13px] leading-relaxed text-muted">
+              <p
+                v-else-if="probeMessage"
+                role="status"
+                class="m-0 text-[12px] leading-relaxed text-muted"
+              >
                 {{ probeMessage }}
               </p>
             </div>
-            <dl class="space-y-4 text-[13px]">
-              <div>
-                <dt class="font-medium">{{ t("field.status") }}</dt>
-                <dd class="mt-2">{{ audit.details.response.status ?? t("value.notExposed") }}</dd>
+            <div class="report-section-block">
+              <div class="technical-section-heading">
+                <h2>{{ t("technical.navigationTitle") }}</h2>
+                <p>{{ t("technical.navigationNote") }}</p>
               </div>
-              <div>
-                <dt class="font-medium">{{ t("field.redirects") }}</dt>
-                <dd class="mt-2">
-                  {{
-                    audit.details.response.redirectCount == null
-                      ? t("value.notExposed")
-                      : n(audit.details.response.redirectCount)
-                  }}
-                </dd>
+              <dl class="technical-stats">
+                <div class="report-panel technical-stat">
+                  <dt>{{ t("field.status") }}</dt>
+                  <dd>{{ audit.details.response.status ?? t("value.notExposed") }}</dd>
+                </div>
+                <div class="report-panel technical-stat">
+                  <dt>{{ t("field.redirects") }}</dt>
+                  <dd>
+                    {{
+                      audit.details.response.redirectCount == null
+                        ? t("value.notExposed")
+                        : n(audit.details.response.redirectCount)
+                    }}
+                  </dd>
+                </div>
+                <div class="report-panel technical-stat">
+                  <dt>{{ t("field.contentType") }}</dt>
+                  <dd>{{ audit.details.response.contentType || t("value.unknown") }}</dd>
+                </div>
+              </dl>
+            </div>
+            <section v-if="siteProbe?.requested" class="technical-results">
+              <div class="technical-section-heading">
+                <h2>{{ t("technical.resultsTitle") }}</h2>
+                <p>{{ t("technical.resultsNote") }}</p>
               </div>
-              <div>
-                <dt class="font-medium">{{ t("field.contentType") }}</dt>
-                <dd class="mt-2">{{ audit.details.response.contentType || t("value.unknown") }}</dd>
-              </div>
-            </dl>
-            <div v-if="audit.details.response.headersAvailable" class="space-y-4">
-              <h2 class="m-0 text-[13px] font-semibold">{{ t("technical.headers") }}</h2>
-              <ul class="space-y-3">
-                <li
-                  v-for="header in audit.details.response.headers"
-                  :key="header.name"
-                  class="rounded-panel border border-border bg-surface px-4 py-3"
-                >
-                  <p class="m-0 text-[12px] font-semibold">{{ header.name }}</p>
-                  <p class="mb-0 mt-2 break-all text-[12px] leading-relaxed text-muted">
-                    {{ header.value }}
+              <div class="technical-result-grid">
+                <article class="report-panel technical-result">
+                  <h3>{{ t("technical.robots") }}</h3>
+                  <p class="technical-result-value">
+                    {{
+                      siteProbe.robotsStatus === 404
+                        ? t("technical.notFound")
+                        : siteProbe.robotsStatus == null
+                          ? t("technical.notAvailable")
+                          : t("technical.httpStatus", { status: siteProbe.robotsStatus })
+                    }}
                   </p>
-                </li>
+                  <details v-if="siteProbe.robotsBody" class="technical-raw-details">
+                    <summary>{{ t("technical.viewRobots") }}</summary>
+                    <pre>{{ siteProbe.robotsBody.slice(0, 6000) }}</pre>
+                    <p v-if="siteProbe.robotsBody.length > 6000">
+                      {{ t("technical.robotsTruncated") }}
+                    </p>
+                  </details>
+                </article>
+                <article class="report-panel technical-result">
+                  <h3>{{ t("technical.sitemap") }}</h3>
+                  <p class="technical-result-value">
+                    {{
+                      siteProbe.sitemapUrls.length
+                        ? t("technical.sitemapUrl", { url: siteProbe.sitemapUrls[0] ?? "" })
+                        : siteProbe.robotsStatus === 404
+                          ? t("technical.robotsMissingForSitemap")
+                          : siteProbe.robotsStatus == null
+                            ? t("technical.notDetermined")
+                            : t("technical.sitemapNone")
+                    }}
+                  </p>
+                  <p v-if="siteProbe.sitemapStatus != null" class="technical-result-detail">
+                    {{ t("technical.httpStatus", { status: siteProbe.sitemapStatus }) }}
+                    <span v-if="siteProbe.sitemapUrlCount != null">
+                      · {{ t("technical.sitemapEntries", { count: n(siteProbe.sitemapUrlCount) }) }}
+                    </span>
+                  </p>
+                  <p v-if="siteProbe.sitemapContainsPage != null" class="technical-result-detail">
+                    {{
+                      siteProbe.sitemapContainsPage
+                        ? t("technical.sitemapContains")
+                        : t("technical.sitemapNotContains")
+                    }}
+                  </p>
+                </article>
+                <article class="report-panel technical-result">
+                  <h3>{{ t("technical.linkResults") }}</h3>
+                  <p class="technical-result-value">
+                    {{
+                      siteProbe.linksTotal === 0
+                        ? t("technical.noPublicLinks")
+                        : t("technical.linkCounts", {
+                            checked: n(siteProbe.linksChecked),
+                            total: n(siteProbe.linksTotal),
+                          })
+                    }}
+                  </p>
+                  <p v-if="siteProbe.linksChecked" class="technical-result-detail">
+                    {{
+                      t("technical.linkOutcomes", {
+                        broken: n(siteProbe.linksBroken),
+                        unreachable: n(siteProbe.linksUnreachable),
+                        blocked: n(siteProbe.linksBlocked),
+                      })
+                    }}
+                  </p>
+                </article>
+                <article class="report-panel technical-result">
+                  <h3>{{ t("technical.hreflang") }}</h3>
+                  <p class="technical-result-value">
+                    {{
+                      siteProbe.hreflangChecked
+                        ? t("technical.hreflangCounts", {
+                            checked: n(siteProbe.hreflangChecked),
+                            missing: n(siteProbe.hreflangMissing),
+                          })
+                        : t("technical.noAlternates")
+                    }}
+                  </p>
+                </article>
+              </div>
+              <div class="report-section-block">
+                <h2>{{ t("technical.headers") }}</h2>
+                <ul v-if="audit.details.response.headersAvailable" class="space-y-3">
+                  <li
+                    v-for="header in audit.details.response.headers"
+                    :key="header.name"
+                    class="report-panel p-4"
+                  >
+                    <p class="m-0 text-[12px] font-semibold">{{ header.name }}</p>
+                    <p class="mb-0 mt-2 break-all text-[12px] leading-relaxed text-muted">
+                      {{ header.value }}
+                    </p>
+                  </li>
+                </ul>
+                <p v-else class="technical-result-detail">{{ t("technical.noHeaders") }}</p>
+              </div>
+              <div class="report-section-block">
+                <h2>{{ t("technical.hops") }}</h2>
+                <ul v-if="siteProbe.redirectHops.length" class="space-y-2 text-[13px] text-muted">
+                  <li
+                    v-for="hop in siteProbe.redirectHops"
+                    :key="hop"
+                    class="report-panel break-all p-3"
+                  >
+                    {{ hop }}
+                  </li>
+                </ul>
+                <p v-else class="technical-result-detail">{{ t("technical.noHops") }}</p>
+              </div>
+              <ul v-if="siteProbe.notes.length" class="report-panel technical-probe-notes">
+                <li v-for="note in siteProbe.notes" :key="note">{{ note }}</li>
               </ul>
-            </div>
-            <div v-if="audit.details.site?.redirectHops.length" class="space-y-3">
-              <h2 class="m-0 text-[13px] font-semibold">{{ t("technical.hops") }}</h2>
-              <ul class="space-y-2 text-[13px] text-muted">
-                <li v-for="hop in audit.details.site.redirectHops" :key="hop">{{ hop }}</li>
-              </ul>
-            </div>
-            <ul v-if="audit.details.site?.notes.length" class="space-y-2 text-[13px] text-muted">
-              <li v-for="note in audit.details.site.notes" :key="note">{{ note }}</li>
-            </ul>
+            </section>
             <CheckTable :checks="checks('technical')" />
           </section>
 
-          <section v-show="section === 'schema'" class="max-w-3xl space-y-6">
+          <section v-show="section === 'schema'" class="report-section max-w-3xl">
             <p class="m-0 text-[13px] leading-relaxed text-muted">{{ t("schema.note") }}</p>
             <EmptyState
               v-if="audit.details.structuredData.length === 0"
@@ -763,22 +1117,77 @@ function host(url: string) {
               :valid="block.validJson"
               :error="block.error"
             />
-            <a
-              href="https://search.google.com/test/rich-results"
-              target="_blank"
-              rel="noreferrer"
-              >{{ t("schema.validator") }}</a
-            >
+            <aside class="space-y-3 rounded-panel border border-border bg-surface p-4 shadow-sm">
+              <div class="flex items-start gap-3">
+                <span
+                  class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                  aria-hidden="true"
+                >
+                  <Braces :size="19" :stroke-width="1.8" />
+                </span>
+                <div class="min-w-0">
+                  <h2 class="m-0 text-[14px] font-semibold">
+                    {{ t("schema.validatorTitle") }}
+                  </h2>
+                  <p class="mb-0 mt-1 text-[12px] leading-relaxed text-muted">
+                    {{ t("schema.validatorDescription") }}
+                  </p>
+                </div>
+              </div>
+              <a
+                href="https://search.google.com/test/rich-results"
+                target="_blank"
+                rel="noreferrer"
+                class="schema-validator-link inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-[13px] font-semibold text-primary-contrast transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                {{ t("schema.validator") }}
+                <ExternalLink :size="15" aria-hidden="true" />
+              </a>
+            </aside>
             <CheckTable :checks="checks('structuredData')" />
           </section>
 
-          <section v-show="section === 'social'" class="max-w-xl space-y-6">
+          <section v-show="section === 'social'" class="report-section max-w-xl">
             <ShareCards :audit="audit" />
             <CheckTable :checks="checks('social')" />
           </section>
 
-          <section v-show="section === 'performance'" class="space-y-6">
-            <p class="text-[13px] text-muted">{{ t("performance.note") }}</p>
+          <section v-show="section === 'performance'" class="report-section">
+            <p class="report-note">{{ t("performance.note") }}</p>
+            <div class="space-y-2 rounded-panel border border-border bg-surface p-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                  <h2 class="m-0 text-[14px] font-semibold">
+                    {{ t("performance.captureTitle") }}
+                  </h2>
+                  <p class="mb-0 mt-1 text-[12px] text-muted">
+                    {{ t("performance.captureHelp") }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="shrink-0 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-medium hover:bg-muted/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="inpCaptureState?.supported === false"
+                  @click="toggleInpCapture"
+                >
+                  {{
+                    inpCaptureState?.active
+                      ? t("performance.captureStop")
+                      : t("performance.captureStart")
+                  }}
+                </button>
+              </div>
+              <p v-if="inpCaptureMessage" class="m-0 text-[12px] text-muted" role="status">
+                {{ inpCaptureMessage }}
+              </p>
+              <p
+                v-else-if="inpCaptureState?.active"
+                class="m-0 text-[12px] text-muted"
+                role="status"
+              >
+                {{ t("performance.captureRunning") }}
+              </p>
+            </div>
             <dl class="grid grid-cols-2 gap-3 text-[13px]">
               <div class="rounded-panel border bg-surface p-3">
                 <dt>{{ t("field.lcp") }}</dt>
@@ -825,9 +1234,75 @@ function host(url: string) {
               <li v-for="note in audit.details.performance.notes" :key="note">{{ note }}</li>
             </ul>
             <CheckTable :checks="checks('performance')" />
+            <div class="space-y-3 rounded-panel border border-border bg-surface p-4">
+              <h2 class="m-0 text-[15px] font-semibold">{{ t("performance.psiTitle") }}</h2>
+              <p class="m-0 text-[13px] text-muted">{{ t("performance.psiPrivacy") }}</p>
+              <label class="block space-y-1 text-[13px]">
+                <span>{{ t("performance.psiKey") }}</span>
+                <input
+                  v-model="pageSpeedApiKey"
+                  type="password"
+                  autocomplete="off"
+                  class="block w-full rounded-panel border border-border bg-background px-3 py-2"
+                />
+                <a
+                  href="https://developers.google.com/speed/docs/insights/v5/get-started"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="inline-block underline"
+                >
+                  {{ t("performance.psiKeyHelp") }}
+                </a>
+              </label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="rounded-panel border border-border px-3 py-2 text-[13px]"
+                  @click="savePageSpeedKey"
+                >
+                  {{ t("performance.psiSaveKey") }}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-panel bg-primary px-3 py-2 text-[13px] text-primary-contrast disabled:opacity-60"
+                  :disabled="pageSpeedStatus === 'loading'"
+                  @click="runPageSpeed"
+                >
+                  {{
+                    t(
+                      pageSpeedStatus === "loading"
+                        ? "performance.psiRunning"
+                        : "performance.psiRun",
+                    )
+                  }}
+                </button>
+              </div>
+              <p v-if="pageSpeedMessage" role="status" class="m-0 text-[13px]">
+                {{ pageSpeedMessage }}
+              </p>
+              <div v-if="pageSpeedResult" class="space-y-2 text-[13px]">
+                <h3 class="m-0 font-semibold">{{ t("performance.psiMetrics") }}</h3>
+                <p class="m-0">
+                  {{ t("performance.psiScore") }}:
+                  {{ pageSpeedResult.performanceScore ?? t("value.unavailable") }}
+                </p>
+                <p class="m-0">
+                  {{ t("performance.psiLcp") }}:
+                  {{
+                    pageSpeedResult.lcpMs == null
+                      ? t("value.unavailable")
+                      : `${n(pageSpeedResult.lcpMs)} ${t("performance.milliseconds")}`
+                  }}
+                </p>
+                <p class="m-0">
+                  {{ t("performance.psiCls") }}: {{ pageSpeedResult.cls ?? t("value.unavailable") }}
+                </p>
+                <p class="m-0 text-[12px] text-muted">{{ t("performance.psiAttribution") }}</p>
+              </div>
+            </div>
           </section>
 
-          <section v-show="section === 'international'" class="space-y-6">
+          <section v-show="section === 'international'" class="report-section">
             <p class="text-[13px]">
               {{ t("international.documentLanguage") }}:
               {{ metadata.language || t("international.notDeclared") }}
@@ -869,41 +1344,134 @@ function host(url: string) {
             <CheckTable :checks="checks('international')" />
           </section>
 
-          <section v-show="section === 'accessibility'" class="space-y-6">
+          <section v-show="section === 'accessibility'" class="report-section">
             <p class="text-[13px] text-muted">{{ t("a11y.note") }}</p>
             <CheckTable :checks="checks('accessibility')" />
           </section>
 
-          <section v-show="section === 'reports'" class="max-w-xl space-y-6">
-            <div v-for="item in reportActions" :key="item[0]" class="space-y-2">
-              <button
-                type="button"
-                class="rounded-panel border border-border bg-surface px-3 py-2 text-[13px]"
-                @click="pendingExport = item[0]"
-              >
-                {{ t(item[1]) }}
-              </button>
-              <div v-if="pendingExport === item[0]" class="flex flex-wrap items-center gap-2">
-                <p class="m-0 text-[13px]">{{ t("export.confirm") }}</p>
+          <section v-show="section === 'reports'" class="report-section max-w-xl">
+            <div class="report-feature">
+              <div class="report-feature-heading">
+                <div class="report-feature-icon">
+                  <History class="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div class="min-w-0">
+                  <p class="report-feature-kicker">{{ t("reports.localLabel") }}</p>
+                  <h2>{{ t("reports.compareTitle") }}</h2>
+                  <p class="report-feature-copy">{{ t("reports.privacy") }}</p>
+                </div>
+              </div>
+              <div class="report-feature-footer">
+                <p role="status" class="report-feature-status">
+                  {{
+                    reportMessage ||
+                    (savedReports.length === 0
+                      ? t("reports.empty")
+                      : t("reports.savedCount", { count: savedReports.length }))
+                  }}
+                </p>
                 <button
                   type="button"
-                  class="rounded-panel bg-primary px-3 py-1.5 text-[13px] text-primary-contrast"
-                  @click="confirmExport"
+                  class="report-feature-save"
+                  :disabled="!audit || status !== 'ready'"
+                  @click="saveCurrentReport"
                 >
-                  {{ t("export.confirmAction") }}
-                </button>
-                <button
-                  type="button"
-                  class="rounded-panel border border-border px-3 py-1.5 text-[13px]"
-                  @click="pendingExport = null"
-                >
-                  {{ t("export.cancel") }}
+                  {{ t("reports.saveCurrent") }}
                 </button>
               </div>
             </div>
+            <div v-if="savedReports.length" class="report-panel report-saved-panel">
+              <div class="report-subheading">
+                <h2>{{ t("reports.savedReports") }}</h2>
+                <button type="button" class="report-text-action" @click="removeAllSavedReports">
+                  {{ t("reports.deleteAll") }}
+                </button>
+              </div>
+              <label class="report-select-label">
+                <span>{{ t("reports.choose") }}</span>
+                <select v-model="selectedReportId">
+                  <option value="">{{ t("reports.selectPlaceholder") }}</option>
+                  <option v-for="report in savedReports" :key="report.id" :value="report.id">
+                    {{ report.comparison.title || t("metadata.untitled") }} ·
+                    {{ report.comparison.url }} · {{ new Date(report.savedAt).toLocaleString() }}
+                  </option>
+                </select>
+              </label>
+              <template v-if="selectedSavedReport && audit">
+                <p class="report-compare-caption">
+                  {{ t("reports.comparing", { url: selectedSavedReport.comparison.url }) }}
+                </p>
+                <p v-if="reportDifferences.length === 0" class="report-no-differences">
+                  {{ t("reports.noChanges") }}
+                </p>
+                <div v-else class="overflow-x-auto">
+                  <table class="report-differences">
+                    <thead>
+                      <tr>
+                        <th>{{ t("reports.field") }}</th>
+                        <th>{{ t("reports.savedValue") }}</th>
+                        <th>{{ t("reports.current") }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="difference in reportDifferences" :key="difference.label">
+                        <th>{{ t(difference.label) }}</th>
+                        <td>{{ difference.previous }}</td>
+                        <td>{{ difference.current }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <button
+                  type="button"
+                  class="report-text-action mt-3"
+                  @click="removeSavedReport(selectedSavedReport.id)"
+                >
+                  {{ t("reports.deleteSelected") }}
+                </button>
+              </template>
+            </div>
+            <section class="report-exports" aria-labelledby="report-exports-heading">
+              <div class="report-exports-heading">
+                <div>
+                  <h2 id="report-exports-heading">{{ t("reports.exports") }}</h2>
+                  <p>{{ t("reports.exportNote") }}</p>
+                </div>
+              </div>
+              <div class="report-export-grid">
+                <div v-for="item in reportActions" :key="item[0]" class="report-export-item">
+                  <button
+                    type="button"
+                    class="report-export-button"
+                    :aria-expanded="pendingExport === item[0]"
+                    @click="pendingExport = pendingExport === item[0] ? null : item[0]"
+                  >
+                    <span class="report-export-icon">
+                      <component :is="item[2]" class="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span class="min-w-0">{{ t(item[1]) }}</span>
+                  </button>
+                  <div v-if="pendingExport === item[0]" class="report-export-confirm">
+                    <p>{{ t("export.confirm") }}</p>
+                    <div class="flex gap-2">
+                      <button type="button" class="report-confirm-button" @click="confirmExport">
+                        {{ t("export.confirmAction") }}
+                      </button>
+                      <button
+                        type="button"
+                        class="report-cancel-button"
+                        @click="pendingExport = null"
+                      >
+                        {{ t("export.cancel") }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
           </section>
 
-          <section v-show="section === 'settings'" class="space-y-6">
+          <section v-show="section === 'settings'" class="report-section">
             <fieldset class="space-y-2">
               <legend class="text-[14px] font-medium">{{ t("settings.theme") }}</legend>
               <label

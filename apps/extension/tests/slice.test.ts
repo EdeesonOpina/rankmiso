@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
 import StatusBadge from "../src/components/StatusBadge.vue";
 import { runPageTool } from "../src/extraction/page-tool";
+import { vi } from "vitest";
 
 describe("StatusBadge", () => {
   it("shows a text label for an error", () => {
@@ -11,7 +12,25 @@ describe("StatusBadge", () => {
 });
 
 describe("page extraction", () => {
-  it("collects rendered metadata, headings, and skips hidden text", () => {
+  it("estimates session INP from exposed interaction entries", async () => {
+    const entries = [
+      { duration: 100, interactionId: 1 },
+      { duration: 150, interactionId: 1 },
+      { duration: 120, interactionId: 2 },
+    ] as Array<PerformanceEntry & { interactionId: number }>;
+    vi.spyOn(performance, "getEntriesByType").mockImplementation((type) =>
+      type === "event" ? entries : [],
+    );
+
+    const result = (await runPageTool("extract")) as {
+      performance: { inpMs: number | null };
+    };
+
+    expect(result.performance.inpMs).toBe(150);
+    vi.restoreAllMocks();
+  });
+
+  it("collects rendered metadata, headings, and skips hidden text", async () => {
     document.title = "Rendered title";
     document.documentElement.lang = "en";
     document.body.innerHTML = `
@@ -27,7 +46,7 @@ describe("page extraction", () => {
       <img src="/decor.png">
       <script type="application/ld+json">{"@type":"Article"}</script>
     `;
-    const snapshot = runPageTool("extract") as {
+    const snapshot = (await runPageTool("extract")) as {
       titles: { rendered: string };
       headings: Array<{ level: number; text: string }>;
       content: { visibleText: string; htmlLang: string };

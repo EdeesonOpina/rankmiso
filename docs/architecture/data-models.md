@@ -2,7 +2,7 @@
 
 Snapshot schema version: 1. Audit schema version: 1. Ruleset version: 1.0.0.
 
-The snapshot carries the URL, titles, meta tags, rel links, headings, links, images, visible text with a 200,000 character cap, JSON-LD blocks, accessibility counts, performance observations, and navigation status when the browser provides it.
+The snapshot carries the URL, titles, meta tags, rel links, headings, links, images, visible text with a 200,000 character cap, JSON-LD blocks, accessibility counts, performance observations, and navigation status when the browser provides it. LCP and CLS are browser timeline observations. INP is estimated from the browser's available event entries for the current session; these are not field measurements.
 
 The audit carries the score, checks, recommendations, content metrics, classified links, and the interpreted metadata. It does not echo the full visible text.
 
