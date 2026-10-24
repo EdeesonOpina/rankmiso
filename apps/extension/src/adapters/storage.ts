@@ -30,8 +30,23 @@ export async function writeThemePreference(preference: ThemePreference): Promise
 export async function clearStoredSettings(): Promise<void> {
   localStorage.removeItem(appConfig.themeKey);
   try {
-    await browser.storage.local.clear();
+    await browser.storage.local.remove([appConfig.themeKey, appConfig.pageSpeedKey]);
   } catch {
-    // Nothing else is stored by this version.
+    // Extension storage is unavailable in unit tests and some restricted pages.
   }
+}
+
+export async function readPageSpeedApiKey(): Promise<string> {
+  const stored = await browser.storage.local.get(appConfig.pageSpeedKey);
+  const value = stored[appConfig.pageSpeedKey];
+  return typeof value === "string" ? value : "";
+}
+
+export async function savePageSpeedApiKey(value: string): Promise<void> {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    await browser.storage.local.remove(appConfig.pageSpeedKey);
+    return;
+  }
+  await browser.storage.local.set({ [appConfig.pageSpeedKey]: trimmed });
 }
