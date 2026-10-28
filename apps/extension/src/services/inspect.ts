@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { runPageTool } from "../extraction/page-tool";
+import { collectMarkup } from "./structured-markup";
 import type { PageSnapshot } from "../types/audit";
 
 export interface InspectedTab {
@@ -61,7 +62,22 @@ export async function inspectTab(tabId: number): Promise<PageSnapshot> {
   if (!extracted?.result || typeof extracted.result !== "object") {
     throw new Error("The page did not return an SEO snapshot.");
   }
-  return extracted.result as PageSnapshot;
+  const snapshot = extracted.result as PageSnapshot;
+  const [markup] = await browser.scripting
+    .executeScript({
+      target: { tabId },
+      func: collectMarkup,
+    })
+    .catch(() => []);
+  const extra = markup?.result;
+  if (Array.isArray(extra)) {
+    const blocks = snapshot.structuredData ?? [];
+    snapshot.structuredData = [...blocks, ...extra].slice(0, 40);
+    snapshot.collection.limitations = (snapshot.collection?.limitations ?? []).filter(
+      (item) => item !== "Microdata and RDFa were not extracted.",
+    );
+  }
+  return snapshot;
 }
 
 export async function readInpCapture(tabId: number): Promise<InpCaptureSnapshot> {
