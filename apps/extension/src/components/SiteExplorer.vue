@@ -46,6 +46,18 @@ const rows = computed(() => visible.value.slice(0, shown.value));
 const selected = computed(
   () => session.value?.pages.find((page) => page.url === selectedUrl.value) ?? null,
 );
+const listedCount = computed(() => session.value?.pages.length ?? 0);
+const fetchedCount = computed(
+  () => session.value?.pages.filter((page) => page.status != null).length ?? 0,
+);
+const failedCount = computed(() => session.value?.pages.filter((page) => page.error).length ?? 0);
+const skippedCount = computed(
+  () => session.value?.pages.filter((page) => page.skipped).length ?? 0,
+);
+const crawlShare = computed(() => {
+  if (CRAWL_LIMITS.maxPages <= 0) return "0%";
+  return `${Math.min(100, (listedCount.value / CRAWL_LIMITS.maxPages) * 100)}%`;
+});
 
 onMounted(() => {
   if (origin.value) session.value = loadCrawl(origin.value);
@@ -168,26 +180,38 @@ function statusLabel(page: CrawlPage): string {
 
 <template>
   <section class="report-section" aria-labelledby="site-explorer-heading">
-    <h2 id="site-explorer-heading">{{ t("site.title") }}</h2>
-    <p class="report-copy">{{ t("site.intro") }}</p>
-    <dl class="essentials">
-      <div>
-        <dt>{{ t("site.website") }}</dt>
-        <dd>{{ pageUrl }}</dd>
+    <div class="crawl-board">
+      <div class="crawl-board-head">
+        <h2 id="site-explorer-heading">{{ t("site.title") }}</h2>
+        <p class="crawl-state">{{ crawlState() }}</p>
       </div>
-      <div>
-        <dt>{{ t("site.scope") }}</dt>
-        <dd>{{ origin || t("site.noOrigin") }}</dd>
+      <p class="crawl-origin">{{ origin || t("site.noOrigin") }}</p>
+      <p class="report-copy">{{ t("site.intro") }}</p>
+      <dl class="health-tally crawl-counts">
+        <div>
+          <dt>{{ t("site.discovered") }}</dt>
+          <dd>{{ n(listedCount) }}</dd>
+        </div>
+        <div>
+          <dt>{{ t("site.fetched") }}</dt>
+          <dd>{{ n(fetchedCount) }}</dd>
+        </div>
+        <div>
+          <dt>{{ t("site.failedCount") }}</dt>
+          <dd>{{ n(failedCount) }}</dd>
+        </div>
+        <div>
+          <dt>{{ t("site.skippedCount") }}</dt>
+          <dd>{{ n(skippedCount) }}</dd>
+        </div>
+      </dl>
+      <div class="status-meter" role="img" :aria-label="t('site.progress', { count: listedCount })">
+        <span v-if="listedCount" class="status-meter-pass" :style="{ width: crawlShare }" />
       </div>
-      <div>
-        <dt>{{ t("site.limit") }}</dt>
-        <dd>{{ n(CRAWL_LIMITS.maxPages) }}</dd>
-      </div>
-      <div>
-        <dt>{{ t("site.status") }}</dt>
-        <dd>{{ crawlState() }}</dd>
-      </div>
-    </dl>
+      <p class="report-copy">
+        {{ t("site.limit") }} {{ n(CRAWL_LIMITS.maxPages) }} · {{ t("site.website") }} {{ pageUrl }}
+      </p>
+    </div>
     <p v-if="!supportsOptionalExternalChecks" class="report-copy">{{ t("site.firefox") }}</p>
     <div v-else class="flex flex-wrap gap-2">
       <button type="button" class="inspector-action is-primary" :disabled="running" @click="start">
@@ -203,21 +227,6 @@ function statusLabel(page: CrawlPage): string {
       {{ t("site.progress", { count: session?.pages.length ?? 0 }) }}
     </p>
     <template v-if="session && session.pages.length">
-      <p class="metric-line">
-        <span>{{ t("site.discovered") }} {{ n(session.pages.length) }}</span>
-        <span
-          >{{ t("site.fetched") }}
-          {{ n(session.pages.filter((page) => page.status != null).length) }}</span
-        >
-        <span
-          >{{ t("site.failedCount") }}
-          {{ n(session.pages.filter((page) => page.error).length) }}</span
-        >
-        <span
-          >{{ t("site.skippedCount") }}
-          {{ n(session.pages.filter((page) => page.skipped).length) }}</span
-        >
-      </p>
       <p class="report-copy">{{ sitemapLine() }}</p>
       <p v-if="session.duplicates.length" class="report-copy">
         {{ t("site.duplicates", { count: session.duplicates.length }) }}
@@ -248,81 +257,85 @@ function statusLabel(page: CrawlPage): string {
           </select>
         </label>
       </div>
-      <table class="site-table">
-        <caption class="sr-only">
-          {{
-            t("site.caption")
-          }}
-        </caption>
-        <thead>
-          <tr>
-            <th>{{ t("site.colStatus") }}</th>
-            <th>{{ t("site.colUrl") }}</th>
-            <th>{{ t("site.colTitle") }}</th>
-            <th>{{ t("site.colIndex") }}</th>
-            <th>{{ t("site.colIssues") }}</th>
-            <th>{{ t("site.colLinks") }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="page in rows" :key="page.url">
-            <td>{{ statusLabel(page) }}</td>
-            <td>
-              <button type="button" class="report-text-action" @click="selectedUrl = page.url">
-                {{ page.url }}
-              </button>
-            </td>
-            <td>{{ page.title || "—" }}</td>
-            <td>{{ page.indexability }}</td>
-            <td>{{ n(page.issues.length) }}</td>
-            <td>{{ n(page.internalLinks.length) }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <button
-        v-if="visible.length > rows.length"
-        type="button"
-        class="inspector-action"
-        @click="shown += 40"
-      >
-        {{ t("site.more") }}
-      </button>
-      <section v-if="selected" class="stack" :aria-label="t('site.detail')">
-        <h3>{{ selected.title || selected.url }}</h3>
-        <dl class="essentials">
-          <div>
-            <dt>{{ t("field.url") }}</dt>
-            <dd>
-              {{ selected.finalUrl || selected.url }}
-              <CopyButton :value="selected.finalUrl || selected.url" />
-            </dd>
-          </div>
-          <div>
-            <dt>{{ t("site.colStatus") }}</dt>
-            <dd>{{ statusLabel(selected) }}</dd>
-          </div>
-          <div>
-            <dt>{{ t("site.description") }}</dt>
-            <dd>{{ selected.description || "—" }}</dd>
-          </div>
-          <div>
-            <dt>{{ t("field.canonical") }}</dt>
-            <dd>{{ selected.canonical || "—" }}</dd>
-          </div>
-          <div>
-            <dt>{{ t("site.robotsMeta") }}</dt>
-            <dd>{{ selected.robots || "—" }}</dd>
-          </div>
-          <div>
-            <dt>{{ t("site.headings") }}</dt>
-            <dd>{{ n(selected.h1Count) }}</dd>
-          </div>
-        </dl>
-        <p v-if="selected.skipped" class="report-copy">{{ selected.skipped }}</p>
-        <ul v-if="selected.issues.length" class="report-copy">
-          <li v-for="issue in selected.issues" :key="issue">{{ issue }}</li>
-        </ul>
-      </section>
+      <div class="site-split">
+        <div>
+          <table class="site-table">
+            <caption class="sr-only">
+              {{
+                t("site.caption")
+              }}
+            </caption>
+            <thead>
+              <tr>
+                <th>{{ t("site.colStatus") }}</th>
+                <th>{{ t("site.colUrl") }}</th>
+                <th>{{ t("site.colTitle") }}</th>
+                <th>{{ t("site.colIndex") }}</th>
+                <th>{{ t("site.colIssues") }}</th>
+                <th>{{ t("site.colLinks") }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="page in rows" :key="page.url">
+                <td>{{ statusLabel(page) }}</td>
+                <td>
+                  <button type="button" class="report-text-action" @click="selectedUrl = page.url">
+                    {{ page.url }}
+                  </button>
+                </td>
+                <td>{{ page.title || "—" }}</td>
+                <td>{{ page.indexability }}</td>
+                <td>{{ n(page.issues.length) }}</td>
+                <td>{{ n(page.internalLinks.length) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <button
+            v-if="visible.length > rows.length"
+            type="button"
+            class="inspector-action"
+            @click="shown += 40"
+          >
+            {{ t("site.more") }}
+          </button>
+        </div>
+        <section v-if="selected" class="site-detail stack" :aria-label="t('site.detail')">
+          <h3>{{ selected.title || selected.url }}</h3>
+          <dl class="essentials">
+            <div>
+              <dt>{{ t("field.url") }}</dt>
+              <dd>
+                {{ selected.finalUrl || selected.url }}
+                <CopyButton :value="selected.finalUrl || selected.url" />
+              </dd>
+            </div>
+            <div>
+              <dt>{{ t("site.colStatus") }}</dt>
+              <dd>{{ statusLabel(selected) }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("site.description") }}</dt>
+              <dd>{{ selected.description || "—" }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("field.canonical") }}</dt>
+              <dd>{{ selected.canonical || "—" }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("site.robotsMeta") }}</dt>
+              <dd>{{ selected.robots || "—" }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("site.headings") }}</dt>
+              <dd>{{ n(selected.h1Count) }}</dd>
+            </div>
+          </dl>
+          <p v-if="selected.skipped" class="report-copy">{{ selected.skipped }}</p>
+          <ul v-if="selected.issues.length" class="report-copy">
+            <li v-for="issue in selected.issues" :key="issue">{{ issue }}</li>
+          </ul>
+        </section>
+      </div>
       <div class="flex flex-wrap gap-2">
         <button type="button" class="inspector-action" @click="download('csv')">
           {{ t("site.exportCsv") }}

@@ -255,7 +255,125 @@ Verification used a local fixture in headless Chromium. Playwright 7 passed. Vit
 
 Chrome package 1.35 MB. Popup chunk 12.69 KB. Report chunk 115.76 KB. Shared chunk 191.51 KB. HTML-fetch chunk 2.14 KB. WASM 904.31 KB. Firefox package 1.32 MB. Audit timings on this run: popup 192 ms, report 193 ms. M4 samples were 186 ms and 181 ms. No new dependency.
 
-Next action: M6 — local MCP integration, only when the maintainer asks. Do not start it.
+Next action at the time: UX-7 official brand alignment. That checkpoint follows.
+
+## Checkpoint UX-7
+
+Date: 2026-10-28
+
+Milestone: UX-7 official Miso brand alignment.
+
+Status: technical checks are recorded below. Visual design sign-off is still pending. Firefox was not loaded as a temporary add-on. Scoring was not changed.
+
+The website repository `~/Projects/Next/misoecosystem.com` was read and not modified. Light tokens match its public palette. Dark tokens match its dashboard. The extension does not load that repository. The fox icon replaces the older header artwork. A noren stripe sits on the popup and the report. Empty history shows the RankMiso fox at 192px. Font files are not bundled. Behavior and the color table are in `docs/branding/design-tokens.md`.
+
+Verification: Playwright 7 passed. Vitest 82 passed. `vue-tsc` passed. Cargo tests and Clippy passed with warnings denied. Chrome package 1.42 MB. Firefox package 1.39 MB, without the HTML-fetch chunk. Popup chunk 12.77 KB. Report chunk 116.04 KB. WASM 904.31 KB. Audit timings: popup 195 ms, report 184 ms. M5 samples were 192 ms and 193 ms.
+
+Next action at the time: UX-8 white workbench. That checkpoint follows.
+
+## Checkpoint UX-8
+
+Date: 2026-10-28
+
+Milestone: UX-8 modern white workbench.
+
+Status: technical checks passed for Chromium. Visual design sign-off is still pending. Firefox was not loaded as a temporary add-on. Scoring was not changed. UX-7's cream canvas is no longer the interface.
+
+The light theme is a white canvas with neutral cards. Miso red is the accent. The platform font stack replaces the named website fonts. Dark mode keeps the navy surfaces. The fox icon stays. Details are in `docs/branding/design-tokens.md`.
+
+Verification: Playwright 7 passed. Vitest 82 passed. `vue-tsc` passed. Chrome package 1.42 MB. Firefox package 1.39 MB, without the HTML-fetch chunk. Popup chunk 12.69 KB. Report chunk 115.97 KB. WASM 904.31 KB. Audit timings: popup 189 ms, report 186 ms. UX-7 samples were 195 ms and 184 ms.
+
+Next action at the time: UX-9 presentation redesign. That checkpoint follows.
+
+## Checkpoint UX-9
+
+Date: 2026-10-28
+
+Milestone: UX-9 premium presentation. Incomplete.
+
+Status: technical sign-off is blocked. Visual design sign-off is pending. Scoring was not changed. The white palette from UX-8 stayed.
+
+`docs/design/references/ux9/` is not in the repository, so the six reference screenshots were not inspected.
+
+The popup score is now a ring beside error, warning, and passed counts, with a distribution bar. Category health is a two-column set of short meters. Findings sit on the canvas instead of inside a second card. Headings use count chips and a guided outline. Link rows stack the name above the URL. Structured values sit under their keys. Site Explorer opens with a four-count crawl board and a progress meter. History, sitemaps, images, metadata, content, social, and the desktop column were not rebuilt. A saved UX-8 screenshot set was not kept, so this pass has no paired before-and-after files.
+
+Verification: Playwright 7 passed. Vitest 82 passed. `vue-tsc` passed. Rust was not re-run. Chrome package 1.43 MB. Firefox package 1.39 MB, without the HTML-fetch chunk. Popup chunk 12.69 KB. Report chunk 116.40 KB. CSS 51.83 KB. WASM 904.31 KB. Audit timings: popup 196 ms, report 193 ms. UX-8 samples were 189 ms and 186 ms.
+
+Next action at the time: finish the remaining UX-9 inspectors. That checkpoint follows.
+
+## Checkpoint UX-9 completion
+
+Date: 2026-10-28
+
+Milestone: UX-9 presentation, continued.
+
+Status: technical checks passed for Chromium. Visual design sign-off is still pending. Scoring was not changed. The white palette stayed. The earlier incomplete UX-9 checkpoint is kept.
+
+The six reference images in `/home/ed/docs/design/references/ux9/RankMiso-UX9-References-NEW/` were opened, including the contact sheet and README. They are not in the repository. UX-8 screenshots were not reconstructed. The partial UX-9 build was copied to `docs/design/reviews/ux9-continuation/baseline/` before these edits. Final shots are in `docs/design/reviews/ux9-continuation/final/`, including `site-board.png`.
+
+From 1100px the report overview is two columns: score and page essentials on the left, findings and limits on the right. Below that width it stacks. Metadata leads with the page identity and keeps the snippet as a separate preview. Content uses four measurements and a ranked term list. Images lead with counts, then a filename, alt state, and dimensions. Social adds a provenance strip and places the two previews side by side on a wide report. Technical values are label-and-value rows, and observed redirects are a numbered sequence. International adds a return-link column that stays “Not checked” unless the syntax is invalid. Sitemaps open with file, URL, and finding counts, then the indented tree and a full-width URL table. History opens with saved count, latest score, and whether two saves can be compared, then the score and issue charts sit side by side, and the comparison is two columns. Site Explorer keeps the crawl board; the selected page sits beside the result table on a wide report. Headings, links, and structured values from the first UX-9 pass remain.
+
+Verification: Playwright 7 passed, then sitemap and audit were run again after the sitemap table was returned to full width. Vitest 82 passed. `vue-tsc` passed. ESLint passed. Cargo tests: 37 seo-rules and 3 scoring. Clippy passed with warnings denied. Chrome package 1.43 MB. Firefox package 1.40 MB, without the HTML-fetch chunk. Popup chunk 12.69 KB. Report chunk 119.66 KB. CSS 54.67 KB. WASM 904.31 KB. Audit timings on the last full run: popup 191 ms, report 200 ms. The partial UX-9 samples were 196 ms and 193 ms. Firefox was not loaded as a temporary add-on.
+
+Next action at the time: replace the popup shell. That checkpoint follows.
+
+## Checkpoint UX-9R
+
+Date: 2026-10-28
+
+Milestone: approved popup visual concept.
+
+Status: technical checks passed for Chromium. Visual design sign-off is pending. Scoring was not changed. The desktop report and the sidebar were not redesigned.
+
+The approved HTML prototype at `/home/ed/Downloads/rankmiso_radical_concept.html` was read. It is a 420px shell with a 71px vertical tool rail, a dark health hero, compact finding rows, three category tiles, and a footer action. The two attached raster images show a different horizontal-tab layout. The popup follows the HTML and the written architecture.
+
+The previous popup shots are in `docs/design/reviews/ux9r/baseline/`. The new shots are in `docs/design/reviews/ux9r/final/`.
+
+The popup no longer uses the horizontal tab strip. Destinations come from `flatNav`, including Export and Settings. The rail scrolls on its own. The workspace scrolls on its own. The header and the Open full report button stay put. All tools opens the full destination list and Open sidebar. The hero uses the Rust score, measured and not-measured counts, and error, warning, and passed counts. A missing score is an en dash, not zero. Findings are the existing error and warning rows. Focus tiles are the three lowest measured categories under 100.
+
+Verification: Playwright 7 passed, then the audit spec was run again after the hero spacing change. Vitest 82 passed. `vue-tsc` passed. ESLint passed. Rust was not re-run. Chrome package 1.46 MB. Firefox package 1.43 MB, without the HTML-fetch chunk. Popup chunk 24.95 KB on Chrome and 26.04 KB on Firefox. Report chunk 124.68 KB on Chrome. CSS 64.88 KB. WASM 904.31 KB. Audit timings on the last run: popup 206 ms, report 186 ms. The previous popup sample was 191 ms. No new dependency. Firefox was not loaded as a temporary add-on.
+
+Next action: wait for visual approval of the popup. Do not start the desktop or sidebar redesign. Do not start M6.
+
+## Checkpoint UX-9R.2
+
+Date: 2026-10-28
+
+Milestone: complete the premium popup inspectors.
+
+Status: technical checks passed for Chromium. Visual design sign-off is pending. Scoring, permissions, and the Overview composition were not changed. The desktop report and the sidebar were not redesigned.
+
+All 18 HTML files in `/home/ed/docs/design/references/RankMiso-18-Self-Contained-HTML-Files/` were opened. Reference shots and the working popup are in `docs/design/reviews/ux9r2/`. The earlier UX-9R shots stay in `docs/design/reviews/ux9r/`.
+
+Issues, metadata, content, headings, links, images, schema, social, technical, performance, international, and accessibility keep the existing checks and measurements. They add the reference summary, tiles, and rows around that data. Site explains that the crawl starts in the report. Sitemaps does not discover files when the popup opens. History shows saved audits only. Export keeps the confirm step. Settings keeps light, dark, and system, and reads the version from the manifest.
+
+Deviations are listed in `docs/design/reviews/ux9r2/NOTES.md`. The prototypes’ sample scores, crawl counts, and Start/Stop controls were not copied.
+
+Verification: Playwright 7 passed, then audit, history, and technical passed again. Vitest 82 passed. `vue-tsc` passed. ESLint passed. Cargo tests: 37 seo-rules and 3 scoring. Clippy passed with warnings denied. Chrome package 1.48 MB. Firefox package 1.44 MB, without the HTML-fetch chunk. Popup chunk 35.55 KB on Chrome and 36.63 KB on Firefox. CSS 69.37 KB. WASM 904.31 KB. Last audit timing: popup 225 ms, report 186 ms. UX-9R samples were 206 ms and 186 ms. No new dependency. Firefox was not loaded as a temporary add-on.
+
+Next action: wait for visual approval of the popup inspectors. Do not start the sidebar or full-report redesign. Do not start M6.
+
+## Checkpoint UX-9R.2 fidelity
+
+Date: 2026-10-28
+
+The updated prototype package adds a labeled Sidebar button in the footer and a corrected dark theme. The popup footer now shows Open full report and Sidebar. Sidebar calls the existing browser sidebar API. It does not open the prototype preview. Dark text uses `#f4f7fc` and muted text uses `#c1ccdc`. Evidence is in `docs/design/reviews/ux9r2-fidelity/`.
+
+This pass ran `vue-tsc`, the Chromium build, the Firefox build, and the audit, history, technical, and install Playwright tests. Popup audit was 216 ms. Rust, Vitest, ESLint, and the full Playwright suite were not re-run. Firefox was not clicked through. Headings, images, links, technical, accessibility, export, and settings now follow the prototype composition. Schema still uses the structured-data explorer. Sitemaps and history stay empty until the user starts those actions in the report. Visual fidelity is not signed off.
+
+## Checkpoint UX-9R.2 exact
+
+Date: 2026-10-28
+
+The maintainer asked for an exact copy of `/home/ed/docs/design/references/RankMiso-Complete-UI-Prototypes-Sidebar-Dark-FIXED/RankMiso-Popup-Tab-Prototypes/`. All 18 destinations were rendered next to the prototype at 420px wide, in light and dark, on a local fixture that mirrors the sample content. Shots are in `docs/design/reviews/ux9r2-exact/`. The status table in `docs/design/reviews/ux9r2-fidelity/FIDELITY-REPORT.md` was replaced.
+
+Maintainer choices: Site and Sitemaps copy the layout, but Start and Discover still open the report. Export lists JSON, CSV, and HTML report. Settings drops the Rules row and Clear saved settings; both stay in the report.
+
+Fixes: Chrome's extension-page font size and font are reset in `popup.css`. Microdata and RDFa items show their type. Images that fail show Preview unavailable. Headings has two actions. Issues, Overview, and Accessibility rows follow the prototype's spacing. Browser tests that still pointed at the old popup were updated.
+
+Verification: Playwright 7 passed. Vitest 82 passed. `vue-tsc` and ESLint passed. Cargo tests 40 passed and Clippy passed with warnings denied. Chrome and Firefox builds passed. Chrome package 1.57 MB. Popup audit 249 ms, report 193 ms; the previous popup sample was 216 ms. Firefox was not loaded as a temporary add-on.
+
+Next action: visual approval of the popup. Do not start the sidebar or full-report redesign. Do not start M6.
 
 ## Do not
 

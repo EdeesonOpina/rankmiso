@@ -2,9 +2,9 @@
 
 Tokens are CSS variables in `packages/design-tokens/src/tokens.css`. Tailwind maps them to color utilities such as `bg-surface` and `text-muted`. Components use those utilities.
 
-Light and dark sets cover background, surface, elevated surface, primary, secondary, text, muted text, border, success, warning, error, information, and focus. Light primary is `#c42a20` with `#fffaf2` text. Dark primary is `#6ee7a0` with `#102016` text. Dark muted text is `#9aaca1` on `#101614`.
+Light and dark sets cover background, surface, elevated surface, primary, secondary, text, muted text, border, success, warning, error, information, and focus. The light canvas is white. Cards are white with a neutral border. Miso red is the accent, not the card outline. Dark values keep the navy dashboard surfaces. Light primary is `#c42a20` with white text. Dark primary is `#ef5340` with `#0f1424` text. The value table is in `docs/branding/design-tokens.md`.
 
-Typography names Nunito first in light mode and Inter first in dark mode, then the system UI fonts. Monospace names JetBrains Mono first. The extension does not download webfonts. Sizes in the popup stay at 12–15px. The score number is larger. Category values use tabular numbers.
+Typography uses the platform UI stack in both themes. Monospace uses the platform mono stack. The extension does not download webfonts and does not name Nunito or M PLUS Rounded 1c. Sizes in the popup stay at 12–15px. The score number is larger. Category values use tabular numbers.
 
 Spacing uses a 4px scale. Panels use the `--radius` token. Borders use the `--border` hairline in both themes, so outlines do not pick up the text color. Motion is removed under `prefers-reduced-motion`. Focus uses a 2px outline on `:focus-visible`. Disabled controls use reduced opacity. There is no separate disabled color token.
 

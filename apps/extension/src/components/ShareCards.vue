@@ -14,10 +14,19 @@ const previews = computed(() => sharePreviews(props.audit));
 <template>
   <section class="stack" aria-labelledby="share-cards-heading">
     <h2 id="share-cards-heading" class="sr-only">{{ t("social.preview") }}</h2>
+    <ul class="social-facts">
+      <li v-for="preview in previews" :key="preview.id">
+        <span>{{ preview.id === "openGraph" ? "Facebook" : "X" }}</span>
+        <span>{{ preview.title || t("metadata.untitled") }}</span>
+        <span>{{ preview.titleFrom }}</span>
+      </li>
+    </ul>
     <div class="report-callout">
       <Info class="report-callout-icon h-4 w-4" aria-hidden="true" />
       <p class="report-copy">{{ t("social.note") }}</p>
     </div>
-    <SharePreviewCard v-for="preview in previews" :key="preview.id" :preview="preview" />
+    <div class="social-stage">
+      <SharePreviewCard v-for="preview in previews" :key="preview.id" :preview="preview" />
+    </div>
   </section>
 </template>
