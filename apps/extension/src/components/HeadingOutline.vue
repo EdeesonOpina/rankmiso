@@ -28,10 +28,12 @@ function label(heading: { text: string }): string {
 <template>
   <div class="inspector">
     <div class="inspector-tools">
-      <p class="metric-line">
-        <span>{{ t("outline.total", { count: headings.length }) }}</span>
-        <span v-for="(count, index) in counts" :key="index">H{{ index + 1 }} {{ n(count) }}</span>
-      </p>
+      <ul class="outline-counts">
+        <li>{{ t("outline.total", { count: headings.length }) }}</li>
+        <li v-for="(count, index) in counts" v-show="count > 0" :key="index">
+          H{{ index + 1 }} {{ n(count) }}
+        </li>
+      </ul>
       <CopyButton v-if="headings.length" :value="outlineText" :label="t('outline.copy')" />
     </div>
     <div v-if="headings.length" class="inspector-tools">

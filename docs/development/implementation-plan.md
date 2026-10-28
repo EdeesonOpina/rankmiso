@@ -123,6 +123,22 @@ Implemented. New saves add a versioned summary beside the existing fields. Older
 
 Implemented. Technical compares a separately fetched response, or a chosen HTML file, with the rendered snapshot. Schema adds bounded Microdata and RDFa beside JSON-LD. New observations stay informational. See `docs/features/advanced-technical.md`. Do not claim official rich-result eligibility.
 
+### UX-7 — Official brand alignment
+
+Recorded. The fox icon came from the website. The cream canvas from that pass is no longer the RankMiso interface. See UX-8.
+
+### UX-8 — White workbench
+
+RankMiso uses a white application canvas, neutral cards, and the platform UI font. The website remains the logo and mascot reference. Do not restore the cream canvas unless the maintainer asks. Details are in `docs/branding/design-tokens.md`.
+
+### UX-9 — Purpose-built presentation
+
+Recorded. A layout change has to change how a screen presents its data. From 1100px the report overview, history charts, and a selected crawl page use two columns. Narrow reports stack. The sitemap URL table stays full width. Details are in the UX-9 completion checkpoint. Do not start M6 unless the maintainer asks.
+
+### UX-9R.2 — Popup inspectors
+
+Recorded. The popup rail and Overview stay. The other 17 destinations use the approved HTML compositions with live audit data. Site and Sitemaps in the popup open the report; they do not run the crawl or discover files. The next visual pass is the sidebar and the full report, and it has not started.
+
 ### M6 — MCP
 
 A local read-only companion over an audit the user chose to share. Write the threat model before any browser bridge. Do not expose arbitrary tabs, API keys, unrestricted URLs, or saved history. No hosted MCP service.

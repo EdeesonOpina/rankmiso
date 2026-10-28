@@ -1,43 +1,33 @@
 # Design tokens
 
-Light colors follow the Miso site. Dark colors stay on the previous palette. Both live in `packages/design-tokens/src/tokens.css`. Components use Tailwind utilities such as `bg-primary`, `text-muted`, and `border-border`. Those utilities read the existing CSS variables, and those variables alias the `--miso-*` tokens. Change the `--miso-*` values to retheme the interface. Do not put hex colors in Vue files.
+RankMiso uses its own white-first application design. The Miso website at `~/Projects/Next/misoecosystem.com` supplies the fox icon and the RankMiso illustration. It does not set the canvas, cards, type, or layout. The extension does not import that repository.
 
-## Color
+Values live in `packages/design-tokens/src/tokens.css`. Components use Tailwind utilities such as `bg-primary` and `border-border`. Those utilities alias the `--miso-*` tokens. Do not put hex colors in Vue files.
 
-Light, matching the Miso site:
+## Light
 
-| Token | Value |
-| --- | --- |
-| `--miso-color-background` | `#fbf3e6` |
-| `--miso-color-surface` | `#fffaf2` |
-| `--miso-color-primary` | `#c42a20` |
-| `--miso-color-primary-foreground` | `#fffaf2` |
-| `--miso-color-text` | `#13213f` |
-| `--miso-color-text-muted` | `#4a536b` |
-| `--miso-color-border` | `#e6d5ba` |
-| `--miso-color-warning` | `#9a4d00` |
-| `--miso-color-error` | `#b4231b` |
+| Token | Value | Role |
+| --- | --- | --- |
+| `--miso-color-background` | `#ffffff` | Application canvas |
+| `--miso-color-surface` | `#f8f9fb` | Sidebar, secondary controls |
+| `--miso-color-surface-muted` | `#f3f4f6` | Grouped neutral fill |
+| `--miso-color-elevated` | `#ffffff` | Cards |
+| `--miso-color-text` | `#17191f` | Main text |
+| `--miso-color-text-muted` | `#667085` | Secondary text |
+| `--miso-color-border` | `#e5e7eb` | Card and control borders |
+| `--miso-color-primary` | `#c42a20` | Brand accent and primary actions |
+| `--miso-color-primary-foreground` | `#ffffff` | Text on a primary fill |
 
-Dark, on `[data-theme="dark"]`:
+Cards use a 1px neutral border, a 14px radius, and a 1px shadow. They do not use a coral outline or a tinted wash. Success, warning, and error stay separate from the brand red.
 
-| Token | Value |
-| --- | --- |
-| `--miso-color-background` | `#101614` |
-| `--miso-color-surface` | `#19211e` |
-| `--miso-color-primary` | `#6ee7a0` |
-| `--miso-color-primary-foreground` | `#102016` |
-| `--miso-color-text` | `#eaf2ec` |
-| `--miso-color-text-muted` | `#9aaca1` |
-| `--miso-color-border` | `#2d3a32` |
-| `--miso-color-warning` | `#f6c76a` |
-| `--miso-color-error` | `#ff8f86` |
+## Dark
 
-Success, info, elevated, focus, and badge backgrounds remain because the current screens use them. They sit next to the palette above and can be replaced when the final identity arrives.
-
-Primary buttons use `text-primary-contrast`. That is cream on `#c42a20` in light mode and `#102016` on `#6ee7a0` in dark mode.
-
-Theme preference is `light`, `dark`, or `system`, stored at `seoToolkit.theme`. The default is light. The resolved theme is applied on `documentElement.dataset.theme` before the logo chooses a PNG.
+Dark keeps the navy surfaces from the website dashboard: canvas `#0f1424`, surface `#171e33`, elevated `#222a43`, text `#f1e9da`, muted `#aab1c5`, border `#2c3552`. Primary is `#ef5340` with `#0f1424` text. Card borders stay neutral. This is not an inversion of the white theme.
 
 ## Type
 
-Light type names Nunito, then M PLUS Rounded 1c, then a rounded system face. Dark type stays Inter. `--miso-font-mono` is JetBrains Mono, then the system monospace stack. The extension does not request remote font files. Technical values such as heading levels use the mono stack through the existing `font-mono` utility.
+`--miso-font-sans` is `ui-sans-serif`, `system-ui`, `-apple-system`, Segoe UI, Roboto, Helvetica Neue, Arial. `--miso-font-mono` is `ui-monospace`, then SF Mono, Cascadia Code, Segoe UI Mono, Menlo, and Consolas. No webfont is downloaded. Popup text stays at 12–15px. The score number is larger. Category values use tabular numbers.
+
+## Mark
+
+`apps/extension/public/brand/icon.png` is a copy of the website's `public/brand/miso-icon.png`. Light and dark headers use that file. Empty history shows a 192px copy of `public/brand/rankmiso-fox.webp`. The header does not use the website noren stripe.

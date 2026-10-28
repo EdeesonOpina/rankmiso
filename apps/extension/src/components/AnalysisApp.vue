@@ -23,6 +23,7 @@ import { brandConfig } from "../config/brand.config";
 import { themeConfig } from "../config/theme.config";
 import { flatNav, workbenchGroups } from "../config/navigation.config";
 import { selectLinks } from "../services/popup-summary";
+import CopyButton from "./CopyButton.vue";
 import HeadingOutline from "./HeadingOutline.vue";
 import LinkGroups from "./LinkGroups.vue";
 import { availableNavigation, supportsOptionalExternalChecks } from "../config/features.config";
@@ -97,6 +98,22 @@ const linkQuery = ref("");
 const imageFilter = ref("all");
 const probeKind = ref<"site" | "more" | null>(null);
 
+function imageName(src: string | null): string {
+  if (!src) return t("value.noSource");
+  try {
+    const path = new URL(src, audit.value?.page.url || "https://example.invalid").pathname;
+    return decodeURIComponent(path.split("/").filter(Boolean).pop() || src);
+  } catch {
+    return src;
+  }
+}
+
+function termWidth(count: number): string {
+  const counts = audit.value?.metrics.content.terms.unigrams.map((term) => term.count) ?? [];
+  const max = Math.max(1, ...counts);
+  return `${(count / max) * 100}%`;
+}
+
 function imageLabel(image: { altPresent: boolean; altValue: string }): string {
   if (!image.altPresent) return t("value.altMissing");
   if (!image.altValue.trim()) return t("value.emptyAlt");
@@ -138,7 +155,6 @@ function openableHref(value: string | null): string | null {
 const serpMode = ref<"desktop" | "mobile">("desktop");
 const previewTitle = ref("");
 const previewDescription = ref("");
-const copied = ref("");
 const settingsNote = ref("");
 const savedReports = ref<SavedReport[]>([]);
 const reportMessage = ref("");
@@ -367,11 +383,15 @@ const images = computed(() => {
   if (imageFilter.value === "broken") return rows.filter((image) => image.broken === true);
   return rows;
 });
-
-async function copy(value: string, label: string) {
-  await navigator.clipboard.writeText(value);
-  copied.value = label;
-}
+const imageTotals = computed(() => {
+  const rows = audit.value?.details.images ?? [];
+  return {
+    total: rows.length,
+    missing: rows.filter((image) => !image.altPresent).length,
+    empty: rows.filter((image) => image.altPresent && image.altValue.trim().length === 0).length,
+    broken: rows.filter((image) => image.broken === true).length,
+  };
+});
 
 async function highlight(kind: string) {
   if (!tab.value?.id) return;
@@ -448,9 +468,12 @@ function host(url: string) {
         class="report-sidebar border-r border-border bg-surface p-3"
         :class="layout === 'sidepanel' ? 'hidden' : ''"
       >
-        <p class="m-0 flex items-center gap-2 text-[13px] font-semibold">
-          <BrandMark />
-          {{ brandConfig.identity.name }}
+        <p class="brand-lockup">
+          <BrandMark large />
+          <span>
+            <span class="brand-name">{{ brandConfig.identity.name }}</span>
+            <span class="brand-ecosystem">{{ brandConfig.identity.ecosystem }}</span>
+          </span>
         </p>
         <p class="mb-3 mt-1 text-[12px] text-muted">{{ brandConfig.identity.tagline }}</p>
         <nav class="report-nav-tree" :aria-label="t('nav.report')">
@@ -554,37 +577,47 @@ function host(url: string) {
           :aria-labelledby="compactNav ? `tab-${section}` : undefined"
         >
           <section v-show="section === 'overview'" class="report-section report-section-plain">
-            <ScoreBlock :score="audit.score" :disclaimer="false" />
-            <section v-if="actionable.length" class="inspector-block">
-              <div class="card-heading">
-                <h2>{{ t("overview.priority") }}</h2>
-                <span>{{ n(actionable.length) }}</span>
+            <div class="desk-overview">
+              <div class="desk-overview-main stack">
+                <ScoreBlock :score="audit.score" :disclaimer="false" />
+                <PopupOverview :audit="audit" mode="essentials" />
               </div>
-              <ul class="m-0 list-none p-0">
-                <li v-for="check in actionable.slice(0, 3)" :key="check.id">
-                  <button type="button" class="finding-row" @click="section = 'issues'">
-                    <StatusBadge :status="check.status" />
-                    <span>{{ check.title }}</span>
+              <div class="desk-overview-side stack">
+                <section v-if="actionable.length" class="inspector-block">
+                  <div class="card-heading">
+                    <h2>{{ t("overview.priority") }}</h2>
+                    <span>{{ n(actionable.length) }}</span>
+                  </div>
+                  <ul class="m-0 list-none p-0">
+                    <li v-for="check in actionable.slice(0, 3)" :key="check.id">
+                      <button type="button" class="finding-row" @click="section = 'issues'">
+                        <StatusBadge :status="check.status" />
+                        <span>{{ check.title }}</span>
+                      </button>
+                    </li>
+                  </ul>
+                  <button type="button" class="popup-text" @click="section = 'issues'">
+                    {{ t("action.allIssues", { count: actionable.length }) }}
                   </button>
-                </li>
-              </ul>
-              <button type="button" class="popup-text" @click="section = 'issues'">
-                {{ t("action.allIssues", { count: actionable.length }) }}
-              </button>
-              <p class="mb-0 mt-3 text-[12px] leading-relaxed text-muted">
-                {{ audit.score.disclaimer }}
-              </p>
-            </section>
-            <EmptyState v-else :title="t('empty.issuesTitle')" :description="t('empty.issuesBody')">
-              <ListChecks class="h-4 w-4" />
-            </EmptyState>
-            <section class="inspector-block">
-              <h2>{{ t("limitations.title") }}</h2>
-              <ul class="mb-0 text-[13px] text-muted">
-                <li v-for="item in audit.source.limitations" :key="item">{{ item }}</li>
-              </ul>
-            </section>
-            <PopupOverview :audit="audit" mode="essentials" />
+                  <p class="mb-0 mt-3 text-[12px] leading-relaxed text-muted">
+                    {{ audit.score.disclaimer }}
+                  </p>
+                </section>
+                <EmptyState
+                  v-else
+                  :title="t('empty.issuesTitle')"
+                  :description="t('empty.issuesBody')"
+                >
+                  <ListChecks class="h-4 w-4" />
+                </EmptyState>
+                <section class="inspector-block">
+                  <h2>{{ t("limitations.title") }}</h2>
+                  <ul class="mb-0 text-[13px] text-muted">
+                    <li v-for="item in audit.source.limitations" :key="item">{{ item }}</li>
+                  </ul>
+                </section>
+              </div>
+            </div>
           </section>
 
           <section v-show="section === 'issues'" class="report-section">
@@ -593,76 +626,109 @@ function host(url: string) {
           </section>
 
           <section v-show="section === 'metadata'" class="report-section">
-            <div class="preview-sheet">
-              <div class="mb-3 grid gap-3">
-                <label class="space-y-1 text-[13px]">
-                  <span>{{ t("serp.editTitle") }}</span>
-                  <input
-                    v-model="previewTitle"
-                    class="block w-full rounded-panel border border-border bg-background px-3 py-2"
-                  />
-                </label>
-                <label class="space-y-1 text-[13px]">
-                  <span>{{ t("serp.editDescription") }}</span>
-                  <textarea
-                    v-model="previewDescription"
-                    rows="3"
-                    class="block w-full rounded-panel border border-border bg-background px-3 py-2"
-                  />
-                </label>
-                <button
-                  type="button"
-                  class="justify-self-start rounded-panel border border-border px-3 py-1.5 text-[12px]"
-                  @click="
-                    previewTitle = metadata.title || '';
-                    previewDescription = metadata.description || '';
-                  "
+            <div class="meta-workbench">
+              <section class="meta-identity" aria-labelledby="metadata-identity">
+                <h2 id="metadata-identity">{{ t("metadata.details") }}</h2>
+                <dl class="identity-list">
+                  <div>
+                    <dt>{{ t("popup.title") }}</dt>
+                    <dd>
+                      <span>{{ metadata.title || t("metadata.untitled") }}</span>
+                      <CopyButton v-if="metadata.title" :value="metadata.title" />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{{ t("popup.description") }}</dt>
+                    <dd>
+                      <span>{{ metadata.description || t("metadata.noDescription") }}</span>
+                      <CopyButton v-if="metadata.description" :value="metadata.description" />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{{ t("popup.canonical") }}</dt>
+                    <dd>
+                      <span>{{ metadata.canonicals.join(" ") || t("value.none") }}</span>
+                      <CopyButton
+                        v-if="metadata.canonicals[0]"
+                        :value="metadata.canonicals.join(' ')"
+                      />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{{ t("popup.robots") }}</dt>
+                    <dd>{{ metadata.robots.join(", ") || t("metadata.none") }}</dd>
+                  </div>
+                </dl>
+              </section>
+              <div class="preview-sheet">
+                <div class="mb-3 grid gap-3">
+                  <label class="space-y-1 text-[13px]">
+                    <span>{{ t("serp.editTitle") }}</span>
+                    <input
+                      v-model="previewTitle"
+                      name="preview-title"
+                      autocomplete="off"
+                      class="block w-full rounded-panel border border-border bg-background px-3 py-2"
+                    />
+                  </label>
+                  <label class="space-y-1 text-[13px]">
+                    <span>{{ t("serp.editDescription") }}</span>
+                    <textarea
+                      v-model="previewDescription"
+                      name="preview-description"
+                      autocomplete="off"
+                      rows="3"
+                      class="block w-full rounded-panel border border-border bg-background px-3 py-2"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    class="justify-self-start rounded-panel border border-border px-3 py-1.5 text-[12px]"
+                    @click="
+                      previewTitle = metadata.title || '';
+                      previewDescription = metadata.description || '';
+                    "
+                  >
+                    {{ t("serp.resetPreview") }}
+                  </button>
+                </div>
+                <div class="mb-3 flex gap-2">
+                  <button
+                    type="button"
+                    class="rounded-full border px-3 py-1 text-[12px]"
+                    :class="serpMode === 'desktop' ? 'bg-primary text-primary-contrast' : ''"
+                    :aria-pressed="serpMode === 'desktop'"
+                    @click="serpMode = 'desktop'"
+                  >
+                    {{ t("serp.desktop") }}
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-full border px-3 py-1 text-[12px]"
+                    :class="serpMode === 'mobile' ? 'bg-primary text-primary-contrast' : ''"
+                    :aria-pressed="serpMode === 'mobile'"
+                    @click="serpMode = 'mobile'"
+                  >
+                    {{ t("serp.mobile") }}
+                  </button>
+                </div>
+                <div
+                  class="rounded-panel bg-background p-4"
+                  :class="serpMode === 'mobile' ? 'max-w-[360px]' : ''"
                 >
-                  {{ t("serp.resetPreview") }}
-                </button>
+                  <p class="m-0 text-[12px] text-success">{{ host(audit.page.url) }}</p>
+                  <p class="m-0 text-[18px] text-info">
+                    {{ previewTitle || t("metadata.untitled") }}
+                  </p>
+                  <p class="mb-0 text-[13px] text-muted">
+                    {{ previewDescription || t("metadata.noDescription") }}
+                  </p>
+                </div>
+                <p class="mb-0 mt-2 text-[12px] text-muted">{{ t("serp.disclaimer") }}</p>
               </div>
-              <div class="mb-3 flex gap-2">
-                <button
-                  type="button"
-                  class="rounded-full border px-3 py-1 text-[12px]"
-                  :class="serpMode === 'desktop' ? 'bg-primary text-primary-contrast' : ''"
-                  @click="serpMode = 'desktop'"
-                >
-                  {{ t("serp.desktop") }}
-                </button>
-                <button
-                  type="button"
-                  class="rounded-full border px-3 py-1 text-[12px]"
-                  :class="serpMode === 'mobile' ? 'bg-primary text-primary-contrast' : ''"
-                  @click="serpMode = 'mobile'"
-                >
-                  {{ t("serp.mobile") }}
-                </button>
-              </div>
-              <div
-                class="rounded-panel bg-background p-4"
-                :class="serpMode === 'mobile' ? 'max-w-[360px]' : ''"
-              >
-                <p class="m-0 text-[12px] text-success">{{ host(audit.page.url) }}</p>
-                <p class="m-0 text-[18px] text-info">
-                  {{ previewTitle || t("metadata.untitled") }}
-                </p>
-                <p class="mb-0 text-[13px] text-muted">
-                  {{ previewDescription || t("metadata.noDescription") }}
-                </p>
-              </div>
-              <p class="mb-0 mt-2 text-[12px] text-muted">{{ t("serp.disclaimer") }}</p>
-              <button
-                v-if="metadata.title"
-                type="button"
-                class="metadata-copy-button mt-3 w-full"
-                @click="copy(metadata.title || '', 'title')"
-              >
-                {{ copied === "title" ? t("action.copied") : t("action.copyTitle") }}
-              </button>
             </div>
             <div class="metadata-details">
-              <h2>{{ t("metadata.details") }}</h2>
+              <h2>{{ t("metadata.measurements") }}</h2>
               <dl class="metadata-grid">
                 <div>
                   <dt class="font-medium">{{ t("field.titleLength") }}</dt>
@@ -713,35 +779,43 @@ function host(url: string) {
           </section>
 
           <section v-show="section === 'content'" class="report-section">
-            <p class="text-[13px] text-muted">{{ t("content.note") }}</p>
-            <p class="metric-line">
-              <span
-                >{{ t("field.words") }}
-                {{
-                  audit.metrics.content.wordCount == null
-                    ? t("value.unavailable")
-                    : n(audit.metrics.content.wordCount)
-                }}</span
-              >
-              <span>{{ t("field.characters") }} {{ n(audit.metrics.content.characterCount) }}</span>
-              <span
-                >{{ t("field.readingTime") }}
-                {{
-                  audit.metrics.content.readingTimeMinutes == null
-                    ? t("value.unavailable")
-                    : n(audit.metrics.content.readingTimeMinutes)
-                }}
-                {{ t("content.minutes") }}</span
-              >
-              <span
-                >{{ t("field.readability") }}
-                {{
-                  audit.metrics.content.readabilityValue == null
-                    ? t("value.notCalculated")
-                    : n(audit.metrics.content.readabilityValue)
-                }}</span
-              >
-            </p>
+            <h2 class="m-0 text-[15px]">{{ t("nav.content") }}</h2>
+            <dl class="health-tally crawl-counts">
+              <div>
+                <dt>{{ t("field.words") }}</dt>
+                <dd>
+                  {{
+                    audit.metrics.content.wordCount == null
+                      ? t("value.unavailable")
+                      : n(audit.metrics.content.wordCount)
+                  }}
+                </dd>
+              </div>
+              <div>
+                <dt>{{ t("field.characters") }}</dt>
+                <dd>{{ n(audit.metrics.content.characterCount) }}</dd>
+              </div>
+              <div>
+                <dt>{{ t("field.readingTime") }}</dt>
+                <dd>
+                  {{
+                    audit.metrics.content.readingTimeMinutes == null
+                      ? t("value.unavailable")
+                      : n(audit.metrics.content.readingTimeMinutes)
+                  }}
+                </dd>
+              </div>
+              <div>
+                <dt>{{ t("field.readability") }}</dt>
+                <dd>
+                  {{
+                    audit.metrics.content.readabilityValue == null
+                      ? t("value.notCalculated")
+                      : n(audit.metrics.content.readabilityValue)
+                  }}
+                </dd>
+              </div>
+            </dl>
             <p class="text-[12px] text-muted">
               {{ audit.metrics.content.wordCountMethod }}.
               {{ audit.metrics.content.readingTimeBasis }}
@@ -757,23 +831,19 @@ function host(url: string) {
             >
               <TextSearch class="h-4 w-4" />
             </EmptyState>
-            <DataTable
-              v-else
-              :caption="t('content.singleWordTerms')"
-              :columns="[
-                { label: t('field.term'), width: 46 },
-                { label: t('field.count'), width: 16 },
-                { label: t('field.share'), width: 18 },
-                { label: t('field.inTitle'), width: 20 },
-              ]"
-            >
-              <tr v-for="term in audit.metrics.content.terms.unigrams" :key="term.term">
-                <td :title="term.term">{{ term.term }}</td>
-                <td>{{ n(term.count) }}</td>
-                <td>{{ term.density == null ? "–" : n(term.density) }}</td>
-                <td>{{ term.inTitle ? t("value.yes") : t("value.no") }}</td>
-              </tr>
-            </DataTable>
+            <ol v-else class="term-rank">
+              <li v-for="term in audit.metrics.content.terms.unigrams" :key="term.term">
+                <span class="term-name" :title="term.term">{{ term.term }}</span>
+                <span class="term-count">{{ n(term.count) }}</span>
+                <span class="microbar" aria-hidden="true">
+                  <span :style="{ width: termWidth(term.count) }" />
+                </span>
+                <span class="term-meta">
+                  {{ term.density == null ? "–" : n(term.density) }}
+                  · {{ term.inTitle ? t("value.yes") : t("value.no") }}
+                </span>
+              </li>
+            </ol>
             <CheckTable :checks="checks('content')" />
           </section>
 
@@ -852,6 +922,24 @@ function host(url: string) {
           </section>
 
           <section v-show="section === 'images'" class="report-section">
+            <dl class="health-tally crawl-counts">
+              <div>
+                <dt>{{ t("popup.images") }}</dt>
+                <dd>{{ n(imageTotals.total) }}</dd>
+              </div>
+              <div>
+                <dt>{{ t("popup.altMissing") }}</dt>
+                <dd>{{ n(imageTotals.missing) }}</dd>
+              </div>
+              <div>
+                <dt>{{ t("images.emptyAltCount") }}</dt>
+                <dd>{{ n(imageTotals.empty) }}</dd>
+              </div>
+              <div>
+                <dt>{{ t("images.failed") }}</dt>
+                <dd>{{ n(imageTotals.broken) }}</dd>
+              </div>
+            </dl>
             <div class="flex flex-wrap gap-2" role="group" :aria-label="t('popup.images')">
               <button
                 type="button"
@@ -916,46 +1004,32 @@ function host(url: string) {
                 {{ t("action.clearHighlights") }}
               </button>
             </div>
-            <ul class="space-y-3">
+            <ul class="asset-list">
               <li
                 v-for="(image, index) in images.slice(0, 100)"
                 :key="`${image.location}-${index}`"
-                class="inspector-row"
               >
                 <img
                   v-if="image.src"
                   :src="image.src"
                   alt=""
+                  width="56"
+                  height="56"
                   class="inspector-thumb"
                   loading="lazy"
                 />
                 <span v-else class="inspector-thumb grid place-items-center text-[10px] text-muted">
                   {{ t("social.noImage") }}
                 </span>
-                <div class="min-w-0 flex-1">
-                  <p class="m-0 truncate text-[13px] font-semibold" :title="imageLabel(image)">
-                    {{ imageLabel(image) }}
-                  </p>
-                  <a
-                    v-if="openableHref(image.src)"
-                    :href="openableHref(image.src) ?? undefined"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="mb-0 mt-2 block truncate text-[12px] underline"
-                    :title="openableHref(image.src) ?? undefined"
-                  >
-                    {{ openableHref(image.src) }}
-                  </a>
-                  <p
-                    v-else
-                    class="mb-0 mt-2 truncate text-[12px] text-muted"
-                    :title="image.src || undefined"
-                  >
-                    {{ image.src || t("value.noSource") }}
-                  </p>
-                  <p class="mb-0 mt-2 text-[12px] leading-relaxed text-muted">
-                    {{ imageMeta(image) }}
-                  </p>
+                <div class="asset-copy">
+                  <p class="asset-name" :title="imageName(image.src)">{{ imageName(image.src) }}</p>
+                  <p class="asset-alt" :title="imageLabel(image)">{{ imageLabel(image) }}</p>
+                  <p class="asset-alt">{{ imageMeta(image) }}</p>
+                  <details class="asset-more">
+                    <summary>{{ t("images.details") }}</summary>
+                    <p>{{ image.src || t("value.noSource") }}</p>
+                    <CopyButton v-if="image.src" :value="image.src" />
+                  </details>
                 </div>
               </li>
             </ul>
@@ -1042,11 +1116,11 @@ function host(url: string) {
                 <p>{{ t("technical.navigationNote") }}</p>
               </div>
               <dl class="technical-stats">
-                <div class="report-panel technical-stat">
+                <div class="technical-stat">
                   <dt>{{ t("field.status") }}</dt>
                   <dd>{{ audit.details.response.status ?? t("value.notExposed") }}</dd>
                 </div>
-                <div class="report-panel technical-stat">
+                <div class="technical-stat">
                   <dt>{{ t("field.redirects") }}</dt>
                   <dd>
                     {{
@@ -1056,11 +1130,11 @@ function host(url: string) {
                     }}
                   </dd>
                 </div>
-                <div class="report-panel technical-stat">
+                <div class="technical-stat">
                   <dt>{{ t("field.contentType") }}</dt>
                   <dd>{{ audit.details.response.contentType || t("value.unknown") }}</dd>
                 </div>
-                <div class="report-panel technical-stat">
+                <div class="technical-stat">
                   <dt>{{ t("technical.metaRefresh") }}</dt>
                   <dd>{{ metadata?.refresh || t("technical.noRefresh") }}</dd>
                 </div>
@@ -1072,31 +1146,31 @@ function host(url: string) {
                 <p>{{ t("technical.indexNote") }}</p>
               </div>
               <dl class="technical-stats">
-                <div class="report-panel technical-stat">
+                <div class="technical-stat">
                   <dt>{{ t("field.robots") }}</dt>
                   <dd>{{ metadata?.robots.join(", ") || t("technical.notDeclared") }}</dd>
                 </div>
-                <div class="report-panel technical-stat">
+                <div class="technical-stat">
                   <dt>Googlebot</dt>
                   <dd>{{ metadata?.googlebot.join(", ") || t("technical.notDeclared") }}</dd>
                 </div>
-                <div class="report-panel technical-stat">
+                <div class="technical-stat">
                   <dt>Bingbot</dt>
                   <dd>{{ metadata?.bingbot.join(", ") || t("technical.notDeclared") }}</dd>
                 </div>
-                <div class="report-panel technical-stat">
+                <div class="technical-stat">
                   <dt>{{ t("technical.xRobots") }}</dt>
                   <dd>{{ xRobots }}</dd>
                 </div>
-                <div class="report-panel technical-stat">
+                <div class="technical-stat">
                   <dt>{{ t("field.canonical") }}</dt>
                   <dd>{{ metadata?.canonicals.join(" · ") || t("technical.notDeclared") }}</dd>
                 </div>
-                <div class="report-panel technical-stat">
+                <div class="technical-stat">
                   <dt>{{ t("field.status") }}</dt>
                   <dd>{{ audit.details.response.status ?? t("value.notExposed") }}</dd>
                 </div>
-                <div class="report-panel technical-stat">
+                <div class="technical-stat">
                   <dt>{{ t("technical.googleIndex") }}</dt>
                   <dd>{{ t("technical.unknown") }}</dd>
                 </div>
@@ -1194,31 +1268,19 @@ function host(url: string) {
               </div>
               <div class="report-section-block">
                 <h2>{{ t("technical.headers") }}</h2>
-                <ul v-if="audit.details.response.headersAvailable" class="space-y-3">
-                  <li
-                    v-for="header in audit.details.response.headers"
-                    :key="header.name"
-                    class="report-panel p-4"
-                  >
-                    <p class="m-0 text-[12px] font-semibold">{{ header.name }}</p>
-                    <p class="mb-0 mt-2 break-all text-[12px] leading-relaxed text-muted">
-                      {{ header.value }}
-                    </p>
-                  </li>
-                </ul>
+                <dl v-if="audit.details.response.headersAvailable" class="identity-list">
+                  <div v-for="header in audit.details.response.headers" :key="header.name">
+                    <dt>{{ header.name }}</dt>
+                    <dd>{{ header.value }}</dd>
+                  </div>
+                </dl>
                 <p v-else class="technical-result-detail">{{ t("technical.noHeaders") }}</p>
               </div>
               <div class="report-section-block">
                 <h2>{{ t("technical.hops") }}</h2>
-                <ul v-if="siteProbe.redirectHops.length" class="space-y-2 text-[13px] text-muted">
-                  <li
-                    v-for="hop in siteProbe.redirectHops"
-                    :key="hop"
-                    class="report-panel break-all p-3"
-                  >
-                    {{ hop }}
-                  </li>
-                </ul>
+                <ol v-if="siteProbe.redirectHops.length" class="hop-list">
+                  <li v-for="hop in siteProbe.redirectHops" :key="hop">{{ hop }}</li>
+                </ol>
                 <p v-else class="technical-result-detail">{{ t("technical.noHops") }}</p>
               </div>
               <ul v-if="siteProbe.notes.length" class="report-panel technical-probe-notes">
@@ -1228,7 +1290,7 @@ function host(url: string) {
             <CheckTable :checks="checks('technical')" />
           </section>
 
-          <section v-show="section === 'schema'" class="report-section max-w-3xl">
+          <section v-show="section === 'schema'" class="report-section">
             <p class="m-0 text-[13px] leading-relaxed text-muted">{{ t("schema.note") }}</p>
             <p class="m-0 text-[13px]">
               {{
@@ -1294,10 +1356,7 @@ function host(url: string) {
             <CheckTable :checks="checks('structuredData')" />
           </section>
 
-          <section
-            v-show="section === 'social'"
-            class="report-section report-section-plain max-w-xl"
-          >
+          <section v-show="section === 'social'" class="report-section report-section-plain">
             <ShareCards :audit="audit" />
             <CheckTable :checks="checks('social')" />
           </section>
@@ -1455,6 +1514,15 @@ function host(url: string) {
               {{ t("international.documentLanguage") }}:
               {{ metadata.language || t("international.notDeclared") }}
             </p>
+            <p v-if="siteProbe?.requested" class="report-copy">
+              {{
+                t("technical.hreflangCounts", {
+                  checked: n(siteProbe.hreflangChecked),
+                  missing: n(siteProbe.hreflangMissing),
+                  skipped: n(siteProbe.hreflangSkipped ?? 0),
+                })
+              }}
+            </p>
             <p class="report-note" role="note">{{ t("international.returnNote") }}</p>
             <EmptyState
               v-if="audit.details.hreflang.length === 0"
@@ -1467,9 +1535,10 @@ function host(url: string) {
               v-else
               :caption="t('international.caption')"
               :columns="[
-                { label: t('field.language'), width: 22 },
-                { label: t('field.url'), width: 58 },
-                { label: t('field.syntax'), width: 20 },
+                { label: t('field.language'), width: 16 },
+                { label: t('field.url'), width: 46 },
+                { label: t('field.syntax'), width: 18 },
+                { label: t('international.return'), width: 20 },
               ]"
             >
               <tr v-for="link in audit.details.hreflang" :key="`${link.lang}-${link.href}`">
@@ -1488,6 +1557,9 @@ function host(url: string) {
                   <span v-else class="block truncate" :title="link.href">{{ link.href }}</span>
                 </td>
                 <td>{{ link.validSyntax ? t("value.recognized") : t("value.invalid") }}</td>
+                <td>
+                  {{ link.validSyntax ? t("technical.notChecked") : t("value.invalid") }}
+                </td>
               </tr>
             </DataTable>
             <CheckTable :checks="checks('international')" />
