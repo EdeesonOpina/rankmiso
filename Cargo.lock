@@ -209,7 +209,7 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "seo-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -217,7 +217,7 @@ dependencies = [
 
 [[package]]
 name = "seo-rules"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "seo-core",
  "seo-scoring",
@@ -229,7 +229,7 @@ dependencies = [
 
 [[package]]
 name = "seo-scoring"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "seo-core",
  "serde",
@@ -237,7 +237,7 @@ dependencies = [
 
 [[package]]
 name = "seo-wasm"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "seo-core",
  "seo-rules",
