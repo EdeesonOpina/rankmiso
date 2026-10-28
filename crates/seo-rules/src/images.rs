@@ -3,7 +3,12 @@ use seo_core::{Category, CheckResult, CheckStatus, ImageSnapshot};
 use crate::support::{bounded_evidence, evidence};
 
 pub fn checks(images: &[ImageSnapshot]) -> Vec<CheckResult> {
-    vec![missing_alt(images), empty_alt(images), broken(images)]
+    vec![
+        missing_alt(images),
+        empty_alt(images),
+        broken(images),
+        display_size(images),
+    ]
 }
 
 fn missing_alt(images: &[ImageSnapshot]) -> CheckResult {
@@ -143,6 +148,64 @@ fn broken(images: &[ImageSnapshot]) -> CheckResult {
             "Collected images loaded",
             "Every collected image reported a non-zero natural width.",
         )
+    }
+}
+
+fn display_size(images: &[ImageSnapshot]) -> CheckResult {
+    if images.is_empty() {
+        return crate::support::check(
+            "RULE_IMAGE_DISPLAY",
+            Category::Images,
+            CheckStatus::NotApplicable,
+            1,
+            "Image display size was not evaluated",
+            "No images were collected. File size is not measured.",
+        );
+    }
+    let large: Vec<String> = images
+        .iter()
+        .filter(|image| {
+            matches!(
+                (image.natural_width, image.rendered_width),
+                (Some(natural), Some(rendered))
+                    if natural >= 2 && rendered >= 1 && natural >= rendered.saturating_mul(2)
+            )
+        })
+        .map(image_label)
+        .collect();
+    let measured = images.iter().any(|image| {
+        image.natural_width.is_some() && image.rendered_width.is_some()
+    });
+    if !measured {
+        return crate::support::check(
+            "RULE_IMAGE_DISPLAY",
+            Category::Images,
+            CheckStatus::NotApplicable,
+            1,
+            "Image display size was not measured",
+            "Intrinsic and displayed widths were not both available. Missing measurements are not treated as zero, and file size is not invented.",
+        );
+    }
+    if large.is_empty() {
+        crate::support::check(
+            "RULE_IMAGE_DISPLAY",
+            Category::Images,
+            CheckStatus::Info,
+            1,
+            "Displayed images are close to their intrinsic width",
+            "Where both widths were measured, the displayed width was more than half the intrinsic width. This is not a file-size measurement.",
+        )
+    } else {
+        let mut check = crate::support::check(
+            "RULE_IMAGE_DISPLAY",
+            Category::Images,
+            CheckStatus::Info,
+            1,
+            "An image is displayed much smaller than its intrinsic width",
+            "The browser's displayed width is at most half the intrinsic width. This can waste bytes. It is not a file-size measurement, and empty alt text is still not treated as an error.",
+        );
+        check.evidence = bounded_evidence(&large, "image");
+        check
     }
 }
 

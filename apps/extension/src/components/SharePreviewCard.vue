@@ -1,17 +1,30 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { Share2 } from "lucide-vue-next";
 import type { SharePreview } from "../services/share-preview";
 import { useI18n } from "../composables/useI18n";
 
 const props = defineProps<{ preview: SharePreview }>();
 const { t } = useI18n();
 const imageFailed = ref(false);
+const imageReady = ref(false);
 
 watch(
   () => props.preview.imageUrl,
   () => {
     imageFailed.value = false;
+    imageReady.value = false;
   },
+);
+
+const showImage = computed(
+  () => Boolean(props.preview.imageUrl) && imageReady.value && !imageFailed.value,
+);
+const landscape = computed(
+  () =>
+    props.preview.presentation === "open-graph" ||
+    props.preview.presentation === "summary-large" ||
+    props.preview.presentation === "undeclared",
 );
 
 const notes = computed(() => {
@@ -22,57 +35,99 @@ const notes = computed(() => {
   if (preview.descriptionFrom === "page") lines.push(t("social.descriptionFromPage"));
   if (preview.descriptionFrom === "openGraph") lines.push(t("social.descriptionFromOpenGraph"));
   if (preview.imageFrom === "openGraph") lines.push(t("social.imageFromOpenGraph"));
-  if (preview.id === "x" && !preview.cardType) lines.push(t("social.cardMissing"));
+  if (preview.imageFrom === "declared" && preview.id === "x") lines.push(t("social.imageFromX"));
+  if (preview.urlFrom === "declared") lines.push(t("social.urlFromOpenGraph"));
+  if (preview.urlFrom === "page") lines.push(t("social.urlFromPage"));
+  if (preview.presentation === "undeclared") lines.push(t("social.cardMissing"));
+  if (preview.presentation === "unsupported") lines.push(t("social.cardUnsupported"));
   return lines;
 });
 </script>
 
 <template>
-  <article class="overflow-hidden rounded-panel border border-border bg-surface">
-    <header class="flex items-center justify-between gap-3 px-4 pb-6 pt-4">
-      <h3 class="m-0 text-[13px] font-semibold">
-        {{ preview.id === "openGraph" ? t("social.openGraph") : t("social.x") }}
-      </h3>
-      <p class="m-0 text-[12px] text-muted">
-        {{ preview.layout === "compact" ? t("social.compact") : t("social.large") }}
-      </p>
-    </header>
-
-    <div :class="preview.layout === 'compact' ? 'flex items-start gap-3 p-3' : ''">
-      <div
-        class="grid place-items-center overflow-hidden bg-background"
-        :class="
-          preview.layout === 'compact' ? 'h-24 w-24 shrink-0 rounded-panel' : 'aspect-[1.91/1]'
-        "
-      >
-        <img
-          v-if="preview.imageUrl && !imageFailed"
-          :src="preview.imageUrl"
-          :alt="t('social.imageAlt')"
-          class="h-full w-full object-cover"
-          referrerpolicy="no-referrer"
-          @error="imageFailed = true"
-        />
-        <p v-else class="m-0 px-3 text-center text-[12px] text-muted">
-          {{ imageFailed ? t("social.imageFailed") : t("social.noImage") }}
+  <article class="miso-card share-card">
+    <header class="share-card-head">
+      <span class="report-feature-icon" aria-hidden="true">
+        <Share2 v-if="preview.id === 'openGraph'" class="h-4 w-4" />
+        <span v-else class="share-mark">X</span>
+      </span>
+      <div class="min-w-0">
+        <p class="report-feature-kicker">
+          {{ preview.id === "openGraph" ? t("social.ogKicker") : t("social.xKicker") }}
+        </p>
+        <h3 class="m-0 text-[15px] font-semibold">
+          {{ preview.id === "openGraph" ? t("social.openGraph") : t("social.x") }}
+        </h3>
+        <p class="report-feature-copy">
+          {{ preview.id === "openGraph" ? t("social.ogHelp") : t("social.xHelp") }}
+          <span v-if="preview.id === 'x' && preview.cardType">
+            {{ t("social.cardDeclared", { type: preview.cardType }) }}
+          </span>
         </p>
       </div>
-      <div :class="preview.layout === 'compact' ? 'min-w-0' : 'space-y-2 px-4 py-4'">
-        <p class="m-0 truncate text-[12px] text-muted">{{ preview.host }}</p>
-        <p class="m-0 line-clamp-2 text-[15px] font-semibold leading-snug">
+    </header>
+
+    <div
+      class="platform-preview"
+      :class="{
+        'is-x': preview.id === 'x',
+        'is-summary': preview.presentation === 'summary' || preview.presentation === 'unsupported',
+      }"
+    >
+      <div
+        v-if="preview.imageUrl && !imageFailed"
+        class="platform-media"
+        :class="showImage ? '' : 'is-pending'"
+      >
+        <img
+          :src="preview.imageUrl"
+          :alt="t('social.imageAlt')"
+          :width="landscape ? 382 : 72"
+          :height="landscape ? 200 : 72"
+          referrerpolicy="no-referrer"
+          @load="imageReady = true"
+          @error="imageFailed = true"
+        />
+        <p v-if="!showImage" class="platform-missing">{{ t("social.imageLoading") }}</p>
+      </div>
+      <p v-else class="platform-missing">
+        {{ imageFailed ? t("social.imageFailed") : t("social.noImage") }}
+      </p>
+      <div class="platform-copy">
+        <p class="platform-host">{{ preview.host }}</p>
+        <p class="platform-title" :title="preview.title || t('social.noTitle')">
           {{ preview.title || t("social.noTitle") }}
         </p>
-        <p class="m-0 line-clamp-3 text-[13px] leading-relaxed text-muted">
+        <p class="platform-desc" :title="preview.description || t('social.noDescription')">
           {{ preview.description || t("social.noDescription") }}
         </p>
       </div>
     </div>
 
-    <p v-if="preview.imageUrl" class="mb-0 break-all px-4 pb-4 pt-3 text-[12px] text-muted">
-      {{ preview.imageUrl }}
-    </p>
-    <ul v-if="notes.length" class="mb-0 mt-0 list-disc px-8 pb-3 text-[12px] text-muted">
+    <details class="share-full">
+      <summary>{{ t("social.fullValues") }}</summary>
+      <dl>
+        <div>
+          <dt>{{ t("popup.title") }}</dt>
+          <dd>{{ preview.title || t("social.noTitle") }}</dd>
+        </div>
+        <div>
+          <dt>{{ t("popup.description") }}</dt>
+          <dd>{{ preview.description || t("social.noDescription") }}</dd>
+        </div>
+        <div>
+          <dt>{{ t("social.urlLabel") }}</dt>
+          <dd>{{ preview.url }}</dd>
+        </div>
+        <div>
+          <dt>{{ t("social.imageLabel") }}</dt>
+          <dd>{{ preview.imageUrl || t("social.noImage") }}</dd>
+        </div>
+      </dl>
+    </details>
+    <ul v-if="notes.length" class="share-notes">
       <li v-for="note in notes" :key="note">{{ note }}</li>
     </ul>
+    <p class="share-approx">{{ t("social.approx") }}</p>
   </article>
 </template>
