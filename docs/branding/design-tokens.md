@@ -2,7 +2,7 @@
 
 RankMiso uses its own white-first application design. The Miso website at `~/Projects/Next/misoecosystem.com` supplies the fox icon and the RankMiso illustration. It does not set the canvas, cards, type, or layout. The extension does not import that repository.
 
-Values live in `packages/design-tokens/src/tokens.css`. Components use Tailwind utilities such as `bg-primary` and `border-border`. Those utilities alias the `--miso-*` tokens. Do not put hex colors in Vue files.
+Values live in `packages/design-tokens/src/tokens.css`. The popup (`popup.css`) and the sidebar and report (`workbench.css`) carry the approved prototype palettes, which use the same Miso red, navy, and white. Do not put hex colors in Vue files.
 
 ## Light
 

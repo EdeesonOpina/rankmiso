@@ -22,9 +22,12 @@ const label: Record<ThemePreference, MessageKey> = {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.settings") }}</span><span class="minor">{{ t("pm.thisDevice") }}</span>
+    <span>{{ t("pane.settings") }}</span
+    ><span class="minor">{{ t("pm.thisDevice") }}</span>
   </div>
-  <div class="title-row" style="margin-top: 0"><h2>{{ t("popup.yourWorkspace") }}</h2></div>
+  <div class="title-row" style="margin-top: 0">
+    <h2>{{ t("popup.yourWorkspace") }}</h2>
+  </div>
   <p class="helper">{{ t("settings.appearanceHelp") }}</p>
   <div class="surface">
     <div class="pair">
@@ -48,7 +51,9 @@ const label: Record<ThemePreference, MessageKey> = {
     </div>
   </div>
 
-  <div class="title-row"><h2>{{ t("pm.extensionBehavior") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.extensionBehavior") }}</h2>
+  </div>
   <div class="surface" style="padding: 0 12px">
     <div class="row">
       <div class="row-content">
@@ -73,14 +78,18 @@ const label: Record<ThemePreference, MessageKey> = {
     </div>
   </div>
 
-  <div class="title-row"><h2>{{ t("pm.about", { name: brandConfig.identity.name }) }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.about", { name: brandConfig.identity.name }) }}</h2>
+  </div>
   <div class="soft">
     <div class="pair">
-      <span class="row-title">{{ t("pm.version") }}</span><span class="badge">{{ version }}</span>
+      <span class="row-title">{{ t("pm.version") }}</span
+      ><span class="badge">{{ version }}</span>
     </div>
     <div class="mini-divider" />
     <div class="pair">
-      <span class="row-title">{{ t("pm.license") }}</span><span class="row-sub">{{ t("pm.licenseValue") }}</span>
+      <span class="row-title">{{ t("pm.license") }}</span
+      ><span class="row-sub">{{ t("pm.licenseValue") }}</span>
     </div>
     <p class="micro" style="margin: 11px 0 0">{{ brandConfig.identity.tagline }}</p>
   </div>

@@ -25,7 +25,8 @@ const sourceKey: Record<ShareFieldSource, MessageKey> = {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.social") }}</span><span class="minor">{{ t("pm.localMetadata") }}</span>
+    <span>{{ t("pane.social") }}</span
+    ><span class="minor">{{ t("pm.localMetadata") }}</span>
   </div>
   <div class="title-row" style="margin-top: 0">
     <h2>{{ t("popup.shareAppearance") }}</h2>
@@ -69,17 +70,26 @@ const sourceKey: Record<ShareFieldSource, MessageKey> = {
       </summary>
       <div class="inside">
         <dl style="margin: 0">
-          <div class="property"><dt>og:title</dt><dd>{{ social.ogTitle || t("metadata.missing") }}</dd></div>
           <div class="property">
-            <dt>og:description</dt><dd>{{ social.ogDescription || t("metadata.missing") }}</dd>
+            <dt>og:title</dt>
+            <dd>{{ social.ogTitle || t("metadata.missing") }}</dd>
           </div>
           <div class="property">
-            <dt>og:image</dt><dd class="code">{{ social.ogImage || t("metadata.missing") }}</dd>
+            <dt>og:description</dt>
+            <dd>{{ social.ogDescription || t("metadata.missing") }}</dd>
           </div>
           <div class="property">
-            <dt>og:url</dt><dd class="code">{{ social.ogUrl || t("metadata.missing") }}</dd>
+            <dt>og:image</dt>
+            <dd class="code">{{ social.ogImage || t("metadata.missing") }}</dd>
           </div>
-          <div class="property"><dt>og:type</dt><dd>{{ social.ogType || t("metadata.missing") }}</dd></div>
+          <div class="property">
+            <dt>og:url</dt>
+            <dd class="code">{{ social.ogUrl || t("metadata.missing") }}</dd>
+          </div>
+          <div class="property">
+            <dt>og:type</dt>
+            <dd>{{ social.ogType || t("metadata.missing") }}</dd>
+          </div>
         </dl>
       </div>
     </details>
@@ -141,10 +151,17 @@ const sourceKey: Record<ShareFieldSource, MessageKey> = {
       <div class="inside">
         <dl style="margin: 0">
           <div class="property">
-            <dt>twitter:card</dt><dd>{{ social.twitterCard || t("pm.notDeclared") }}</dd>
+            <dt>twitter:card</dt>
+            <dd>{{ social.twitterCard || t("pm.notDeclared") }}</dd>
           </div>
-          <div class="property"><dt>{{ t("pm.titleSource") }}</dt><dd>{{ t(sourceKey[x.titleFrom]) }}</dd></div>
-          <div class="property"><dt>{{ t("pm.imageSource") }}</dt><dd>{{ t(sourceKey[x.imageFrom]) }}</dd></div>
+          <div class="property">
+            <dt>{{ t("pm.titleSource") }}</dt>
+            <dd>{{ t(sourceKey[x.titleFrom]) }}</dd>
+          </div>
+          <div class="property">
+            <dt>{{ t("pm.imageSource") }}</dt>
+            <dd>{{ t(sourceKey[x.imageFrom]) }}</dd>
+          </div>
         </dl>
       </div>
     </details>

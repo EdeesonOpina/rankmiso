@@ -21,7 +21,8 @@ const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFra
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.content") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("pane.content") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
   <div class="title-row" style="margin-top: 0">
     <h2>{{ t("content.profile") }}</h2>
@@ -72,7 +73,8 @@ const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFra
     <div v-if="terms.length" style="display: grid; gap: 12px">
       <div v-for="term in terms" :key="term.term">
         <div class="pair">
-          <span class="row-title">{{ term.term }}</span><span class="badge">{{ n(term.count) }}</span>
+          <span class="row-title">{{ term.term }}</span
+          ><span class="badge">{{ n(term.count) }}</span>
         </div>
         <div class="progress" style="margin-top: 7px">
           <i :style="{ width: `${Math.round((term.count / top) * 100)}%` }" />
@@ -82,7 +84,9 @@ const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFra
     <p v-else class="row-sub">{{ t("empty.termsBody") }}</p>
   </div>
 
-  <div class="title-row"><h2>{{ t("pm.contentObservations") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.contentObservations") }}</h2>
+  </div>
   <div v-for="check in findings" :key="check.id" class="row">
     <span class="mark" :class="{ error: check.status === 'ERROR' }" aria-hidden="true">!</span>
     <div class="row-content">

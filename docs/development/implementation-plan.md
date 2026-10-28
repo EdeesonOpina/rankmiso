@@ -17,7 +17,7 @@ Status: documented in this repository.
 Status: in place for the vertical slice.
 
 - pnpm workspace and Cargo workspace
-- WXT extension with Vue 3, TypeScript, and Tailwind tokens
+- WXT extension with Vue 3, TypeScript, and plain CSS per surface (`popup.css`, `workbench.css`)
 - Rust crates `seo-core`, `seo-rules`, `seo-scoring`, and `seo-wasm`
 - Theme preference in extension storage
 - GitHub Actions workflow for format, Clippy, tests, and browser builds
@@ -138,6 +138,10 @@ Recorded. A layout change has to change how a screen presents its data. From 110
 ### UX-9R.2 — Popup inspectors
 
 Recorded. The popup rail and Overview stay. The other 17 destinations use the approved HTML compositions with live audit data. Site and Sitemaps in the popup open the report; they do not run the crawl or discover files. The next visual pass is the sidebar and the full report, and it has not started.
+
+### UX-9R.3 / UX-9R.4 — Sidebar and full report
+
+Recorded. The sidebar and report follow the approved HTML prototypes through one workbench shell. Visual sign-off is pending. Do not start M6 unless the maintainer asks.
 
 ### M6 — MCP
 

@@ -375,6 +375,26 @@ Verification: Playwright 7 passed. Vitest 82 passed. `vue-tsc` and ESLint passed
 
 Next action: visual approval of the popup. Do not start the sidebar or full-report redesign. Do not start M6.
 
+## Checkpoint UX-9R.3 and UX-9R.4
+
+Date: 2026-10-28
+
+Milestone: sidebar workbench and full-page dashboard from the approved HTML prototypes in `/home/ed/docs/design/references/RankMiso-Sidebar-Fullpage-HTML-Prototypes/`.
+
+Status: technical checks passed for Chromium. HTML fidelity matched with recorded deviations. Product-owner visual sign-off is pending. Firefox was built but not loaded as a temporary add-on.
+
+The sidebar, the full report, and the options page now render `src/components/workbench/WorkbenchApp.vue` with `surface="sidebar"` or `surface="report"`. Styles are `src/styles/workbench.css`, a port of the prototype stylesheet. The 18 destinations are views in `src/components/workbench/`. Site, Sitemaps, History, and HTML compare kept their scripts; only templates changed. `AnalysisApp.vue`, 22 other old report components, `services/tablist.ts`, `styles/main.css`, and 175 unused locale strings were removed. The popup is unchanged.
+
+The sidebar does not crawl; its Site view shows the last saved crawl and opens the report. Sitemaps still run in both surfaces. Deep links (`?section=`) still work.
+
+Verification: Playwright 7 passed. Vitest 81 passed (component tests moved to the workbench views). `vue-tsc`, ESLint, and Prettier passed. Cargo tests 40 passed, Clippy passed with warnings denied. `cargo fmt --check` fails on `seo-rules` and `seo-wasm` files from the earlier M5 commit; Rust was not changed here. Chrome package 1.52 MB (was 1.57 MB). Firefox 1.49 MB (was 1.54 MB). Workbench script 150.15 KB and CSS 41.68 KB, replacing the 157.49 KB report script and 82.71 KB CSS. Popup chunk 81.12 KB, popup CSS 26.30 KB, WASM 904.31 KB. Start-up on the same fixture, best of five: sidebar 125 ms, report 122 ms, popup 123 ms. Audit spec: popup 231 ms, report 175 ms (UX-9R.2: 216 and 193 ms).
+
+Fidelity matrix: `docs/design/reviews/ux9r3-4/FIDELITY-REPORT.md`. Screenshots are local only in `docs/design/reviews/local/` (git-ignored).
+
+Popup fix found in manual Chrome testing: `popup.css` carried the prototype's `@media (max-width: 400px) { body { width: 100% } }`. Chrome sizes a toolbar popup from a tiny first window, so the popup collapsed to its rail. The rule was removed and the body has `min-width: 420px`. `extension-install.spec.ts` now checks the popup at a 120px window. This bug dated from UX-9R.
+
+Next action: product-owner review. Do not start M6.
+
 ## Do not
 
 - Add host permissions to the default manifest to make development easier.
@@ -396,7 +416,7 @@ Next action: visual approval of the popup. Do not start the sidebar or full-repo
 - `apps/extension/src/extraction/page-tool.ts` — `runPageTool`
 - `apps/extension/src/composables/useAudit.ts`
 - `apps/extension/entrypoints/popup/App.vue`
-- `apps/extension/src/components/AnalysisApp.vue`
+- `apps/extension/src/components/workbench/WorkbenchApp.vue` — sidebar, report, and options shell
 - `apps/extension/src/services/site-crawl.ts` — crawl session, scope, and export
 - `apps/extension/src/services/site-crawl-network.ts` — Chromium fetch, robots, and sitemaps
 - `docs/features/site-explorer.md`

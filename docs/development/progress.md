@@ -295,6 +295,12 @@ The popup was compared screen by screen with the corrected prototype package, in
 
 Playwright 7 passed after stale popup selectors were updated. Vitest 82 passed. `vue-tsc` and ESLint passed. Cargo: 37 seo-rules tests and 3 scoring tests. Clippy passed with warnings denied. Chrome package 1.57 MB. Popup audit 249 ms, report 193 ms. No new dependency and no new permission. Firefox was not loaded as a temporary add-on. Visual sign-off is pending.
 
+## UX-9R.3 and UX-9R.4 (2026-10-28)
+
+The sidebar and the full report were rebuilt from the approved sidebar and full-page HTML prototypes. One shell serves both, with a 64px rail in the sidebar and a 232px rail in the report. All 18 destinations use real audit data; prototype sample numbers were not copied. Site crawling stays in the report. Old report components and `main.css` were removed. The popup did not change.
+
+Playwright 7 passed. Vitest 81 passed. `vue-tsc`, ESLint, and Prettier passed. Cargo: 37 seo-rules tests and 3 scoring tests; Clippy passed with warnings denied. Chrome package 1.52 MB, Firefox 1.49 MB. Start-up: sidebar 125 ms, report 122 ms, popup 123 ms. No new dependency and no new permission. Firefox was not loaded as a temporary add-on. Visual sign-off is pending. Matrix: `docs/design/reviews/ux9r3-4/FIDELITY-REPORT.md`.
+
 ## Blockers
 
 - `wasm-bindgen-cli` must stay on 0.2.100. A newer CLI will not match the pinned crate.

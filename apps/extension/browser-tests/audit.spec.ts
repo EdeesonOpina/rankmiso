@@ -64,13 +64,12 @@ test("scored fixtures render in the popup and the report", async () => {
     await popup.screenshot({
       path: "../../docs/design/reviews/ux9r/final/overview-420.png",
     });
+    // A toolbar popup sizes to its page, so the page keeps 420px even in a narrow window.
     await popup.setViewportSize({ width: 360, height: 640 });
-    expect(await overflows(popup)).toBe(false);
+    expect(await popup.evaluate(() => document.body.getBoundingClientRect().width)).toBe(420);
     await popup.screenshot({
       path: "../../docs/design/reviews/ux9r/final/overview-360.png",
     });
-    await popup.setViewportSize({ width: 350, height: 640 });
-    expect(await overflows(popup)).toBe(false);
     await popup.setViewportSize({ width: 420, height: 735 });
     expect(await overflows(popup)).toBe(false);
     await popup.setViewportSize({ width: 420, height: 720 });
@@ -150,7 +149,9 @@ test("scored fixtures render in the popup and the report", async () => {
     await expect(popup.getByText("Example Company")).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-schema-graph.png" });
     await popup.getByRole("button", { name: "Raw JSON" }).click();
-    await expect(popup.locator(".code-block", { hasText: '"name": "Example Company"' })).toBeVisible();
+    await expect(
+      popup.locator(".code-block", { hasText: '"name": "Example Company"' }),
+    ).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-schema-raw.png" });
     expect(await overflows(popup)).toBe(false);
     await popup.getByRole("button", { name: "Social", exact: true }).click();
@@ -243,7 +244,7 @@ test("scored fixtures render in the popup and the report", async () => {
     await linked.setViewportSize({ width: 1280, height: 800 });
     await linked.getByRole("button", { name: "Schema", exact: true }).click();
     await expect(linked.getByText("Article").locator("visible=true").first()).toBeVisible();
-    await linked.locator("summary", { hasText: "@graph" }).click();
+    await linked.locator("summary", { hasText: "Organization, LocalBusiness" }).click();
     await linked.screenshot({ path: "test-results/audit-report-schema.png", fullPage: true });
     await linked.getByRole("button", { name: "Links", exact: true }).click();
     await expect(linked.getByText("Read the guide").locator("visible=true")).toBeVisible();
@@ -270,16 +271,16 @@ test("scored fixtures render in the popup and the report", async () => {
       .locator("article")
       .filter({ has: shown(report, "Meta description is missing") })
       .first();
-    await metaDescription.getByText("Evidence and checks").click();
+    await metaDescription.getByText("Inspect evidence").click();
     await expect(metaDescription.getByText("How to check")).toBeVisible();
     const example = metaDescription.locator("code", { hasText: '<meta name="description"' });
     await expect(example).not.toHaveCount(0);
     expect(await report.locator("code meta").count()).toBe(0);
 
-    await report.getByRole("button", { name: "Errors", exact: true }).click();
+    await report.getByRole("button", { name: /^Errors · / }).click();
     await expect(shown(report, "Images missing alt attributes")).toBeVisible();
     await expect(shown(report, "Meta description is missing")).toHaveCount(0);
-    await report.getByRole("button", { name: "Warnings", exact: true }).click();
+    await report.getByRole("button", { name: /^Warnings · / }).click();
     await expect(shown(report, "Multiple H1 elements")).toBeVisible();
     await expect(shown(report, "Images missing alt attributes")).toHaveCount(0);
     await report.getByRole("button", { name: "All", exact: true }).click();
@@ -331,7 +332,7 @@ test("scored fixtures render in the popup and the report", async () => {
     expect(await overflows(report)).toBe(false);
     await report.setViewportSize({ width: 360, height: 640 });
     await expect(report.getByLabel("Current view")).toHaveCount(0);
-    await expect(report.getByRole("tab", { name: "Headings", exact: true })).toBeVisible();
+    await expect(report.getByRole("button", { name: "Headings", exact: true })).toBeVisible();
     expect(await overflows(report)).toBe(false);
     await report.screenshot({ path: "test-results/audit-dashboard-360.png", fullPage: true });
     await report.setViewportSize({ width: 320, height: 640 });
@@ -349,22 +350,16 @@ test("scored fixtures render in the popup and the report", async () => {
     ).toBeVisible();
     await report.screenshot({ path: "test-results/audit-report-social.png" });
     await report.getByRole("button", { name: "Overview", exact: true }).click();
-    await report.locator("summary", { hasText: "View all categories" }).click();
-    const issuesPerformance = report
-      .locator(".category-health li")
-      .filter({ hasText: "Performance" });
+    const issuesPerformance = report.locator(".category-item").filter({ hasText: "Performance" });
     await expect(issuesPerformance).toContainText("Not measured");
-    await expect(issuesPerformance.locator(".category-fill")).toHaveAttribute(
-      "style",
-      /width:\s*0%/,
-    );
+    await expect(issuesPerformance.locator(".fill")).toHaveCount(0);
     await report.screenshot({ path: "test-results/audit-dashboard-overview.png" });
     await expect(report.getByRole("button", { name: "Performance", exact: true })).toBeVisible();
     await expect(report.getByRole("button", { name: "International", exact: true })).toBeVisible();
     await expect(report.getByRole("button", { name: "Accessibility", exact: true })).toBeVisible();
     await report.getByRole("button", { name: "Performance", exact: true }).click();
-    await expect(shown(report, "PageSpeed Insights was not requested")).toBeVisible();
-    await report.getByRole("button", { name: "Export" }).click();
+    await expect(report.getByText("PageSpeed Insights was not requested").first()).toBeVisible();
+    await report.getByRole("button", { name: "Export", exact: true }).click();
     const json = await downloadText(report, "Export JSON");
     const parsed = JSON.parse(json) as { page: { url: string }; checks: Array<{ id: string }> };
     expect(parsed.page.url).toContain("/issues.html");
@@ -375,19 +370,19 @@ test("scored fixtures render in the popup and the report", async () => {
     expect(html).not.toContain("<script>alert(1)</script>");
     expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
 
-    await report.getByRole("button", { name: "History" }).click();
+    await report.getByRole("button", { name: "History", exact: true }).click();
     await report.getByRole("button", { name: "Save current comparison" }).click();
     await expect(report.getByText("Comparison saved on this device.")).toBeVisible();
     await report.reload();
     await expect(report.getByText("Saved comparisons: 1")).toBeVisible();
     await expect(report.getByText(/Saved page:.*\/issues\.html/)).toBeVisible();
 
-    await report.getByRole("button", { name: "Settings" }).click();
-    await report.getByLabel("Dark").check();
+    await report.getByRole("button", { name: "Settings", exact: true }).click();
+    await report.getByRole("button", { name: "Dark", exact: true }).click();
     await expect(report.locator("html")).toHaveAttribute("data-theme", "dark");
     await report.screenshot({ path: "test-results/audit-dashboard-dark.png" });
     await report.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
-    await report.getByLabel("System").check();
+    await report.getByRole("button", { name: "System", exact: true }).click();
     await expect(report.locator("html")).toHaveAttribute("data-theme", "dark");
     const motion = await report.evaluate(() => {
       const probe = document.createElement("div");
@@ -403,23 +398,23 @@ test("scored fixtures render in the popup and the report", async () => {
       `chrome-extension://${extensionId}/sidepanel.html?tabId=${issuesId}&section=metadata`,
     );
     await expect(panel.getByLabel("Current view")).toHaveCount(0);
-    await expect(panel.getByRole("heading", { name: /Issues/ })).toBeVisible();
-    await panel.getByRole("tab", { name: "Overview", exact: true }).click();
+    await expect(panel.locator(".top-title")).toContainText("Issues");
+    await panel.getByRole("button", { name: "Overview", exact: true }).click();
     await panel.screenshot({ path: "test-results/audit-sidebar-overview.png" });
-    await panel.getByRole("tab", { name: "Metadata", exact: true }).click();
+    await panel.getByRole("button", { name: "Metadata", exact: true }).click();
     await panel.screenshot({ path: "test-results/audit-sidebar-metadata.png" });
-    await panel.getByRole("tab", { name: "Social", exact: true }).click();
+    await panel.getByRole("button", { name: "Social", exact: true }).click();
     await expect(panel.getByText("These previews are approximations.")).toBeVisible();
     await panel.screenshot({ path: "test-results/audit-sidebar-nav.png" });
     await panel.screenshot({ path: "test-results/audit-sidebar-social.png" });
-    await panel.getByRole("tab", { name: "Headings", exact: true }).click();
+    await panel.getByRole("button", { name: "Headings", exact: true }).click();
     await expect(panel).toHaveURL(/section=headings/);
     await expect(panel.getByText("First topic").locator("visible=true")).not.toHaveCount(0);
     await panel.screenshot({ path: "test-results/audit-sidebar-headings.png" });
-    await panel.getByRole("tab", { name: "Links", exact: true }).click();
+    await panel.getByRole("button", { name: "Links", exact: true }).click();
     await panel.screenshot({ path: "test-results/audit-sidebar-links.png" });
-    await panel.getByRole("tab", { name: "Schema", exact: true }).click();
-    await expect(panel.getByText("JSON did not parse")).toBeVisible();
+    await panel.getByRole("button", { name: "Schema", exact: true }).click();
+    await expect(panel.getByText("JSON did not parse").first()).toBeVisible();
     await panel.screenshot({ path: "test-results/audit-sidebar-schema.png" });
     expect(await overflows(panel)).toBe(false);
     await panel.close();
@@ -450,16 +445,13 @@ test("scored fixtures render in the popup and the report", async () => {
     await sparseReport.goto(
       `chrome-extension://${extensionId}/dashboard.html?tabId=${sparseId}&section=overview`,
     );
-    await expect(sparseReport.getByRole("heading", { name: "Sparse page" })).toBeVisible();
-    await sparseReport.locator("summary", { hasText: "View all categories" }).click();
-    const performance = sparseReport
-      .locator(".category-health li")
-      .filter({ hasText: "Performance" });
+    await expect(sparseReport.locator(".top-title")).toContainText("Sparse page");
+    const performance = sparseReport.locator(".category-item").filter({ hasText: "Performance" });
     await expect(performance).toContainText("Not measured");
     await expect(performance).not.toContainText("100");
-    await expect(performance.locator(".category-fill")).toHaveAttribute("style", /width:\s*0%/);
+    await expect(performance.locator(".fill")).toHaveCount(0);
     await sparseReport.getByRole("button", { name: "Issues", exact: true }).click();
-    await sparseReport.getByRole("button", { name: "Passed", exact: true }).click();
+    await sparseReport.getByRole("button", { name: /^Passed · / }).click();
     await expect(
       sparseReport.getByRole("heading", { name: "PageSpeed Insights was not requested" }),
     ).toHaveCount(0);

@@ -16,7 +16,12 @@ interface Entity {
   valid: boolean;
   error: string | null;
   type: string;
-  entries: Array<{ key: string; value: string; nested: string[] | null; kind: "object" | "array" | "" }>;
+  entries: Array<{
+    key: string;
+    value: string;
+    nested: string[] | null;
+    kind: "object" | "array" | "";
+  }>;
   json: string;
 }
 
@@ -67,16 +72,22 @@ const entities = computed<Entity[]>(() => {
     } catch {
       parsed = null;
     }
-    const items: unknown[] = format !== "JSON-LD"
-      ? markupItems(parsed)
-      : Array.isArray(parsed)
-      ? parsed
-      : parsed && typeof parsed === "object" && Array.isArray((parsed as { "@graph"?: unknown })["@graph"])
-        ? ((parsed as { "@graph": unknown[] })["@graph"])
-        : [parsed];
+    const items: unknown[] =
+      format !== "JSON-LD"
+        ? markupItems(parsed)
+        : Array.isArray(parsed)
+          ? parsed
+          : parsed &&
+              typeof parsed === "object" &&
+              Array.isArray((parsed as { "@graph"?: unknown })["@graph"])
+            ? (parsed as { "@graph": unknown[] })["@graph"]
+            : [parsed];
     items.forEach((item, itemIndex) => {
       counters[format] = (counters[format] ?? 0) + 1;
-      const record = item && typeof item === "object" && !Array.isArray(item) ? (item as Record<string, unknown>) : null;
+      const record =
+        item && typeof item === "object" && !Array.isArray(item)
+          ? (item as Record<string, unknown>)
+          : null;
       list.push({
         key: `${blockIndex}-${itemIndex}`,
         label: `${format} ${String(counters[format]).padStart(2, "0")}`,
@@ -87,10 +98,22 @@ const entities = computed<Entity[]>(() => {
         entries: record
           ? Object.entries(record).map(([key, value]) => {
               if (Array.isArray(value))
-                return { key, value: t("pm.itemCount", { count: value.length }), nested: value.map(short), kind: "array" as const };
+                return {
+                  key,
+                  value: t("pm.itemCount", { count: value.length }),
+                  nested: value.map(short),
+                  kind: "array" as const,
+                };
               if (value && typeof value === "object") {
-                const nested = Object.entries(value as Record<string, unknown>).map(([k, v]) => `${k}: ${short(v)}`);
-                return { key, value: t("pm.propertyCount", { count: nested.length }), nested, kind: "object" as const };
+                const nested = Object.entries(value as Record<string, unknown>).map(
+                  ([k, v]) => `${k}: ${short(v)}`,
+                );
+                return {
+                  key,
+                  value: t("pm.propertyCount", { count: nested.length }),
+                  nested,
+                  kind: "object" as const,
+                };
               }
               return { key, value: short(value), nested: null, kind: "" as const };
             })
@@ -103,10 +126,13 @@ const entities = computed<Entity[]>(() => {
 });
 const counts = computed(() => {
   const result = { "JSON-LD": 0, Microdata: 0, RDFa: 0 } as Record<string, number>;
-  for (const block of props.audit.details.structuredData) result[formatName(block.format)] = (result[formatName(block.format)] ?? 0) + 1;
+  for (const block of props.audit.details.structuredData)
+    result[formatName(block.format)] = (result[formatName(block.format)] ?? 0) + 1;
   return result;
 });
-const allValid = computed(() => props.audit.details.structuredData.every((block) => block.validJson));
+const allValid = computed(() =>
+  props.audit.details.structuredData.every((block) => block.validJson),
+);
 function subtitle(entity: Entity): string {
   if (entity.format === "Microdata") return `Microdata · ${t("pm.extractedLower")}`;
   if (entity.format === "RDFa") return `RDFa · ${t("pm.boundedSubset")}`;
@@ -118,21 +144,34 @@ const rest = computed(() => entities.value.slice(1));
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.schema") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("pane.schema") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
   <div class="pair" style="align-items: end">
     <div>
       <h2 class="sec-heading">{{ t("nav.schema") }}</h2>
       <p class="helper" style="margin: 5px 0 0">{{ t("pm.schemaHelp") }}</p>
     </div>
-    <span v-if="audit.details.structuredData.length" class="badge" :class="allValid ? 'ok' : 'err'">{{
-      allValid ? t("pm.jsonSyntax") : t("popup.jsonInvalid")
-    }}</span>
+    <span
+      v-if="audit.details.structuredData.length"
+      class="badge"
+      :class="allValid ? 'ok' : 'err'"
+      >{{ allValid ? t("pm.jsonSyntax") : t("popup.jsonInvalid") }}</span
+    >
   </div>
   <div class="grid3" style="margin: 14px 0">
-    <div class="mini-tile"><strong>{{ n(counts["JSON-LD"] ?? 0) }}</strong><span>JSON-LD</span></div>
-    <div class="mini-tile"><strong>{{ n(counts.Microdata ?? 0) }}</strong><span>Microdata</span></div>
-    <div class="mini-tile"><strong>{{ n(counts.RDFa ?? 0) }}</strong><span>RDFa</span></div>
+    <div class="mini-tile">
+      <strong>{{ n(counts["JSON-LD"] ?? 0) }}</strong
+      ><span>JSON-LD</span>
+    </div>
+    <div class="mini-tile">
+      <strong>{{ n(counts.Microdata ?? 0) }}</strong
+      ><span>Microdata</span>
+    </div>
+    <div class="mini-tile">
+      <strong>{{ n(counts.RDFa ?? 0) }}</strong
+      ><span>RDFa</span>
+    </div>
   </div>
   <p v-if="!first" class="note">{{ t("empty.schemaBody") }}</p>
   <template v-else>
@@ -149,7 +188,9 @@ const rest = computed(() => entities.value.slice(1));
         <div class="pair">
           <div>
             <span class="tiny-label">{{ first.label }}</span>
-            <strong class="row-title" style="font-size: 14px; margin-top: 5px">{{ first.type }}</strong>
+            <strong class="row-title" style="font-size: 14px; margin-top: 5px">{{
+              first.type
+            }}</strong>
           </div>
           <span class="badge" :class="first.valid ? 'ok' : 'err'">{{
             first.valid ? t("pm.parsed") : t("popup.jsonInvalid")
@@ -160,14 +201,17 @@ const rest = computed(() => entities.value.slice(1));
         <ul class="tree">
           <li v-for="entry in first.entries" :key="entry.key">
             <template v-if="!entry.nested">
-              <span class="key">{{ entry.key }}</span><br /><span class="value">{{ entry.value }}</span>
+              <span class="key">{{ entry.key }}</span
+              ><br /><span class="value">{{ entry.value }}</span>
             </template>
             <details v-else>
               <summary class="code" style="cursor: pointer">
                 {{ entry.key }} <span class="muted">{{ entry.value }}</span>
               </summary>
               <div class="nested code">
-                <template v-for="(line, index) in entry.nested" :key="index">{{ line }}<br /></template>
+                <template v-for="(line, index) in entry.nested" :key="index"
+                  >{{ line }}<br
+                /></template>
               </div>
             </details>
           </li>
@@ -178,7 +222,12 @@ const rest = computed(() => entities.value.slice(1));
           </button>
         </div>
       </div>
-      <details v-for="(entity, index) in rest" :key="entity.key" class="disclosure" :style="index === 0 ? 'margin-top:10px' : ''">
+      <details
+        v-for="(entity, index) in rest"
+        :key="entity.key"
+        class="disclosure"
+        :style="index === 0 ? 'margin-top:10px' : ''"
+      >
         <summary>
           <span>
             <strong class="disclosure-title">{{ entity.type }}</strong>
@@ -187,7 +236,9 @@ const rest = computed(() => entities.value.slice(1));
         </summary>
         <div class="inside">
           <span class="code">
-            <template v-for="entry in entity.entries" :key="entry.key">{{ entry.key }}: {{ entry.value }}<br /></template>
+            <template v-for="entry in entity.entries" :key="entry.key"
+              >{{ entry.key }}: {{ entry.value }}<br
+            /></template>
           </span>
         </div>
       </details>

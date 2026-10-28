@@ -1,13 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { ref } from "vue";
 import { mount } from "@vue/test-utils";
-import CheckTable from "../src/components/CheckTable.vue";
-import IssueCard from "../src/components/IssueCard.vue";
-import ScoreBlock from "../src/components/ScoreBlock.vue";
-import { workbenchGroupId } from "../src/config/navigation.config";
+import IssuesView from "../src/components/workbench/IssuesView.vue";
+import OverviewView from "../src/components/workbench/OverviewView.vue";
+import RelatedChecks from "../src/components/workbench/RelatedChecks.vue";
+import { workbenchKey, type Surface } from "../src/components/workbench/context";
 import { findingGuide, findingGuides } from "../src/locales/findings.en";
 import { selectChecks } from "../src/services/check-list";
-import { nextTabId, scrollThumb } from "../src/services/tablist";
-import type { CheckResult, ScoreSummary } from "../src/types/audit";
+import type { AuditResult, CheckResult, ScoreSummary } from "../src/types/audit";
 
 function check(patch: Partial<CheckResult> & Pick<CheckResult, "id" | "status">): CheckResult {
   return {
@@ -23,34 +23,6 @@ function check(patch: Partial<CheckResult> & Pick<CheckResult, "id" | "status">)
     ...patch,
   };
 }
-
-describe("workbench navigation", () => {
-  it("keeps existing report sections reachable", () => {
-    expect(workbenchGroupId("headings")).toBe("onpage");
-    expect(workbenchGroupId("schema")).toBe("onpage");
-    expect(workbenchGroupId("performance")).toBe("technical");
-    expect(workbenchGroupId("reports")).toBe("history");
-    expect(workbenchGroupId("export")).toBe("export");
-    expect(workbenchGroupId("sitemaps")).toBe("sitemaps");
-    expect(workbenchGroupId("settings")).toBe("settings");
-    expect(workbenchGroupId("not-a-section")).toBe("overview");
-  });
-});
-
-describe("tablist keys", () => {
-  const ids = ["overview", "issues", "inspect"];
-
-  it("moves and wraps", () => {
-    expect(nextTabId("overview", ids, "ArrowRight")).toBe("issues");
-    expect(nextTabId("overview", ids, "ArrowLeft")).toBe("inspect");
-    expect(nextTabId("issues", ids, "Home")).toBe("overview");
-    expect(nextTabId("issues", ids, "End")).toBe("inspect");
-    expect(nextTabId("issues", ids, "Enter")).toBeNull();
-    expect(scrollThumb(0, 100, 100)).toBeNull();
-    expect(scrollThumb(0, 100, 400)).toEqual({ size: 25, start: 0 });
-    expect(scrollThumb(300, 100, 400)?.start).toBe(75);
-  });
-});
 
 describe("check list", () => {
   const checks = [
@@ -91,17 +63,89 @@ describe("finding guides", () => {
   });
 });
 
+function context(surface: Surface = "report") {
+  return {
+    [workbenchKey as symbol]: {
+      surface,
+      tabId: ref(undefined),
+      ready: ref(true),
+      probing: ref(false),
+      probeMessage: ref(""),
+      preference: ref("light"),
+      issueFocus: ref(null),
+      go: vi.fn(),
+      toast: vi.fn(),
+      copy: vi.fn(),
+      highlight: vi.fn(),
+      clearMarks: vi.fn(),
+      refresh: vi.fn(),
+      runSiteProbe: vi.fn(),
+      setPreference: vi.fn(),
+      openReport: vi.fn(),
+    },
+  };
+}
+
+const baseScore: ScoreSummary = {
+  available: true,
+  value: 50,
+  disclaimer: "Not a ranking.",
+  applicableChecks: 1,
+  excludedChecks: 1,
+  errors: 1,
+  warnings: 0,
+  passed: 0,
+  info: 0,
+  unavailable: 1,
+  notApplicable: 0,
+  categories: [
+    {
+      category: "metadata",
+      available: true,
+      value: 50,
+      applicableChecks: 1,
+      errors: 1,
+      warnings: 0,
+      passed: 0,
+    },
+    {
+      category: "performance",
+      available: false,
+      value: null,
+      applicableChecks: 0,
+      errors: 0,
+      warnings: 0,
+      passed: 0,
+    },
+  ],
+};
+
+function audit(checks: CheckResult[], score: ScoreSummary = baseScore): AuditResult {
+  return {
+    page: { url: "https://example.com/", title: "Example", language: "en" },
+    score,
+    checks,
+    source: { limitations: [] },
+    details: {
+      metadata: { title: "Example", canonicals: [], robots: [], language: "en" },
+    },
+  } as unknown as AuditResult;
+}
+
 describe("issue presentation", () => {
   it("shows the page suggestion separately from a generic example", () => {
-    const wrapper = mount(IssueCard, {
+    const wrapper = mount(IssuesView, {
       props: {
-        check: check({
-          id: "RULE_META_TITLE_MISSING",
-          status: "ERROR",
-          title: "Title missing",
-          recommendation: "Add one title element.",
-        }),
+        audit: audit([
+          check({
+            id: "RULE_META_TITLE_MISSING",
+            status: "ERROR",
+            title: "Title missing",
+            recommendation: "Add one title element.",
+          }),
+        ]),
       },
+      global: { provide: context() },
     });
     expect(wrapper.text()).toContain("Add one title element.");
     expect(wrapper.text()).toContain("Example only");
@@ -109,71 +153,58 @@ describe("issue presentation", () => {
     expect(wrapper.find("code").text()).not.toContain("Add one title element.");
   });
 
-  it("hides the example on a compact card", () => {
-    const wrapper = mount(IssueCard, {
-      props: {
-        check: check({ id: "RULE_H1_MISSING", status: "ERROR", title: "H1 missing" }),
-        compact: true,
-      },
+  it("lists only errors and warnings in the sidebar checks", () => {
+    const checks = [
+      check({ id: "a", status: "PASS", title: "Fine title" }),
+      check({ id: "b", status: "WARNING", title: "Long title" }),
+    ];
+    const sidebar = mount(RelatedChecks, {
+      props: { audit: audit(checks), category: "metadata" },
+      global: { provide: context("sidebar") },
     });
-    expect(wrapper.text()).toContain("H1 missing");
-    expect(wrapper.find("code").exists()).toBe(false);
+    expect(sidebar.text()).toContain("Long title");
+    expect(sidebar.text()).not.toContain("Fine title");
+    expect(sidebar.text()).toContain("2 in Issues");
+    const report = mount(RelatedChecks, {
+      props: { audit: audit(checks), category: "metadata" },
+      global: { provide: context("report") },
+    });
+    expect(report.text()).toContain("Fine title");
   });
 
   it("draws a measured category and leaves an empty category unlabeled as a score", () => {
-    const score: ScoreSummary = {
-      available: true,
-      value: 50,
-      disclaimer: "Not a ranking.",
-      applicableChecks: 1,
-      excludedChecks: 1,
-      errors: 1,
-      warnings: 0,
-      passed: 0,
-      info: 0,
-      unavailable: 1,
-      notApplicable: 0,
-      categories: [
-        {
-          category: "metadata",
-          available: true,
-          value: 50,
-          applicableChecks: 1,
-          errors: 1,
-          warnings: 0,
-          passed: 0,
-        },
-        {
-          category: "performance",
-          available: false,
-          value: null,
-          applicableChecks: 0,
-          errors: 0,
-          warnings: 0,
-          passed: 0,
-        },
-      ],
-    };
-    const wrapper = mount(ScoreBlock, { props: { score } });
-    expect(wrapper.text()).toContain("50");
-    expect(wrapper.find(".score-ring-value").attributes("stroke-dashoffset")).toBe("50");
+    const wrapper = mount(OverviewView, {
+      props: { audit: audit([]) },
+      global: { provide: context("report") },
+    });
+    expect(wrapper.find(".score-figure").text()).toContain("50");
+    const ring = wrapper.findAll(".score-svg circle")[1];
+    expect(Number(ring?.attributes("stroke-dashoffset"))).toBeCloseTo(Math.PI * 42, 1);
     expect(wrapper.text()).toContain("Not measured");
     expect(wrapper.text()).toContain("Not a ranking.");
-    const fills = wrapper.findAll(".category-fill");
-    expect(fills[0]?.attributes("style")).toContain("50%");
-    expect(fills[1]?.attributes("style")).toContain("0%");
+    const items = wrapper.findAll(".category-item");
+    expect(items[0]?.find(".fill").attributes("style")).toContain("50%");
+    expect(items[1]?.find(".fill").exists()).toBe(false);
+  });
+
+  it("shows a dash, not zero, when there is no score", () => {
+    const wrapper = mount(OverviewView, {
+      props: { audit: audit([], { ...baseScore, available: false, value: null }) },
+      global: { provide: context("sidebar") },
+    });
+    expect(wrapper.find(".score-figure").text()).toContain("–");
+    expect(wrapper.findAll(".score-svg circle")).toHaveLength(1);
   });
 
   it("searches and sorts the issue list", async () => {
-    const wrapper = mount(CheckTable, {
+    const wrapper = mount(IssuesView, {
       props: {
-        title: "Issues",
-        showCategory: true,
-        checks: [
+        audit: audit([
           check({ id: "b", status: "PASS", title: "Passed title", category: "content" }),
           check({ id: "a", status: "ERROR", title: "Missing title", category: "metadata" }),
-        ],
+        ]),
       },
+      global: { provide: context() },
     });
     const cards = () => wrapper.findAll("article h3").map((item) => item.text());
     expect(cards()).toEqual(["Missing title", "Passed title"]);

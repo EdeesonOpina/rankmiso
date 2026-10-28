@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
 import type { AuditResult } from "../../types/audit";
-import { groupLinks, linkGroupOrder, selectLinks, type LinkGroupName } from "../../services/popup-summary";
+import {
+  groupLinks,
+  linkGroupOrder,
+  selectLinks,
+  type LinkGroupName,
+} from "../../services/popup-summary";
 import { useI18n } from "../../composables/useI18n";
 import type { MessageKey } from "../../locales/en";
 
@@ -36,21 +41,29 @@ function attributes(link: AuditResult["details"]["links"][number]): string[] {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.links") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("pane.links") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
   <div class="title-row" style="margin-top: 0">
     <h2>{{ t("popup.linkExplorer") }}</h2>
-    <span class="badge">{{ t(audit.metrics.counts.links === 1 ? "pm.linkCount" : "pm.linksCount", { count: n(audit.metrics.counts.links) }) }}</span>
+    <span class="badge">{{
+      t(audit.metrics.counts.links === 1 ? "pm.linkCount" : "pm.linksCount", {
+        count: n(audit.metrics.counts.links),
+      })
+    }}</span>
   </div>
   <div class="grid3">
     <div class="mini-tile">
-      <strong>{{ n(audit.metrics.counts.internalLinks) }}</strong><span>{{ t("links.internal") }}</span>
+      <strong>{{ n(audit.metrics.counts.internalLinks) }}</strong
+      ><span>{{ t("links.internal") }}</span>
     </div>
     <div class="mini-tile">
-      <strong>{{ n(audit.metrics.counts.externalLinks) }}</strong><span>{{ t("links.external") }}</span>
+      <strong>{{ n(audit.metrics.counts.externalLinks) }}</strong
+      ><span>{{ t("links.external") }}</span>
     </div>
     <div class="mini-tile">
-      <strong>{{ n(nofollow) }}</strong><span>{{ t("popup.nofollowLabel") }}</span>
+      <strong>{{ n(nofollow) }}</strong
+      ><span>{{ t("popup.nofollowLabel") }}</span>
     </div>
   </div>
   <label class="field-label" for="link-search">{{ t("pm.searchDestinations") }}</label>

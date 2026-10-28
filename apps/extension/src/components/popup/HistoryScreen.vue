@@ -33,7 +33,9 @@ const baseline = computed(() => (records.value.length > 1 ? records.value[0]! : 
 const comparison = computed(() =>
   baseline.value && latest.value ? compareRecords(baseline.value, latest.value) : null,
 );
-const scored = computed(() => records.value.filter((item) => item.comparison.score != null).slice(-8));
+const scored = computed(() =>
+  records.value.filter((item) => item.comparison.score != null).slice(-8),
+);
 const points = computed(() => {
   const list = scored.value;
   return list.map((item, index) => ({
@@ -78,7 +80,8 @@ function scoreText(item: SavedReport | null): string {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.history") }}</span><span class="minor">{{ t("pm.thisDevice") }}</span>
+    <span>{{ t("pane.history") }}</span
+    ><span class="minor">{{ t("pm.thisDevice") }}</span>
   </div>
   <div class="title-row" style="margin-top: 0">
     <h2>{{ t("popup.seoOverTime") }}</h2>
@@ -91,7 +94,10 @@ function scoreText(item: SavedReport | null): string {
         <div class="metric-line" style="margin-top: 7px">
           <strong style="font-size: 41px">{{ scoreText(latest) }}</strong>
           <span
-            v-if="comparison?.score.kind === 'delta' && comparison.score.after !== comparison.score.before"
+            v-if="
+              comparison?.score.kind === 'delta' &&
+              comparison.score.after !== comparison.score.before
+            "
             :class="comparison.score.after > comparison.score.before ? 'delta-up' : 'delta-down'"
             >{{ comparison.score.after > comparison.score.before ? "↑ +" : "↓ "
             }}{{ n(comparison.score.after - comparison.score.before) }}</span
@@ -105,7 +111,9 @@ function scoreText(item: SavedReport | null): string {
         class="mini-chart"
         viewBox="0 0 270 105"
         role="img"
-        :aria-label="t('pm.chartLabel', { scores: scored.map((item) => item.comparison.score).join(', ') })"
+        :aria-label="
+          t('pm.chartLabel', { scores: scored.map((item) => item.comparison.score).join(', ') })
+        "
       >
         <path class="grid" d="M5 23H265M5 55H265M5 87H265" />
         <path
@@ -117,7 +125,9 @@ function scoreText(item: SavedReport | null): string {
       </svg>
       <div class="chart-foot">
         <span>{{ day(scored[0]!.savedAt) }}</span>
-        <span v-if="scored.length > 2">{{ day(scored[Math.floor(scored.length / 2)]!.savedAt) }}</span>
+        <span v-if="scored.length > 2">{{
+          day(scored[Math.floor(scored.length / 2)]!.savedAt)
+        }}</span>
         <span v-if="scored.length > 1">{{ day(scored.at(-1)!.savedAt) }}</span>
       </div>
     </template>
@@ -139,7 +149,9 @@ function scoreText(item: SavedReport | null): string {
     </div>
     <div class="grid2">
       <div class="mini-tile">
-        <span style="margin: 0 0 8px">{{ t("pm.baselineOn", { date: day(baseline.savedAt) }) }}</span>
+        <span style="margin: 0 0 8px">{{
+          t("pm.baselineOn", { date: day(baseline.savedAt) })
+        }}</span>
         <strong>{{ scoreText(baseline) }}</strong>
         <span>{{
           baseline.comparison.history
@@ -160,18 +172,29 @@ function scoreText(item: SavedReport | null): string {
   </template>
 
   <template v-if="movement.length">
-    <div class="title-row"><h2>{{ t("pm.issueMovement") }}</h2></div>
+    <div class="title-row">
+      <h2>{{ t("pm.issueMovement") }}</h2>
+    </div>
     <div v-for="item in movement" :key="`${item.kind}-${item.id}`" class="row">
-      <span class="mark" :class="{ green: item.kind === 'resolved', error: item.kind === 'introduced' }" aria-hidden="true">{{
-        item.kind === "resolved" ? "✓" : "!"
-      }}</span>
+      <span
+        class="mark"
+        :class="{ green: item.kind === 'resolved', error: item.kind === 'introduced' }"
+        aria-hidden="true"
+        >{{ item.kind === "resolved" ? "✓" : "!" }}</span
+      >
       <div class="row-content">
         <strong class="row-title">{{ item.title }}</strong>
         <p class="row-sub">{{ t(moveKey[item.kind][1]) }}</p>
       </div>
-      <span class="badge" :class="{ ok: item.kind === 'resolved', warn: item.kind === 'unchanged', err: item.kind === 'introduced' }">{{
-        t(moveKey[item.kind][0])
-      }}</span>
+      <span
+        class="badge"
+        :class="{
+          ok: item.kind === 'resolved',
+          warn: item.kind === 'unchanged',
+          err: item.kind === 'introduced',
+        }"
+        >{{ t(moveKey[item.kind][0]) }}</span
+      >
     </div>
   </template>
 
