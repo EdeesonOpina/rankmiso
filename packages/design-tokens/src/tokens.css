@@ -49,6 +49,26 @@
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
+  --gutter: var(--space-4);
+  --card-pad: var(--space-4);
+  --section-gap: var(--space-4);
+  --card-fill: var(--surface);
+  --card-line: color-mix(in srgb, var(--primary) 28%, var(--border));
+  --card-radius: 18px;
+  --card-wash: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 7%, var(--card-fill)),
+    var(--card-fill) 70%
+  );
+  --card: var(--card-fill);
+  --preview-canvas: #f0f2f5;
+  --preview-ink: #050505;
+  --preview-quiet: #65676b;
+  --preview-frame: #dadde1;
+  --preview-x-canvas: #ffffff;
+  --preview-x-ink: #0f1419;
+  --preview-x-quiet: #536471;
+  --preview-x-frame: #cfd9de;
   --text-sm: 13px;
   --text-md: 14px;
   --text-lg: 20px;
@@ -77,6 +97,22 @@
   --miso-color-info-bg: #172554;
   --focus: var(--miso-color-primary);
   --shadow: 0 1px 2px rgb(0 0 0 / 30%);
+  --card-fill: var(--miso-color-elevated);
+  --card: var(--card-fill);
+  --card-line: color-mix(in srgb, var(--primary) 28%, var(--border));
+  --card-wash: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 7%, var(--card-fill)),
+    var(--card-fill) 70%
+  );
+  --preview-canvas: #242526;
+  --preview-ink: #e4e6eb;
+  --preview-quiet: #b0b3b8;
+  --preview-frame: #3e4042;
+  --preview-x-canvas: #15202b;
+  --preview-x-ink: #e7e9ea;
+  --preview-x-quiet: #8b98a5;
+  --preview-x-frame: #38444d;
   color-scheme: dark;
 }
 

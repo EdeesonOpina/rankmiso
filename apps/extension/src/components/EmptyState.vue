@@ -3,7 +3,7 @@ defineProps<{ title: string; description: string }>();
 </script>
 
 <template>
-  <div class="flex items-start gap-3 rounded-panel border border-border bg-surface px-4 py-4">
+  <div class="flex items-start gap-3 border-b border-border py-3">
     <div
       class="grid h-9 w-9 shrink-0 place-items-center rounded-panel bg-background text-muted"
       aria-hidden="true"

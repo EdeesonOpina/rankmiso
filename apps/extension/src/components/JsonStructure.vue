@@ -1,24 +1,74 @@
 <script setup lang="ts">
-import type { JsonNode } from "../services/readable-json";
+import { ref } from "vue";
+import { jsonCopy, jsonPath, schemaIdentity, type JsonNode } from "../services/readable-json";
+import { useI18n } from "../composables/useI18n";
+import CopyButton from "./CopyButton.vue";
 
 defineOptions({ name: "JsonStructure" });
-defineProps<{ node: JsonNode }>();
+defineProps<{ node: JsonNode; name: string; path: string }>();
+const { t } = useI18n();
+const opened = ref(false);
+
+function onToggle(event: Event) {
+  opened.value = (event.target as HTMLDetailsElement).open;
+}
+
+function hint(node: JsonNode): string {
+  if (node.kind === "list") return `[${node.items.length + node.hidden}]`;
+  if (node.kind === "fields") {
+    const identity = schemaIdentity(node);
+    if (identity.types.length) return identity.types.join(", ");
+    return t("schema.object");
+  }
+  return "";
+}
 </script>
 
 <template>
-  <dl v-if="node.kind === 'fields'" class="m-0 space-y-5">
-    <div v-for="field in node.fields" :key="field.key">
-      <dt class="text-[12px] text-muted">{{ field.key }}</dt>
-      <dd class="m-0 mt-2 break-words text-[13px] leading-relaxed">
-        <JsonStructure v-if="field.value.kind !== 'text'" :node="field.value" />
-        <span v-else>{{ field.value.text }}</span>
-      </dd>
+  <details
+    v-if="node.kind === 'fields' || node.kind === 'list'"
+    class="json-branch"
+    @toggle="onToggle"
+  >
+    <summary>
+      <span class="json-key">{{ name }}</span>
+      <span class="json-hint">{{ hint(node) }}</span>
+      <span class="json-copies" @click.stop>
+        <CopyButton :value="jsonCopy(node)" :accessible-name="t('schema.copyValue')" />
+        <CopyButton :value="path" :accessible-name="t('schema.copyPath')" />
+      </span>
+    </summary>
+    <div v-if="opened" class="json-nest">
+      <template v-if="node.kind === 'fields'">
+        <JsonStructure
+          v-for="field in node.fields"
+          :key="field.key"
+          :node="field.value"
+          :name="field.key"
+          :path="jsonPath(path, field.key)"
+        />
+        <p v-if="node.hidden" class="json-note">{{ t("schema.hidden", { count: node.hidden }) }}</p>
+      </template>
+      <template v-else>
+        <JsonStructure
+          v-for="(item, index) in node.items"
+          :key="index"
+          :node="item"
+          :name="`[${index}]`"
+          :path="jsonPath(path, `[${index}]`)"
+        />
+        <p v-if="node.hidden" class="json-note">{{ t("schema.hidden", { count: node.hidden }) }}</p>
+      </template>
     </div>
-  </dl>
-  <ol v-else-if="node.kind === 'list'" class="m-0 list-none space-y-3 p-0">
-    <li v-for="(item, index) in node.items" :key="index" class="border-l border-border pl-3">
-      <JsonStructure :node="item" />
-    </li>
-  </ol>
-  <p v-else class="m-0 break-words leading-relaxed">{{ node.text }}</p>
+  </details>
+  <div v-else class="json-leaf">
+    <span class="json-key">{{ name }}</span>
+    <span v-if="node.kind === 'value'" class="json-hint">{{ node.type }}</span>
+    <span class="json-text">{{ node.text }}</span>
+    <span class="json-copies">
+      <CopyButton :value="node.text" :accessible-name="t('schema.copyValue')" />
+      <CopyButton :value="path" :accessible-name="t('schema.copyPath')" />
+    </span>
+    <p v-if="node.kind === 'limit'" class="json-note">{{ t("schema.depth") }}</p>
+  </div>
 </template>

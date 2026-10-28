@@ -12,7 +12,7 @@ const previews = computed(() => sharePreviews(props.audit));
 </script>
 
 <template>
-  <section class="report-section" aria-labelledby="share-cards-heading">
+  <section class="stack" aria-labelledby="share-cards-heading">
     <h2 id="share-cards-heading" class="sr-only">{{ t("social.preview") }}</h2>
     <div class="report-callout">
       <Info class="report-callout-icon h-4 w-4" aria-hidden="true" />

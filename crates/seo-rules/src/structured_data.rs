@@ -6,25 +6,28 @@ pub fn interpret(blocks: &[StructuredDataBlock]) -> Vec<StructuredDataView> {
     blocks
         .iter()
         .map(|block| {
-            if !block.format.eq_ignore_ascii_case("json-ld") {
+            let known = block.format.eq_ignore_ascii_case("json-ld")
+                || block.format.eq_ignore_ascii_case("microdata")
+                || block.format.eq_ignore_ascii_case("rdfa");
+            if !known {
                 return StructuredDataView {
                     format: block.format.clone(),
                     valid_json: false,
-                    error: Some("Only JSON-LD syntax is validated in this version.".to_string()),
+                    error: Some("This structured-data format is not read.".to_string()),
                     types: Vec::new(),
                     raw: block.raw.clone(),
                 };
             }
             match serde_json::from_str::<serde_json::Value>(&block.raw) {
                 Ok(value) => StructuredDataView {
-                    format: "json-ld".to_string(),
+                    format: block.format.to_ascii_lowercase(),
                     valid_json: true,
                     error: None,
                     types: collect_types(&value),
                     raw: block.raw.clone(),
                 },
                 Err(error) => StructuredDataView {
-                    format: "json-ld".to_string(),
+                    format: block.format.to_ascii_lowercase(),
                     valid_json: false,
                     error: Some(error.to_string()),
                     types: Vec::new(),
@@ -36,7 +39,59 @@ pub fn interpret(blocks: &[StructuredDataBlock]) -> Vec<StructuredDataView> {
 }
 
 pub fn checks(views: &[StructuredDataView]) -> Vec<CheckResult> {
-    vec![syntax(views), coverage(views)]
+    let json_ld: Vec<StructuredDataView> = views
+        .iter()
+        .filter(|view| view.format == "json-ld")
+        .cloned()
+        .collect();
+    vec![
+        syntax(&json_ld),
+        coverage(&json_ld),
+        extracted(views, "microdata", "RULE_MICRODATA_EXTRACTED", "Microdata"),
+        extracted(views, "rdfa", "RULE_RDFA_EXTRACTED", "RDFa"),
+    ]
+}
+
+fn extracted(
+    views: &[StructuredDataView],
+    format: &str,
+    id: &str,
+    label: &str,
+) -> CheckResult {
+    let found: Vec<&StructuredDataView> = views.iter().filter(|view| view.format == format).collect();
+    if found.is_empty() {
+        return crate::support::check(
+            id,
+            Category::StructuredData,
+            CheckStatus::NotApplicable,
+            1,
+            &format!("No {label} was extracted"),
+            "Nothing in this format was collected from the rendered page. This is not a pass, and it is not rich-result eligibility.",
+        );
+    }
+    if found.iter().any(|view| !view.valid_json) {
+        return crate::support::check(
+            id,
+            Category::StructuredData,
+            CheckStatus::Info,
+            1,
+            &format!("{label} could not be read"),
+            "The extracted block was not usable JSON. This is a local extraction limit, not a search-engine eligibility result.",
+        );
+    }
+    let mut check = crate::support::check(
+        id,
+        Category::StructuredData,
+        CheckStatus::Info,
+        1,
+        &format!("{label} was extracted"),
+        "Items were read from the rendered page with a bounded extractor. A successful read is not rich-result eligibility, and it does not validate the vocabulary.",
+    );
+    let types: Vec<String> = found.iter().flat_map(|view| view.types.clone()).collect();
+    if !types.is_empty() {
+        check.evidence = bounded_evidence(&types, "type");
+    }
+    check
 }
 
 fn syntax(views: &[StructuredDataView]) -> CheckResult {
@@ -47,7 +102,7 @@ fn syntax(views: &[StructuredDataView]) -> CheckResult {
             CheckStatus::Info,
             1,
             "No JSON-LD scripts were found",
-            "Microdata and RDFa are not extracted in this version. Absence of JSON-LD is not a statement that the page has no structured data, and it is not a ranking error.",
+            "No JSON-LD script was collected. Microdata and RDFa are reported separately when present. Absence of JSON-LD is not a ranking error, and extraction is not rich-result eligibility.",
         );
     }
     let invalid: Vec<String> = views
@@ -302,6 +357,22 @@ mod field_tests {
             ),
             CheckStatus::Warning
         );
+    }
+
+    #[test]
+    fn microdata_does_not_become_a_json_ld_error() {
+        let views = interpret(&[StructuredDataBlock {
+            format: "microdata".to_string(),
+            raw: r#"{"items":[{"@type":"Article","properties":{"name":["Ada"]}}],"limitations":["An itemscope has no itemtype."]}"#.to_string(),
+        }]);
+        let results = checks(&views);
+        let syntax = results.iter().find(|check| check.id == "RULE_JSONLD_SYNTAX").unwrap();
+        let rich = results.iter().find(|check| check.id == "RULE_SCHEMA_RICH_RESULTS").unwrap();
+        let micro = results.iter().find(|check| check.id == "RULE_MICRODATA_EXTRACTED").unwrap();
+        assert_eq!(syntax.status, CheckStatus::Info);
+        assert_eq!(rich.status, CheckStatus::Unavailable);
+        assert_eq!(micro.status, CheckStatus::Info);
+        assert!(micro.evidence.iter().any(|item| item.value.contains("Article")));
     }
 
     #[test]

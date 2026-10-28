@@ -5,6 +5,7 @@ import { useI18n } from "../composables/useI18n";
 const props = defineProps<{
   caption: string;
   columns: Array<{ label: string; width: number }>;
+  wrap?: boolean;
 }>();
 
 const { t } = useI18n();
@@ -72,7 +73,7 @@ function nudge(event: KeyboardEvent, index: number) {
   <div class="overflow-x-auto">
     <table
       class="data-table w-full table-fixed border-collapse text-left text-[13px]"
-      :class="resizing ? 'select-none' : ''"
+      :class="[resizing ? 'select-none' : '', wrap ? 'is-wrap' : '']"
     >
       <caption class="sr-only">
         {{
@@ -126,5 +127,12 @@ function nudge(event: KeyboardEvent, index: number) {
 
 .data-table :deep(tbody tr) {
   border-bottom: 1px solid var(--border);
+}
+
+.data-table.is-wrap :deep(td) {
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 </style>

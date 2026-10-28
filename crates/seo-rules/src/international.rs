@@ -190,6 +190,16 @@ fn reciprocal(snapshot: &PageSnapshot, links: &[HreflangLink]) -> CheckResult {
         );
     }
     if snapshot.site.hreflang_checked == 0 {
+        if snapshot.site.hreflang_skipped > 0 {
+            return crate::support::check(
+                "RULE_HREFLANG_RECIPROCAL",
+                Category::International,
+                CheckStatus::Unavailable,
+                1,
+                "Return links were not checked",
+                "Alternates on another host, or same-host fetches that failed, were not treated as missing return links.",
+            );
+        }
         return crate::support::check(
             "RULE_HREFLANG_RECIPROCAL",
             Category::International,
@@ -215,7 +225,21 @@ fn reciprocal(snapshot: &PageSnapshot, links: &[HreflangLink]) -> CheckResult {
             "missing return links",
             snapshot.site.hreflang_missing.to_string(),
         ));
+        if snapshot.site.hreflang_skipped > 0 {
+            check.description.push_str(
+                " Other alternates were not checked, and those are not counted as missing.",
+            );
+        }
         check
+    } else if snapshot.site.hreflang_skipped > 0 {
+        crate::support::check(
+            "RULE_HREFLANG_RECIPROCAL",
+            Category::International,
+            CheckStatus::Info,
+            1,
+            "Some return links were not checked",
+            "The same-host alternates that were fetched point back. Alternates on another host were not requested and are not reported as missing.",
+        )
     } else {
         crate::support::check(
             "RULE_HREFLANG_RECIPROCAL",
@@ -318,5 +342,26 @@ mod tests {
             .unwrap()
             .status;
         assert_eq!(status, CheckStatus::Warning);
+    }
+
+    #[test]
+    fn an_unchecked_alternate_is_not_a_missing_return_link() {
+        let mut snapshot = PageSnapshot::default();
+        snapshot.links_rel.push(LinkRel {
+            rel: "alternate".to_string(),
+            href: "https://other.example/fr".to_string(),
+            hreflang: Some("fr".to_string()),
+            media: None,
+        });
+        snapshot.site.requested = true;
+        snapshot.site.hreflang_skipped = 1;
+        let audit = crate::analyze(&snapshot, &AnalyzeOptions::default()).unwrap();
+        let status = audit
+            .checks
+            .iter()
+            .find(|check| check.id == "RULE_HREFLANG_RECIPROCAL")
+            .unwrap()
+            .status;
+        assert_eq!(status, CheckStatus::Unavailable);
     }
 }
