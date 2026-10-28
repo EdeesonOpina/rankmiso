@@ -1,27 +1,36 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, ref } from "vue";
-import { ListChecks, LoaderCircle, PanelRightOpen, RefreshCw } from "lucide-vue-next";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { browser } from "wxt/browser";
-import BrandMark from "../../src/components/BrandMark.vue";
 import { openSidebar, sidebarAvailable } from "../../src/services/sidebar";
-import { brandConfig } from "../../src/config/brand.config";
+import { clearHighlights, highlightElements } from "../../src/services/inspect";
 import { useI18n } from "../../src/composables/useI18n";
 import { useTheme } from "../../src/composables/useTheme";
 import { useAudit } from "../../src/composables/useAudit";
-import ScoreBlock from "../../src/components/ScoreBlock.vue";
-import CheckTable from "../../src/components/CheckTable.vue";
-import SectionTabs from "../../src/components/SectionTabs.vue";
-import StatusBadge from "../../src/components/StatusBadge.vue";
-import { popupNav } from "../../src/config/navigation.config";
-import PopupOverview from "../../src/components/PopupOverview.vue";
-import PopupBriefs from "../../src/components/PopupBriefs.vue";
-import ShareCards from "../../src/components/ShareCards.vue";
-import LoadingStatus from "../../src/components/LoadingStatus.vue";
-import EmptyState from "../../src/components/EmptyState.vue";
+import { flatNav } from "../../src/config/navigation.config";
+import type { ThemePreference } from "../../src/config/theme.config";
+import type { MessageKey } from "../../src/locales/en";
+import PopupRail from "../../src/components/PopupRail.vue";
+import OverviewScreen from "../../src/components/popup/OverviewScreen.vue";
+import IssuesScreen from "../../src/components/popup/IssuesScreen.vue";
+import MetadataScreen from "../../src/components/popup/MetadataScreen.vue";
+import ContentScreen from "../../src/components/popup/ContentScreen.vue";
+import HeadingsScreen from "../../src/components/popup/HeadingsScreen.vue";
+import LinksScreen from "../../src/components/popup/LinksScreen.vue";
+import ImagesScreen from "../../src/components/popup/ImagesScreen.vue";
+import SchemaScreen from "../../src/components/popup/SchemaScreen.vue";
+import SocialScreen from "../../src/components/popup/SocialScreen.vue";
+import TechnicalScreen from "../../src/components/popup/TechnicalScreen.vue";
+import PerformanceScreen from "../../src/components/popup/PerformanceScreen.vue";
+import InternationalScreen from "../../src/components/popup/InternationalScreen.vue";
+import AccessibilityScreen from "../../src/components/popup/AccessibilityScreen.vue";
+import SiteScreen from "../../src/components/popup/SiteScreen.vue";
+import SitemapsScreen from "../../src/components/popup/SitemapsScreen.vue";
+import HistoryScreen from "../../src/components/popup/HistoryScreen.vue";
+import ExportScreen from "../../src/components/popup/ExportScreen.vue";
+import SettingsScreen from "../../src/components/popup/SettingsScreen.vue";
 
-const HistoryBrief = defineAsyncComponent(() => import("../../src/components/HistoryBrief.vue"));
-const { t, n } = useI18n();
-useTheme();
+const { t } = useI18n();
+const { preference, setPreference } = useTheme();
 const requestedTabId = Number(new URLSearchParams(location.search).get("tabId"));
 const { status, error, audit, tab, stale, refresh } = useAudit(
   Number.isInteger(requestedTabId) && requestedTabId > 0 ? requestedTabId : undefined,
@@ -29,42 +38,67 @@ const { status, error, audit, tab, stale, refresh } = useAudit(
 const canOpenSidebar = sidebarAvailable();
 
 const pane = ref("overview");
-const tabs = computed(() =>
-  popupNav.map((item) => ({ id: item.id, label: t(item.labelKey as "nav.overview") })),
+const focusCheck = ref("");
+const menuOpen = ref(false);
+const view = ref<HTMLElement | null>(null);
+const menuClose = ref<HTMLButtonElement | null>(null);
+const toastText = ref("");
+const toastShown = ref(false);
+let toastTimer = 0;
+
+const screens = {
+  overview: OverviewScreen,
+  issues: IssuesScreen,
+  metadata: MetadataScreen,
+  content: ContentScreen,
+  headings: HeadingsScreen,
+  links: LinksScreen,
+  images: ImagesScreen,
+  schema: SchemaScreen,
+  social: SocialScreen,
+  technical: TechnicalScreen,
+  performance: PerformanceScreen,
+  international: InternationalScreen,
+  accessibility: AccessibilityScreen,
+  site: SiteScreen,
+  sitemaps: SitemapsScreen,
+  reports: HistoryScreen,
+  export: ExportScreen,
+  settings: SettingsScreen,
+} as const;
+
+/** The pinned footer action names the report for the current tool. */
+const footLabel: Record<keyof typeof screens, MessageKey> = {
+  overview: "action.openReport",
+  issues: "issues.reviewReport",
+  metadata: "pm.foot.metadata",
+  content: "pm.foot.content",
+  headings: "pm.foot.headings",
+  links: "pm.foot.links",
+  images: "pm.foot.images",
+  schema: "pm.foot.schema",
+  social: "pm.foot.social",
+  technical: "pm.foot.technical",
+  performance: "pm.foot.performance",
+  international: "pm.foot.international",
+  accessibility: "pm.foot.accessibility",
+  site: "pm.foot.site",
+  sitemaps: "pm.foot.sitemaps",
+  reports: "pm.foot.history",
+  export: "pm.foot.export",
+  settings: "pm.foot.settings",
+};
+
+const destinations = computed(() =>
+  flatNav.map((item) => ({
+    id: item.id,
+    label: t(item.labelKey as MessageKey),
+    short: t((item.shortLabelKey ?? item.labelKey) as MessageKey),
+  })),
 );
-
-function checksFor(category: string) {
-  return (audit.value?.checks ?? []).filter((check) => check.category === category);
-}
-
-onMounted(() => {
-  void refresh();
-});
-
-async function openSidebarView() {
-  if (!tab.value?.id) return;
-  await openSidebar(tab.value.id);
-  window.close();
-}
-
-async function openReport() {
-  if (!tab.value?.id) return;
-  await browser.tabs.create({
-    url: browser.runtime.getURL(`/dashboard.html?tabId=${tab.value.id}&section=${pane.value}`),
-  });
-  window.close();
-}
-
-const issueCount = computed(
-  () =>
-    (audit.value?.checks ?? []).filter(
-      (check) => check.status === "ERROR" || check.status === "WARNING",
-    ).length,
-);
-const topFindings = computed(() =>
-  (audit.value?.checks ?? [])
-    .filter((check) => check.status === "ERROR" || check.status === "WARNING")
-    .slice(0, 3),
+const current = computed(() => (pane.value in screens ? pane.value : "overview") as keyof typeof screens);
+const sectionName = computed(
+  () => destinations.value.find((item) => item.id === current.value)?.label ?? "",
 );
 const host = computed(() => {
   const url = audit.value?.page.url;
@@ -75,166 +109,221 @@ const host = computed(() => {
     return "";
   }
 });
+const pageTitle = computed(() => {
+  if (!audit.value) return t("state.empty");
+  return audit.value.page.title || t("metadata.untitled");
+});
+
+onMounted(() => {
+  void refresh();
+});
+
+watch(pane, async () => {
+  menuOpen.value = false;
+  await nextTick();
+  view.value?.scrollTo(0, 0);
+});
+
+watch(menuOpen, async (open) => {
+  if (!open) return;
+  await nextTick();
+  menuClose.value?.focus();
+});
+
+function toast(message: string) {
+  toastText.value = message;
+  toastShown.value = true;
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toastShown.value = false;
+  }, 2600);
+}
+
+function go(id: string, check = "") {
+  focusCheck.value = check;
+  pane.value = id;
+}
+
+async function copy(value: string) {
+  try {
+    await navigator.clipboard.writeText(value);
+    toast(t("action.copied"));
+  } catch {
+    toast(t("pm.copyFailed"));
+  }
+}
+
+async function highlight(kind: string) {
+  if (!tab.value?.id) return;
+  try {
+    if (kind === "clear") await clearHighlights(tab.value.id);
+    else await highlightElements(tab.value.id, kind);
+    toast(t(kind === "clear" ? "pm.highlightCleared" : "pm.highlighted"));
+  } catch {
+    toast(t("pm.highlightFailed"));
+  }
+}
+
+async function openSidebarView() {
+  if (!canOpenSidebar) {
+    toast(t("action.sidebarUnavailable"));
+    return;
+  }
+  await openSidebar(tab.value?.id);
+  window.close();
+}
+
+async function openReport(section = current.value as string) {
+  if (!tab.value?.id) return;
+  await browser.tabs.create({
+    url: browser.runtime.getURL(`/dashboard.html?tabId=${tab.value.id}&section=${section}`),
+  });
+  window.close();
+}
+
+function onKeydown(event: KeyboardEvent) {
+  if (event.key === "Escape" && menuOpen.value) {
+    event.preventDefault();
+    menuOpen.value = false;
+  }
+}
+
+const THEME_ORDER: ThemePreference[] = ["light", "dark", "system"];
+const themeKey: Record<ThemePreference, MessageKey> = {
+  light: "settings.light",
+  dark: "settings.dark",
+  system: "settings.system",
+};
 </script>
 
 <template>
-  <main class="popup-shell bg-background text-foreground">
-    <header class="flex items-start gap-2">
-      <div class="min-w-0 flex-1">
-        <p class="m-0 flex items-center gap-2 text-[12px] text-muted">
-          <BrandMark />
-          <span>{{ brandConfig.identity.name }}</span>
-          <span v-if="host">· {{ host }}</span>
-        </p>
-        <h1 class="popup-title" :title="audit?.page.title || undefined">
-          {{ audit?.page.title || t("state.empty") }}
-        </h1>
-      </div>
-      <button
-        type="button"
-        class="popup-icon"
-        :disabled="status === 'loading'"
-        :aria-busy="status === 'loading'"
-        :aria-label="t('action.refresh')"
-        @click="refresh"
-      >
-        <LoaderCircle v-if="status === 'loading'" class="h-4 w-4 animate-spin" aria-hidden="true" />
-        <RefreshCw v-else class="h-4 w-4" aria-hidden="true" />
-      </button>
-    </header>
-    <SectionTabs
-      :items="tabs"
-      :current="pane"
-      :label="t('nav.report')"
-      panel-id="popup-panel"
-      @select="pane = $event"
+  <div class="app" @keydown="onKeydown">
+    <a class="skip-link" href="#main">{{ t("nav.skip") }}</a>
+    <PopupRail
+      :items="destinations"
+      :current="current"
+      :label="t('nav.tools')"
+      :menu-label="t('nav.allTools')"
+      :menu-open="menuOpen"
+      @select="go($event)"
+      @more="menuOpen = true"
     />
-    <LoadingStatus v-if="status === 'loading'" class="mb-4" :label="t('state.loading')" />
-    <p
-      v-else-if="status === 'error' || stale"
-      role="status"
-      aria-live="polite"
-      class="mb-4 text-[13px] leading-relaxed"
-    >
-      <span v-if="status === 'error'" class="text-danger">{{ error }}</span>
-      <span v-else>{{ t("state.stale") }}</span>
-    </p>
-    <div
-      v-if="audit"
-      id="popup-panel"
-      role="tabpanel"
-      :aria-labelledby="`tab-${pane}`"
-      class="stack"
-    >
-      <div v-if="pane === 'overview'" class="stack">
-        <ScoreBlock :score="audit.score" :disclaimer="false" />
-        <section v-if="issueCount" class="inspector-block">
-          <div class="card-heading">
-            <h2 class="m-0 text-[13px] font-semibold">{{ t("overview.priority") }}</h2>
-            <span>{{ n(issueCount) }}</span>
-          </div>
-          <ul class="m-0 list-none p-0">
-            <li v-for="check in topFindings" :key="check.id">
-              <button type="button" class="finding-row" @click="pane = 'issues'">
-                <StatusBadge :status="check.status" />
-                <span>{{ check.title }}</span>
-              </button>
-            </li>
-          </ul>
-          <button type="button" class="popup-text" @click="pane = 'issues'">
-            {{ t("action.allIssues", { count: issueCount }) }}
-          </button>
-          <p class="mb-0 mt-3 text-[12px] leading-relaxed text-muted">
-            {{ audit.score.disclaimer }}
-          </p>
-        </section>
-        <EmptyState v-else :title="t('empty.issuesTitle')" :description="t('empty.issuesBody')">
-          <ListChecks class="h-4 w-4" />
-        </EmptyState>
-        <PopupOverview :audit="audit" mode="essentials" />
-      </div>
-      <div v-else-if="pane === 'issues'" class="inspector-block">
-        <p class="mb-3 text-[12px] leading-relaxed text-muted">{{ t("issues.note") }}</p>
-        <CheckTable :checks="audit.checks" show-category :title="t('nav.issues')" />
-      </div>
-      <div v-else-if="pane === 'metadata'">
-        <PopupOverview :audit="audit" mode="details" />
-      </div>
-      <div v-else-if="pane === 'content'" class="inspector-block stack">
-        <dl class="essentials">
-          <div>
-            <dt>{{ t("popup.words") }}</dt>
-            <dd>
-              {{
-                audit.metrics.content.wordCount == null
-                  ? t("popup.notAvailable")
-                  : n(audit.metrics.content.wordCount)
-              }}
-            </dd>
-          </div>
-          <div>
-            <dt>{{ t("field.readingTime") }}</dt>
-            <dd>
-              {{
-                audit.metrics.content.readingTimeMinutes == null
-                  ? t("popup.notAvailable")
-                  : n(audit.metrics.content.readingTimeMinutes)
-              }}
-            </dd>
-          </div>
-        </dl>
-        <CheckTable :checks="checksFor('content')" :title="t('nav.content')" />
-      </div>
-      <div
-        v-else-if="pane === 'headings' || pane === 'links' || pane === 'images'"
-        class="inspector-block"
-      >
-        <PopupBriefs :audit="audit" :kind="pane" />
-      </div>
-      <div v-else-if="pane === 'schema'" class="inspector-block">
-        <PopupBriefs :audit="audit" kind="jsonld" />
-      </div>
-      <ShareCards v-else-if="pane === 'social'" :audit="audit" />
-      <div
-        v-else-if="
-          pane === 'technical' ||
-          pane === 'performance' ||
-          pane === 'international' ||
-          pane === 'accessibility'
-        "
-        class="inspector-block"
-      >
-        <CheckTable
-          :checks="checksFor(pane)"
-          :title="t(popupNav.find((item) => item.id === pane)?.labelKey as 'nav.overview')"
+    <div class="work">
+      <header class="app-head">
+        <div>
+          <div class="eyebrow">{{ t("overview.contextNamed", { section: sectionName }) }}</div>
+          <h1 class="page-title" :title="audit?.page.title || undefined">{{ pageTitle }}</h1>
+          <p v-if="host" class="domain" :title="audit?.page.url">{{ host }}</p>
+        </div>
+        <button
+          type="button"
+          class="refresh"
+          :class="{ busy: status === 'loading' }"
+          :disabled="status === 'loading'"
+          :aria-busy="status === 'loading'"
+          :aria-label="t('action.refresh')"
+          :title="t('action.refresh')"
+          @click="refresh"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2 5.5M20 4v7h-7" /></svg>
+        </button>
+      </header>
+      <main id="main" ref="view" class="view" tabindex="-1">
+        <p v-if="status === 'loading' && !audit" class="note" role="status">
+          {{ t("state.loading") }}
+        </p>
+        <p v-else-if="status === 'error'" class="note status-red" role="status">{{ error }}</p>
+        <p v-else-if="stale" class="note" role="status" style="margin-bottom: 14px">
+          {{ t("state.stale") }}
+        </p>
+        <component
+          :is="screens[current]"
+          v-if="audit"
+          :audit="audit"
+          :focus-id="focusCheck"
+          :preference="preference"
+          @go="go"
+          @report="openReport"
+          @copy="copy"
+          @toast="toast"
+          @highlight="highlight"
+          @theme="setPreference"
         />
-      </div>
-      <p
-        v-else-if="pane === 'sitemaps'"
-        class="inspector-block m-0 text-[13px] leading-relaxed text-muted"
+      </main>
+      <footer class="foot">
+        <button type="button" class="main-btn" :disabled="!tab?.id" @click="openReport()">
+          {{ t(footLabel[current]) }} <span aria-hidden="true">↗</span>
+        </button>
+        <button
+          type="button"
+          class="sidebar-trigger"
+          :title="t('action.openSidebar')"
+          @click="openSidebarView"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M9 4v16M13 9h4M13 13h4" />
+          </svg>
+          <span>{{ t("action.sidebar") }}</span>
+        </button>
+      </footer>
+    </div>
+    <div
+      class="tools-menu"
+      :class="{ open: menuOpen }"
+      role="presentation"
+      @click.self="menuOpen = false"
+    >
+      <div
+        v-if="menuOpen"
+        class="menu-sheet"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="t('pm.allToolsTitle')"
       >
-        {{ t("sitemap.intro") }}
-      </p>
-      <HistoryBrief v-else-if="pane === 'reports'" :page-url="audit?.page.url ?? ''" />
-      <div v-else-if="pane === 'site'" class="inspector-block stack">
-        <h2 class="m-0 text-[14px] font-semibold">{{ t("site.title") }}</h2>
-        <p class="m-0 text-[13px] leading-relaxed text-muted">{{ t("site.intro") }}</p>
-        <p class="m-0 text-[13px]">{{ host }}</p>
-        <button type="button" class="inspector-action is-primary" @click="openReport">
-          {{ t("site.explore") }}
-        </button>
-      </div>
-      <div class="popup-actions">
-        <button type="button" class="popup-primary" @click="openReport">
-          {{ t("action.openReport") }}
-        </button>
-        <div v-if="canOpenSidebar" class="popup-secondary">
-          <button type="button" :disabled="!tab?.id" @click="openSidebarView">
-            <PanelRightOpen class="h-4 w-4" aria-hidden="true" />
-            {{ t("action.openSidebar") }}
+        <div class="pair" style="margin-bottom: 12px">
+          <strong style="font-size: 14px">{{ t("pm.allToolsTitle") }}</strong>
+          <button
+            ref="menuClose"
+            type="button"
+            class="icon-btn"
+            :aria-label="t('pm.closeTools')"
+            @click="menuOpen = false"
+          >
+            ✕
           </button>
+        </div>
+        <div class="menu-grid">
+          <button
+            v-for="item in destinations"
+            :key="item.id"
+            type="button"
+            :aria-current="current === item.id ? 'page' : undefined"
+            @click="go(item.id)"
+          >
+            {{ item.label }}
+          </button>
+        </div>
+        <p class="micro" style="margin-top: 12px">{{ t("pm.allToolsNote") }}</p>
+        <div class="theme-controls">
+          <strong>{{ t("settings.theme") }}</strong>
+          <div class="segmented" :aria-label="t('settings.theme')">
+            <button
+              v-for="option in THEME_ORDER"
+              :key="option"
+              type="button"
+              class="segment"
+              :aria-pressed="preference === option"
+              @click="setPreference(option as ThemePreference)"
+            >
+              {{ t(themeKey[option as ThemePreference]) }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </main>
+    <div role="status" aria-live="polite" class="toast" :class="{ show: toastShown }">
+      {{ toastText }}
+    </div>
+  </div>
 </template>

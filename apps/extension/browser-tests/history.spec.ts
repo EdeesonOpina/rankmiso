@@ -53,8 +53,8 @@ test("saved audits stay on this device and compare real measurements", async () 
     const popup = await context.newPage();
     await popup.setViewportSize({ width: 420, height: 720 });
     await popup.goto(`chrome-extension://${extensionId}/popup.html?tabId=${pageId}`);
-    await popup.getByRole("tab", { name: "History" }).click();
-    await expect(popup.getByText("1 saved for this page")).toBeVisible();
+    await popup.getByRole("button", { name: "History", exact: true }).click();
+    await expect(popup.getByText("1 saved", { exact: true })).toBeVisible();
     await popup.screenshot({ path: "test-results/history-popup-420.png" });
     expect(await overflows(popup)).toBe(false);
     await popup.close();

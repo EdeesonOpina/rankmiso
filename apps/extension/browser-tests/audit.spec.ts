@@ -42,119 +42,201 @@ test("scored fixtures render in the popup and the report", async () => {
     await expect(popup.getByRole("heading", { name: "Healthy guide" })).toBeVisible();
     await expect(popup.getByText("Not enough measured checks for a score.")).toHaveCount(0);
     await expect(popup.getByText(/\d+ measured checks/)).toBeVisible();
-    await expect(popup.getByRole("button", { name: "Open sidebar" })).toBeVisible();
-    await expect(popup.locator(".popup-primary")).toHaveCount(1);
+    await popup.getByRole("button", { name: "All tools", exact: true }).click();
+    const toolsMenu = popup.getByRole("dialog", { name: "All RankMiso tools" });
+    await expect(toolsMenu.getByRole("button", { name: "Dark", exact: true })).toBeVisible();
+    await popup.keyboard.press("Escape");
+    await expect(popup.locator(".main-btn")).toHaveCount(1);
+    await expect(popup.getByRole("button", { name: "Sidebar", exact: true })).toBeVisible();
     console.log(`popup audit ms ${Date.now() - popupStarted}`);
     await popup.setViewportSize({ width: 420, height: 650 });
-    const needs = popup.getByRole("heading", { name: "Needs attention" });
+    const needs = popup.getByRole("heading", { name: "Fix next" });
     await expect(needs).toBeVisible();
     const needsBox = await needs.boundingBox();
     const findingBox = await popup.locator(".finding-row").nth(1).boundingBox();
     expect((needsBox?.y ?? 999) + (needsBox?.height ?? 0)).toBeLessThan(650);
     expect((findingBox?.y ?? 999) + (findingBox?.height ?? 0)).toBeLessThan(650);
     expect(await overflows(popup)).toBe(false);
-    await expect(popup.locator(".score-ring-value")).toBeVisible();
+    await expect(popup.locator(".hero-score")).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-overview.png" });
     await popup.setViewportSize({ width: 420, height: 720 });
     await popup.screenshot({ path: "test-results/audit-popup-overview-720.png" });
-    const strip = popup.getByRole("tablist");
-    await expect(popup.getByRole("button", { name: "Previous sections" })).toHaveCount(0);
-    await expect(popup.locator(".section-tabs-meter")).toBeVisible();
-    await expect(popup.getByText("Drag or swipe to see more")).toBeVisible();
-    await expect(popup.locator(".section-tabs-fade.is-right")).toBeVisible();
-    await expect(popup.locator(".section-tabs-fade.is-left")).toHaveCount(0);
-    await expect(popup.getByRole("tab", { name: "Overview" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    const before = await strip.evaluate((el) => el.scrollLeft);
-    const box = await strip.boundingBox();
-    if (!box) throw new Error("tab strip has no box");
-    await popup.mouse.move(box.x + 90, box.y + box.height / 2);
-    await popup.mouse.down();
-    await popup.mouse.move(box.x + 90 - 160, box.y + box.height / 2, { steps: 10 });
-    await popup.mouse.up();
-    expect(await strip.evaluate((el) => el.scrollLeft)).toBeGreaterThan(before + 20);
-    await expect(popup.getByRole("tab", { name: "Overview" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    await popup.screenshot({ path: "test-results/audit-popup-tabs-middle.png" });
-    await strip.evaluate((el) => {
-      el.scrollLeft = el.scrollWidth;
+    await popup.screenshot({
+      path: "../../docs/design/reviews/ux9r/final/overview-420.png",
     });
-    await expect(popup.locator(".section-tabs-fade.is-right")).toHaveCount(0);
-    await expect(popup.locator(".section-tabs-fade.is-left")).toBeVisible();
-    await expect
-      .poll(async () =>
-        popup
-          .locator(".section-tabs-meter span")
-          .evaluate((el) => Number.parseFloat((el as HTMLElement).style.marginInlineStart)),
-      )
-      .toBeGreaterThan(10);
-    await popup.screenshot({ path: "test-results/audit-popup-tabs-end.png" });
-    await popup.getByRole("tab", { name: "Social" }).click();
-    await expect(popup.getByRole("tab", { name: "Social" })).toHaveAttribute(
-      "aria-selected",
-      "true",
+    await popup.setViewportSize({ width: 360, height: 640 });
+    expect(await overflows(popup)).toBe(false);
+    await popup.screenshot({
+      path: "../../docs/design/reviews/ux9r/final/overview-360.png",
+    });
+    await popup.setViewportSize({ width: 350, height: 640 });
+    expect(await overflows(popup)).toBe(false);
+    await popup.setViewportSize({ width: 420, height: 735 });
+    expect(await overflows(popup)).toBe(false);
+    await popup.setViewportSize({ width: 420, height: 720 });
+    await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    await popup.screenshot({
+      path: "../../docs/design/reviews/ux9r/final/overview-dark.png",
+    });
+    await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
+    const tools = popup.locator(".rail-nav");
+    const workspace = popup.locator(".view");
+    await expect(popup.getByRole("button", { name: "Overview", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
-    await popup.getByRole("tab", { name: "Overview" }).click();
+    await tools.evaluate((el) => {
+      el.scrollTop = 120;
+    });
+    expect(await tools.evaluate((el) => el.scrollTop)).toBeGreaterThan(20);
+    expect(await workspace.evaluate((el) => el.scrollTop)).toBe(0);
+    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/nav-middle.png" });
+    await tools.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/nav-bottom.png" });
+    await tools.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/nav-top.png" });
+    await workspace.evaluate((el) => {
+      el.scrollTop = 80;
+    });
+    expect(await tools.evaluate((el) => el.scrollTop)).toBe(0);
+    await workspace.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    await popup.getByRole("button", { name: "Social", exact: true }).click();
+    await expect(popup.getByRole("button", { name: "Social", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await popup.getByRole("button", { name: "Overview", exact: true }).click();
 
-    await popup.getByRole("tab", { name: "Issues" }).click();
-    await expect(popup.getByRole("heading", { name: "JSON-LD parses" })).toBeVisible();
+    await popup.getByRole("button", { name: "Issues", exact: true }).click();
+    await expect(popup.locator(".row-title", { hasText: "Page uses HTTP" })).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-issues.png" });
-    await popup.getByRole("tab", { name: "Metadata" }).click();
-    await expect(popup.getByText("Healthy topic")).toBeVisible();
+    await popup.getByRole("button", { name: "Metadata", exact: true }).click();
+    await expect(popup.getByRole("heading", { name: "Page identity" })).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-metadata.png" });
-    await popup.getByRole("tab", { name: "Headings" }).click();
+    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/metadata.png" });
+    await popup.getByRole("button", { name: "Headings", exact: true }).click();
     await expect(popup.getByText("Healthy topic")).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-headings.png" });
-    await popup.getByRole("tab", { name: "Links" }).click();
+    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/headings.png" });
+    await popup.getByRole("button", { name: "Links", exact: true }).click();
     await expect(popup.getByText("Read the guide")).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-links.png" });
+    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/links.png" });
     await popup.locator("summary", { hasText: "External links" }).click();
     await expect(popup.getByText("Outside reference")).toBeVisible();
+    for (const flag of ["nofollow", "sponsored", "ugc"]) {
+      await expect(popup.locator(".badge", { hasText: flag })).toBeVisible();
+    }
     await popup.screenshot({ path: "test-results/audit-popup-links-external.png" });
-    await popup.getByText("Outside reference").click();
-    await expect(popup.locator(".link-detail").getByText("nofollow sponsored ugc")).toBeVisible();
-    await popup.screenshot({ path: "test-results/audit-popup-links-detail.png" });
-    await popup.getByRole("searchbox", { name: "Search link text or URL" }).fill("no-such-link");
+    await popup.getByLabel("Search destinations").fill("no-such-link");
     await expect(popup.getByText("No links match this search.")).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-links-search.png" });
-    await popup.getByRole("searchbox", { name: "Search link text or URL" }).fill("");
+    await popup.getByLabel("Search destinations").fill("");
     await expect(popup.getByText("Read the guide")).toBeVisible();
-    await popup.locator("summary", { hasText: "Internal links" }).click();
-    await popup.locator("summary", { hasText: "External links" }).click();
-    await popup.screenshot({ path: "test-results/audit-popup-links-collapsed.png" });
     expect(await overflows(popup)).toBe(false);
-    await popup.getByRole("tab", { name: "Images" }).click();
+    await popup.getByRole("button", { name: "Images", exact: true }).click();
     await expect(popup.getByText("A one pixel sample")).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-images.png" });
-    await popup.getByRole("tab", { name: "Schema" }).click();
+    await popup.getByRole("button", { name: "Schema", exact: true }).click();
     await expect(popup.getByText("Article").first()).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-schema.png" });
-    await popup.locator("summary", { hasText: "@graph" }).click();
-    await popup.locator("summary", { hasText: "[0]" }).click();
+    await popup.locator("summary", { hasText: "Organization, LocalBusiness" }).click();
     await expect(popup.getByText("Example Company")).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-schema-graph.png" });
-    await popup.getByRole("button", { name: "Raw JSON" }).last().click();
-    await expect(popup.getByText('"@graph"')).toBeVisible();
+    await popup.getByRole("button", { name: "Raw JSON" }).click();
+    await expect(popup.locator(".code-block", { hasText: '"name": "Example Company"' })).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-schema-raw.png" });
     expect(await overflows(popup)).toBe(false);
-    await popup.getByRole("tab", { name: "Social" }).click();
-    await expect(popup.locator(".platform-media.is-pending")).toHaveCount(0);
-    await popup.screenshot({ path: "test-results/audit-popup-social.png" });
+    await popup.getByRole("button", { name: "Social", exact: true }).click();
     await popup.getByText("Full values").first().click();
     await popup.screenshot({ path: "test-results/audit-popup-social-full.png" });
-    await expect(popup.getByText("These previews are approximations.")).toBeVisible();
+    await expect(popup.getByText(/visual approximations only/)).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-light.png" });
     await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
     await popup.screenshot({ path: "test-results/audit-popup-dark.png" });
     await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
 
+    const review = resolve("../../docs/design/reviews/ux9r2/final");
+    const shots: Array<[string, string]> = [
+      ["Content", "content"],
+      ["Technical", "technical"],
+      ["Performance", "performance"],
+      ["International", "international"],
+      ["Accessibility", "accessibility"],
+      ["Site", "site"],
+      ["Sitemaps", "sitemaps"],
+      ["History", "history"],
+      ["Export", "export"],
+      ["Settings", "settings"],
+    ];
+    for (const [name, file] of shots) {
+      await popup.getByRole("button", { name, exact: true }).click();
+      if (file === "history") {
+        await expect(popup.getByRole("heading", { name: "SEO over time" })).toBeVisible();
+      }
+      await popup.screenshot({ path: `${review}/${file}.png` });
+    }
+    await popup.getByRole("button", { name: "Issues", exact: true }).click();
+    await popup.screenshot({ path: `${review}/issues.png` });
+    await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    await popup.screenshot({ path: `${review}/issues-dark.png` });
+    await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
+    await popup.getByRole("button", { name: "Metadata", exact: true }).click();
+    await popup.screenshot({ path: `${review}/metadata.png` });
+    await popup.getByRole("button", { name: "Headings", exact: true }).click();
+    await popup.screenshot({ path: `${review}/headings.png` });
+    await popup.getByRole("button", { name: "Links", exact: true }).click();
+    await popup.screenshot({ path: `${review}/links.png` });
+    await popup.getByRole("button", { name: "Images", exact: true }).click();
+    await popup.screenshot({ path: `${review}/images.png` });
+    await popup.getByRole("button", { name: "Schema", exact: true }).click();
+    await popup.screenshot({ path: `${review}/schema.png` });
+    await popup.getByRole("button", { name: "Social", exact: true }).click();
+    await popup.screenshot({ path: `${review}/social.png` });
+    await popup.getByRole("button", { name: "Overview", exact: true }).click();
+    await popup.screenshot({ path: `${review}/overview.png` });
+
+    const darkDir = resolve("../../docs/design/reviews/ux9r2-fidelity/production-dark");
+    await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    const darkShots: Array<[string, string]> = [
+      ["Overview", "overview"],
+      ["Issues", "issues"],
+      ["Metadata", "metadata"],
+      ["Content", "content"],
+      ["Headings", "headings"],
+      ["Links", "links"],
+      ["Images", "images"],
+      ["Schema", "schema"],
+      ["Social", "social"],
+      ["Technical", "technical"],
+      ["Performance", "performance"],
+      ["International", "international"],
+      ["Accessibility", "accessibility"],
+      ["Site", "site"],
+      ["Sitemaps", "sitemaps"],
+      ["History", "history"],
+      ["Export", "export"],
+      ["Settings", "settings"],
+    ];
+    for (const [name, file] of darkShots) {
+      await popup.getByRole("button", { name, exact: true }).click();
+      if (file === "history") {
+        await expect(popup.getByRole("heading", { name: "SEO over time" })).toBeVisible();
+      }
+      await popup.screenshot({ path: `${darkDir}/${file}.png` });
+    }
+    await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
+    await popup.getByRole("button", { name: "Overview", exact: true }).click();
+
     const opened = context.waitForEvent("page");
-    await popup.getByRole("tab", { name: "Headings" }).click();
-    await popup.getByRole("button", { name: "Open full report" }).click();
+    await popup.getByRole("button", { name: "Headings", exact: true }).click();
+    await popup.getByRole("button", { name: "Open heading report" }).click();
     const linked = await opened;
     await linked.waitForURL(/section=headings/);
     await expect(linked.getByText("Healthy topic").locator("visible=true").first()).toBeVisible();
@@ -351,9 +433,8 @@ test("scored fixtures render in the popup and the report", async () => {
     await socialPopup.setViewportSize({ width: 420, height: 720 });
     await socialPopup.goto(`chrome-extension://${extensionId}/popup.html?tabId=${socialId}`);
     await expect(socialPopup.getByRole("heading", { name: "Wide share" })).toBeVisible();
-    await socialPopup.getByRole("tab", { name: "Social" }).click();
-    await expect(socialPopup.getByText("summary_large_image")).toBeVisible();
-    await expect(socialPopup.locator(".platform-media.is-pending")).toHaveCount(0);
+    await socialPopup.getByRole("button", { name: "Social", exact: true }).click();
+    await expect(socialPopup.locator(".badge", { hasText: "summary_large_image" })).toBeVisible();
     await socialPopup.screenshot({ path: "test-results/audit-popup-social-large.png" });
     await socialPopup.getByText("Full values").first().click();
     await socialPopup.screenshot({ path: "test-results/audit-popup-social-large-full.png" });

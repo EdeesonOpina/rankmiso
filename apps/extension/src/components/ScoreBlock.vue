@@ -40,6 +40,12 @@ const ringOffset = computed(() => {
   if (value == null) return null;
   return 100 - value;
 });
+
+function share(count: number): string {
+  const total = props.score.errors + props.score.warnings + props.score.passed;
+  if (total <= 0 || count <= 0) return "0%";
+  return `${(count / total) * 100}%`;
+}
 </script>
 
 <template>
@@ -64,16 +70,52 @@ const ringOffset = computed(() => {
             {{ score.available && score.value != null ? n(score.value) : "–" }}
           </p>
         </div>
-        <div class="min-w-0">
+        <div class="health-copy min-w-0">
           <h2 id="score-heading" class="m-0 text-[15px] font-semibold">{{ t("score.label") }}</h2>
           <p v-if="!score.available" class="mb-0 mt-1 text-[13px] text-muted">
             {{ t("state.scoreUnavailable") }}
           </p>
-          <p class="mb-0 mt-1 text-[13px]">
-            {{ t("score.errors", { count: score.errors }) }}
-            · {{ t("score.warnings", { count: score.warnings }) }} ·
-            {{ t("score.passed", { count: score.passed }) }}
-          </p>
+          <dl class="health-tally">
+            <div>
+              <dt>{{ t("score.errorName") }}</dt>
+              <dd class="text-danger">{{ n(score.errors) }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("score.warningName") }}</dt>
+              <dd class="text-warning">{{ n(score.warnings) }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("score.passedName") }}</dt>
+              <dd class="text-success">{{ n(score.passed) }}</dd>
+            </div>
+          </dl>
+          <div
+            class="status-meter"
+            role="img"
+            :aria-label="
+              t('score.errors', { count: score.errors }) +
+              ', ' +
+              t('score.warnings', { count: score.warnings }) +
+              ', ' +
+              t('score.passed', { count: score.passed })
+            "
+          >
+            <span
+              v-if="score.errors"
+              class="status-meter-error"
+              :style="{ width: share(score.errors) }"
+            />
+            <span
+              v-if="score.warnings"
+              class="status-meter-warn"
+              :style="{ width: share(score.warnings) }"
+            />
+            <span
+              v-if="score.passed"
+              class="status-meter-pass"
+              :style="{ width: share(score.passed) }"
+            />
+          </div>
           <p class="mb-0 mt-1 text-[12px] text-muted">
             {{ t("score.measured", { count: score.applicableChecks }) }}
             · {{ t("score.unavailable", { count: score.unavailable }) }}

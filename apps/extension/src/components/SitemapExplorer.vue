@@ -296,12 +296,21 @@ function fileLabel(file: SitemapFileRecord): string {
     </p>
 
     <template v-if="showResults && collected && report">
-      <p class="metric-line mt-4">
-        <span>{{ t("sitemap.files") }} {{ collected.files.length }}</span>
-        <span>{{ t("sitemap.urls") }} {{ report.urlCount }}</span>
-        <span>{{ t("sitemap.issues") }} {{ report.findings.length }}</span>
-        <span>{{ t("sitemap.page") }} {{ t(matchLabel(report.pageMatch)) }}</span>
-      </p>
+      <dl class="health-tally crawl-counts">
+        <div>
+          <dt>{{ t("sitemap.files") }}</dt>
+          <dd>{{ collected.files.length }}</dd>
+        </div>
+        <div>
+          <dt>{{ t("sitemap.urls") }}</dt>
+          <dd>{{ report.urlCount }}</dd>
+        </div>
+        <div>
+          <dt>{{ t("sitemap.issues") }}</dt>
+          <dd>{{ report.findings.length }}</dd>
+        </div>
+      </dl>
+      <p class="report-copy">{{ t("sitemap.page") }} {{ t(matchLabel(report.pageMatch)) }}</p>
       <p class="mt-2 text-[12px] leading-relaxed text-muted">{{ t("sitemap.coverage") }}</p>
 
       <h3 class="mt-6 text-[15px]">{{ t("sitemap.tree") }}</h3>
@@ -346,7 +355,6 @@ function fileLabel(file: SitemapFileRecord): string {
         </li>
       </ul>
       <p v-else class="text-[13px] text-muted">{{ t("sitemap.noFiles") }}</p>
-
       <h3 class="mt-6 text-[15px]">{{ t("sitemap.urlList") }}</h3>
       <div class="check-tools">
         <label class="check-search" :for="searchField">

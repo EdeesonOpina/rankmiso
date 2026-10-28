@@ -264,92 +264,109 @@ function confirmExport() {
     <p class="report-copy">{{ t("reports.separateCrawl") }}</p>
 
     <section v-if="pageReports.length === 0" class="miso-card stack">
+      <img class="history-mascot" src="/brand/rankmiso-fox.webp" width="96" height="96" alt="" />
       <h2>{{ t("reports.timeline") }}</h2>
       <p class="report-copy">{{ t("reports.historyEmpty") }}</p>
     </section>
 
     <template v-else>
-      <section class="miso-card stack">
-        <h2>{{ t("reports.timeline") }}</h2>
-        <p class="report-copy">
-          {{ pageReports.length === 1 ? t("reports.onePoint") : t("reports.sequence") }}
-        </p>
-        <HistoryChart
-          :label="t('reports.timeline')"
-          :ids="pageReports.map((report) => report.id)"
-          :points="pointLabels"
-          :series="scoreSeries"
-          :y-max="100"
-          :selected="selected"
-          @select="selected = $event"
-        />
-        <p v-if="selectedReport" class="metric-line">
-          <span>{{ formatWhen(selectedReport.savedAt) }}</span>
-          <span>{{ t("reports.fieldScore") }} {{ measureText(selectedReport, "score") }}</span>
-          <span>{{ t("reports.errors") }} {{ measureText(selectedReport, "errors") }}</span>
-          <span>{{ t("reports.warnings") }} {{ measureText(selectedReport, "warnings") }}</span>
-          <span>{{ t("reports.coverage") }} {{ measureText(selectedReport, "coverage") }}</span>
-        </p>
-        <table class="site-table">
-          <caption class="sr-only">
-            {{
-              t("reports.timeline")
-            }}
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">{{ t("reports.savedWhen") }}</th>
-              <th scope="col">{{ t("reports.fieldScore") }}</th>
-              <th scope="col">{{ t("reports.errors") }}</th>
-              <th scope="col">{{ t("reports.warnings") }}</th>
-              <th scope="col">{{ t("reports.coverage") }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(report, index) in pageReports" :key="report.id">
-              <th scope="row">
-                <button type="button" class="report-text-action" @click="selected = index">
-                  {{ formatWhen(report.savedAt) }}
-                </button>
-              </th>
-              <td>{{ measureText(report, "score") }}</td>
-              <td>{{ measureText(report, "errors") }}</td>
-              <td>{{ measureText(report, "warnings") }}</td>
-              <td>{{ measureText(report, "coverage") }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+      <dl class="health-tally">
+        <div>
+          <dt>{{ t("reports.timeline") }}</dt>
+          <dd>{{ n(pageReports.length) }}</dd>
+        </div>
+        <div>
+          <dt>{{ t("reports.fieldScore") }}</dt>
+          <dd>{{ measureText(pageReports.at(-1) ?? null, "score") }}</dd>
+        </div>
+        <div>
+          <dt>{{ t("reports.compareTwo") }}</dt>
+          <dd>{{ pageReports.length > 1 ? t("value.yes") : t("value.no") }}</dd>
+        </div>
+      </dl>
+      <div class="history-charts">
+        <section class="miso-card stack">
+          <h2>{{ t("reports.timeline") }}</h2>
+          <p class="report-copy">
+            {{ pageReports.length === 1 ? t("reports.onePoint") : t("reports.sequence") }}
+          </p>
+          <HistoryChart
+            :label="t('reports.timeline')"
+            :ids="pageReports.map((report) => report.id)"
+            :points="pointLabels"
+            :series="scoreSeries"
+            :y-max="100"
+            :selected="selected"
+            @select="selected = $event"
+          />
+          <p v-if="selectedReport" class="metric-line">
+            <span>{{ formatWhen(selectedReport.savedAt) }}</span>
+            <span>{{ t("reports.fieldScore") }} {{ measureText(selectedReport, "score") }}</span>
+            <span>{{ t("reports.errors") }} {{ measureText(selectedReport, "errors") }}</span>
+            <span>{{ t("reports.warnings") }} {{ measureText(selectedReport, "warnings") }}</span>
+            <span>{{ t("reports.coverage") }} {{ measureText(selectedReport, "coverage") }}</span>
+          </p>
+          <table class="site-table">
+            <caption class="sr-only">
+              {{
+                t("reports.timeline")
+              }}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">{{ t("reports.savedWhen") }}</th>
+                <th scope="col">{{ t("reports.fieldScore") }}</th>
+                <th scope="col">{{ t("reports.errors") }}</th>
+                <th scope="col">{{ t("reports.warnings") }}</th>
+                <th scope="col">{{ t("reports.coverage") }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(report, index) in pageReports" :key="report.id">
+                <th scope="row">
+                  <button type="button" class="report-text-action" @click="selected = index">
+                    {{ formatWhen(report.savedAt) }}
+                  </button>
+                </th>
+                <td>{{ measureText(report, "score") }}</td>
+                <td>{{ measureText(report, "errors") }}</td>
+                <td>{{ measureText(report, "warnings") }}</td>
+                <td>{{ measureText(report, "coverage") }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
 
-      <section class="miso-card stack">
-        <h2>{{ t("reports.issuesTrend") }}</h2>
-        <p class="report-copy">{{ t("reports.warningNote") }}</p>
-        <ul class="history-legend">
-          <li>
-            <svg width="28" height="10" aria-hidden="true">
-              <line class="series series-error" x1="0" y1="5" x2="28" y2="5" />
-              <circle class="mark series-error" cx="14" cy="5" r="3" />
-            </svg>
-            {{ t("reports.errors") }}
-          </li>
-          <li>
-            <svg width="28" height="10" aria-hidden="true">
-              <line class="series series-warning" x1="0" y1="5" x2="28" y2="5" />
-              <rect class="mark series-warning" x="10" y="1" width="8" height="8" />
-            </svg>
-            {{ t("reports.warnings") }}
-          </li>
-        </ul>
-        <HistoryChart
-          :label="t('reports.issuesTrend')"
-          :ids="pageReports.map((report) => report.id)"
-          :points="pointLabels"
-          :series="issueSeries"
-          :y-max="issueMax"
-          :selected="selected"
-          @select="selected = $event"
-        />
-      </section>
+        <section class="miso-card stack">
+          <h2>{{ t("reports.issuesTrend") }}</h2>
+          <p class="report-copy">{{ t("reports.warningNote") }}</p>
+          <ul class="history-legend">
+            <li>
+              <svg width="28" height="10" aria-hidden="true">
+                <line class="series series-error" x1="0" y1="5" x2="28" y2="5" />
+                <circle class="mark series-error" cx="14" cy="5" r="3" />
+              </svg>
+              {{ t("reports.errors") }}
+            </li>
+            <li>
+              <svg width="28" height="10" aria-hidden="true">
+                <line class="series series-warning" x1="0" y1="5" x2="28" y2="5" />
+                <rect class="mark series-warning" x="10" y="1" width="8" height="8" />
+              </svg>
+              {{ t("reports.warnings") }}
+            </li>
+          </ul>
+          <HistoryChart
+            :label="t('reports.issuesTrend')"
+            :ids="pageReports.map((report) => report.id)"
+            :points="pointLabels"
+            :series="issueSeries"
+            :y-max="issueMax"
+            :selected="selected"
+            @select="selected = $event"
+          />
+        </section>
+      </div>
 
       <section class="miso-card stack">
         <h2>{{ t("reports.categoryTrend") }}</h2>
@@ -403,6 +420,22 @@ function confirmExport() {
             </label>
           </div>
           <p v-if="reversed" class="report-copy">{{ t("reports.reversed") }}</p>
+          <div v-if="comparison && baseline && later" class="compare-split">
+            <article>
+              <h3>{{ t("reports.baseline") }}</h3>
+              <p>{{ formatWhen(baseline.savedAt) }}</p>
+              <p>{{ t("reports.fieldScore") }} {{ measureText(baseline, "score") }}</p>
+              <p>{{ t("reports.errors") }} {{ measureText(baseline, "errors") }}</p>
+              <p>{{ t("reports.warnings") }} {{ measureText(baseline, "warnings") }}</p>
+            </article>
+            <article>
+              <h3>{{ t("reports.laterAudit") }}</h3>
+              <p>{{ formatWhen(later.savedAt) }}</p>
+              <p>{{ t("reports.fieldScore") }} {{ measureText(later, "score") }}</p>
+              <p>{{ t("reports.errors") }} {{ measureText(later, "errors") }}</p>
+              <p>{{ t("reports.warnings") }} {{ measureText(later, "warnings") }}</p>
+            </article>
+          </div>
           <dl v-if="comparison" class="essentials">
             <div>
               <dt>{{ t("reports.fieldScore") }}</dt>
