@@ -1,5 +1,9 @@
 # Implementation plan
 
+## v0.3.0 — release preparation
+
+Version 0.3.0 collects M1–M5 and the UX-9R popup, sidebar, and full-report redesign. Packages are built from `release/v0.3.0`. Store submission and publication remain separate release actions. The ruleset version stays 1.0.0 so saved history keeps comparing.
+
 ## v0.2.0 — release preparation
 
 The current release branch consolidates the completed report improvements, saved comparisons, editable snippet drafts, Chromium-only optional PageSpeed Insights lab results and technical probes, browser performance observations, and explicit page-scoped INP capture. Firefox builds omit those external requests and retain the no-data-collection declaration. Version 0.2.0 is being prepared for Chrome and Firefox builds; store submission and publication remain separate release actions.
@@ -86,7 +90,7 @@ Initial spike deliverable: a threat model and a small transport prototype over f
 - `vue-tsc` passes
 - Chrome MV3 and Firefox MV3 builds emit a local `.wasm` asset
 - The report distinguishes measured issues from checks that did not run
-- Chrome MV3 and Firefox MV3 package versions are 0.2.0
+- Chrome MV3 and Firefox MV3 package versions are 0.3.0
 - Firefox MV3 declares no optional host permissions and cannot invoke PageSpeed Insights or optional site probes; Chromium retains those explicit opt-in features
 - INP capture is explicit, remains page-scoped, and has start, running, unsupported, stop, and no-interactions states
 - MCP remains documented as planned and is not represented as an available feature

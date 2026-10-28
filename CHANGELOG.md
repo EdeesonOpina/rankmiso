@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.0 — prepared for release (2026-10-28)
+
+- Rebuild the popup as a 420px vertical-rail workspace with a dark page-health hero, compact finding rows, focus areas, and a pinned footer with Open full report and Sidebar. All 18 destinations have purpose-built layouts.
+- Rebuild the sidebar as a persistent narrow workbench with a 64px rail, and the full report as a desktop dashboard with a 232px rail and a two-column Overview. All three surfaces share one audit and one visual language, in light, dark, and system themes.
+- Add a Sitemap Explorer: read robots.txt sitemap directives and common sitemap paths after a per-site permission, or import a local XML file. Shows the file tree, URL entries, findings, and confirmed CSV exports. Inclusion is not presented as proof of indexing.
+- Add a Site Explorer in Chromium: a bounded, user-started crawl of the current origin (up to 100 pages, depth 3) that respects robots.txt, reports duplicate titles and descriptions, and exports CSV or JSON. It can be stopped at any time and never runs in the background.
+- Add historical analytics for explicitly saved audits: score, error and warning, and per-category trends; before-and-after comparison of two saves; issue movement; and confirmed history exports. Older saves stay readable.
+- Add advanced technical checks: compare the rendered page with separately fetched HTML (Chromium) or a chosen HTML file, and extract Microdata and bounded RDFa alongside JSON-LD.
+- Show each finding's evidence, recommendation, and a verification guide with a clearly marked generic example.
+- Keep every network feature opt-in and permission-gated. Firefox builds omit the crawl, sitemap discovery over the network, HTML fetch, and PageSpeed Insights, and keep the no-data-collection declaration.
+- No new permissions, accounts, telemetry, or backend.
+
+This branch is prepared for v0.3.0 builds. Store packages have not been submitted as v0.3.0.
+
 ## 0.2.0 — prepared for release (2026-10-24)
 
 - Add a refreshed, more consistent report interface with clearer section spacing, structured-data guidance, and more noticeable page-action controls.

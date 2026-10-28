@@ -7,7 +7,7 @@ RankMiso is a free, open-source SEO browser extension for developers, marketers,
 It belongs to the Miso ecosystem. The idea is simple: powerful tools, less overhead. No account. No subscription. No telemetry. No ads. No backend.
 
 RankMiso is available in the Chrome Web Store and Firefox Add-ons. Edge builds are available for sideloading. Release maintenance notes are in [docs/releases](docs/releases/).
-Version 0.2.0 is in build preparation and has not yet been submitted to either store. MCP integration is a documented future plan; no MCP server or browser bridge is included in this release.
+Version 0.3.0 is in build preparation and has not yet been submitted to either store. MCP integration is a documented future plan; no MCP server or browser bridge is included in this release.
 
 ## What you see
 

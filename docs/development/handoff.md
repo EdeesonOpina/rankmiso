@@ -6,7 +6,7 @@ Date: 2026-10-27
 
 The project is this repository.
 
-The directory was renamed from `seo-toolkit`. The old directory no longer exists. The git remote is `https://github.com/EdeesonOpina/rankmiso.git` and is private. The v0.2.0 release-preparation branch is `release/v0.2.0`, based on the current `master` branch. Do not commit, push, or change visibility unless the maintainer asks.
+The directory was renamed from `seo-toolkit`. The old directory no longer exists. The git remote is `https://github.com/EdeesonOpina/rankmiso.git` and is private. The v0.3.0 release-preparation branch is `release/v0.3.0`, based on `feature/sidebar-fullpage-workbench` (which carries M3–M5 and the UX-9R work that is not yet on `master`). Do not commit, push, or change visibility unless the maintainer asks.
 
 ## Product identity
 
@@ -46,7 +46,7 @@ The analysis slice is unchanged in the engine. Navigation is one flat list: Over
 
 ## Release status
 
-RankMiso is available in both the Chrome Web Store and Firefox Add-ons. Version 0.2.0 is being prepared on `release/v0.2.0`; it has not been submitted or published. Follow `docs/releases/chrome.md` and `docs/releases/firefox.md` for build and store preparation. The verification notes above describe earlier builds and are historical; verify the currently published versions before relying on them for browser-specific behavior.
+RankMiso is available in both the Chrome Web Store and Firefox Add-ons. Version 0.3.0 is being prepared on `release/v0.3.0`; it has not been submitted or published. The earlier 0.2.0 preparation is recorded in the changelog. Follow `docs/releases/chrome.md` and `docs/releases/firefox.md` for build and store preparation. The verification notes above describe earlier builds and are historical; verify the currently published versions before relying on them for browser-specific behavior.
 
 ## Not verified
 
