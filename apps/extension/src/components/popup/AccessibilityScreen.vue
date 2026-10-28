@@ -19,16 +19,22 @@ const checks = computed(() =>
     { status: "all", sort: "severity" },
   ),
 );
-const review = computed(() => checks.value.filter((check) => check.status === "ERROR" || check.status === "WARNING"));
+const review = computed(() =>
+  checks.value.filter((check) => check.status === "ERROR" || check.status === "WARNING"),
+);
 const passed = computed(() => checks.value.filter((check) => check.status === "PASS"));
 const notChecked = computed(
-  () => checks.value.filter((check) => check.status === "UNAVAILABLE" || check.status === "NOT_APPLICABLE").length,
+  () =>
+    checks.value.filter(
+      (check) => check.status === "UNAVAILABLE" || check.status === "NOT_APPLICABLE",
+    ).length,
 );
 </script>
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.accessibility") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("pane.accessibility") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
   <div class="title-row" style="margin-top: 0">
     <h2>{{ t("popup.accessibleFoundations") }}</h2>
@@ -67,12 +73,15 @@ const notChecked = computed(
         ><span>{{ t("score.passedName") }}</span>
       </div>
       <div class="stat-item">
-        <strong style="font-size: 18px">{{ n(notChecked) }}</strong><span>{{ t("technical.notChecked") }}</span>
+        <strong style="font-size: 18px">{{ n(notChecked) }}</strong
+        ><span>{{ t("technical.notChecked") }}</span>
       </div>
     </div>
   </section>
 
-  <div class="title-row"><h2>{{ t("pm.areasToReview") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.areasToReview") }}</h2>
+  </div>
   <button
     v-for="check in review"
     :key="check.id"
@@ -95,6 +104,8 @@ const notChecked = computed(
     </div>
   </div>
   <p v-if="!checks.length" class="note">{{ t("status.unavailable") }}</p>
-  <div class="title-row"><h2>{{ t("pm.whatThisMeans") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.whatThisMeans") }}</h2>
+  </div>
   <p class="note">{{ t("pane.notWcag") }}</p>
 </template>

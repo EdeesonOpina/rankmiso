@@ -53,7 +53,7 @@ test("rendered page compares with fetched HTML and shows structured data", async
       has: report.getByRole("heading", { name: "Indexability signals" }),
     });
     await expect(signals.getByText("Google index status")).toBeVisible();
-    await expect(signals.getByText("Unknown", { exact: true })).toBeVisible();
+    await expect(signals.getByText("Unknown", { exact: true }).first()).toBeVisible();
     await expect(report.getByText("A separate fetch can differ")).toBeVisible();
     const permitted = await report.evaluate(async () => {
       const chrome = (
@@ -84,16 +84,22 @@ test("rendered page compares with fetched HTML and shows structured data", async
     await report.goto(
       `chrome-extension://${extensionId}/dashboard.html?tabId=${pageId}&section=schema`,
     );
-    await expect(report.getByText("JSON-LD 1 · Microdata 1 · RDFa 1")).toBeVisible();
-    await expect(report.getByRole("heading", { name: "Microdata was extracted" })).toBeVisible();
-    await expect(report.getByRole("heading", { name: "RDFa was extracted" })).toBeVisible();
-    await report.getByRole("button", { name: "Raw JSON" }).nth(1).click();
+    await expect(report.locator(".compact-stats")).toHaveText(
+      /1\s*JSON-LD\s*1\s*Microdata\s*1\s*RDFa/,
+    );
+    await expect(report.getByText("Microdata was extracted")).toBeVisible();
+    await expect(report.getByText("RDFa was extracted")).toBeVisible();
+    await report.getByRole("button", { name: "Raw JSON" }).click();
     await expect(report.getByText("Local product").first()).toBeVisible();
     await report.screenshot({ path: "test-results/technical-schema-1280.png" });
 
     await report.goto(
       `chrome-extension://${extensionId}/dashboard.html?tabId=${pageId}&section=images`,
     );
+    await report
+      .getByRole("button", { name: /^Details for/ })
+      .first()
+      .click();
     await expect(report.getByText(/Intrinsic/).first()).toBeVisible();
     await expect(report.getByText("Empty alt", { exact: true })).toBeVisible();
     await report.screenshot({ path: "test-results/technical-images-1280.png" });

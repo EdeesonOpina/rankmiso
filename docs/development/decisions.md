@@ -120,3 +120,12 @@ UX-9R replaces the popup’s horizontal tab strip with a vertical rail. The repo
 UX-9R.2 keeps that shell and restyles the other popup destinations around the same audit. A destination may show a navy summary only from values the audit already measured. The popup does not start a crawl, fetch a sitemap, or save history by being opened. Optional network checks stay in the report.
 
 The UX-9R.2 exact pass follows the corrected prototype package. The popup Export shows JSON, CSV, and HTML report; the other CSV files are in the report. The popup Settings has no Rules row and no clear button; the report keeps both. Site and Sitemaps show the prototype layout, but their actions open the report because a popup closes when it loses focus. The popup resets Chrome's extension-page `font-size:75%` so it renders like the prototype.
+
+## Sidebar and full report (UX-9R.3 / UX-9R.4)
+
+The approved prototypes share one stylesheet with `.sidebar` and `.report` modifiers, and 13 of 18 views share markup. RankMiso follows that: one `WorkbenchApp` shell and one view per destination, with a `surface` value for the few layout differences. The popup keeps its own shell and screens. Views get the audit as a prop and app actions (navigate, copy, highlight, refresh, theme, open report) from a provided context, so there is one audit state per page and no second rules engine.
+
+`workbench.css` is the prototype stylesheet with the demo frame removed, plus production rules for forms, confirmations, evidence, crawl, and history controls. Like `popup.css`, it carries the approved prototype palette directly instead of mapping `tokens.css` through Tailwind. Neither surface loads Tailwind now. Chrome's extension-page `font-size:75%` is reset so the pages render at prototype size.
+
+The sidebar does not crawl. Its Site view reads the last saved crawl and opens the report. Sitemap discovery still runs in the sidebar because its results are not stored and the earlier sidebar offered it. Each inspector ends with that category's checks, linking to Issues, so the report keeps per-category evidence that the prototype does not draw. The sidebar lists only errors and warnings there. The prototype's Compact results and Reduced motion settings were not added because RankMiso has no such settings.
+

@@ -96,7 +96,9 @@ const destinations = computed(() =>
     short: t((item.shortLabelKey ?? item.labelKey) as MessageKey),
   })),
 );
-const current = computed(() => (pane.value in screens ? pane.value : "overview") as keyof typeof screens);
+const current = computed(
+  () => (pane.value in screens ? pane.value : "overview") as keyof typeof screens,
+);
 const sectionName = computed(
   () => destinations.value.find((item) => item.id === current.value)?.label ?? "",
 );
@@ -225,7 +227,9 @@ const themeKey: Record<ThemePreference, MessageKey> = {
           :title="t('action.refresh')"
           @click="refresh"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2 5.5M20 4v7h-7" /></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 11a8 8 0 1 0-2 5.5M20 4v7h-7" />
+          </svg>
         </button>
       </header>
       <main id="main" ref="view" class="view" tabindex="-1">

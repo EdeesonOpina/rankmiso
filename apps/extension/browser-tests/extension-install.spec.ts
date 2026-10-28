@@ -35,7 +35,22 @@ test("built extension loads and renders its popup", async () => {
       "page",
     );
     await popup.screenshot({ path: "test-results/popup-420.png" });
+    // Chrome sizes a toolbar popup from a tiny first window. The page must still ask for 420px.
+    await popup.setViewportSize({ width: 120, height: 600 });
+    const measured = await popup.evaluate(() => ({
+      body: document.body.getBoundingClientRect().width,
+      work: document.querySelector(".work")?.getBoundingClientRect().width ?? 0,
+    }));
+    expect(measured.body).toBe(420);
+    expect(measured.work).toBeGreaterThan(300);
+    await popup.setViewportSize({ width: 420, height: 720 });
     await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    // The browser frame shows the page background at its edges, so it must be dark too.
+    const backgrounds = await popup.evaluate(() => [
+      getComputedStyle(document.documentElement).backgroundColor,
+      getComputedStyle(document.body).backgroundColor,
+    ]);
+    expect(backgrounds).toEqual(["rgb(15, 20, 36)", "rgb(15, 20, 36)"]);
     await popup.screenshot({ path: "test-results/popup-dark.png" });
 
     const report = await context.newPage();

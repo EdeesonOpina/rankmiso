@@ -20,21 +20,32 @@ const host = computed(() => {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.site") }}</span><span class="minor">{{ t("pm.reportCrawl") }}</span>
+    <span>{{ t("pane.site") }}</span
+    ><span class="minor">{{ t("pm.reportCrawl") }}</span>
   </div>
   <section class="navy">
     <div class="pair">
       <div>
         <span class="tiny-label">{{ t("site.title") }}</span>
-        <strong class="row-title nv-strong" style="font-size: 17px; margin: 8px 0 4px">{{ host }}</strong>
+        <strong class="row-title nv-strong" style="font-size: 17px; margin: 8px 0 4px">{{
+          host
+        }}</strong>
         <span class="nv" style="font-size: 10px">{{ t("pm.crawlReady") }}</span>
       </div>
-      <span class="badge nv-badge">{{ t("pm.pageLimit", { count: n(CRAWL_LIMITS.maxPages) }) }}</span>
+      <span class="badge nv-badge">{{
+        t("pm.pageLimit", { count: n(CRAWL_LIMITS.maxPages) })
+      }}</span>
     </div>
     <div class="stat-grid divide">
-      <div class="stat-item"><strong style="font-size: 20px">–</strong><span>{{ t("pm.fetched") }}</span></div>
-      <div class="stat-item"><strong style="font-size: 20px">–</strong><span>{{ t("pm.listed") }}</span></div>
-      <div class="stat-item"><strong style="font-size: 20px">–</strong><span>{{ t("pm.failed") }}</span></div>
+      <div class="stat-item">
+        <strong style="font-size: 20px">–</strong><span>{{ t("pm.fetched") }}</span>
+      </div>
+      <div class="stat-item">
+        <strong style="font-size: 20px">–</strong><span>{{ t("pm.listed") }}</span>
+      </div>
+      <div class="stat-item">
+        <strong style="font-size: 20px">–</strong><span>{{ t("pm.failed") }}</span>
+      </div>
     </div>
     <div style="margin-top: 15px">
       <div class="pair nv" style="margin-bottom: 7px; font-size: 9px">

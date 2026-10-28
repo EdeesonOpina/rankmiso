@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import type { AuditResult } from "../../types/audit";
-import {
-  exportAuditJson,
-  exportChecksCsv,
-  exportHtmlReport,
-} from "../../services/export";
+import { exportAuditJson, exportChecksCsv, exportHtmlReport } from "../../services/export";
 import { useI18n } from "../../composables/useI18n";
 import type { MessageKey } from "../../locales/en";
 
@@ -23,9 +19,33 @@ const formats: Array<{
   action: MessageKey;
   run: (audit: AuditResult) => void;
 }> = [
-  { id: "json", mark: "{ }", tone: "blue", title: "pm.fmtJson", sub: "pm.fmtJsonSub", action: "action.exportJson", run: exportAuditJson },
-  { id: "checks", mark: "≡", tone: "green", title: "pm.fmtChecks", sub: "pm.fmtChecksSub", action: "action.exportChecks", run: exportChecksCsv },
-  { id: "html", mark: "↗", tone: "blue", title: "pm.fmtHtml", sub: "pm.fmtHtmlSub", action: "action.exportHtml", run: exportHtmlReport },
+  {
+    id: "json",
+    mark: "{ }",
+    tone: "blue",
+    title: "pm.fmtJson",
+    sub: "pm.fmtJsonSub",
+    action: "action.exportJson",
+    run: exportAuditJson,
+  },
+  {
+    id: "checks",
+    mark: "≡",
+    tone: "green",
+    title: "pm.fmtChecks",
+    sub: "pm.fmtChecksSub",
+    action: "action.exportChecks",
+    run: exportChecksCsv,
+  },
+  {
+    id: "html",
+    mark: "↗",
+    tone: "blue",
+    title: "pm.fmtHtml",
+    sub: "pm.fmtHtmlSub",
+    action: "action.exportHtml",
+    run: exportHtmlReport,
+  },
 ];
 
 const score = computed(() => props.audit.score);
@@ -38,9 +58,12 @@ function confirm(format: (typeof formats)[number]) {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.export") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("pane.export") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
-  <div class="title-row" style="margin-top: 0"><h2>{{ t("pm.yourData") }}</h2></div>
+  <div class="title-row" style="margin-top: 0">
+    <h2>{{ t("pm.yourData") }}</h2>
+  </div>
   <p class="helper">{{ t("pm.exportHelp") }}</p>
   <section class="navy">
     <div class="kicker">{{ t("pm.preparedLocally") }}</div>
@@ -56,15 +79,19 @@ function confirm(format: (typeof formats)[number]) {
         ><span>{{ t("pm.score") }}</span>
       </div>
       <div class="stat-item">
-        <strong class="status-amber">{{ n(score.warnings) }}</strong><span>{{ t("score.warningName") }}</span>
+        <strong class="status-amber">{{ n(score.warnings) }}</strong
+        ><span>{{ t("score.warningName") }}</span>
       </div>
       <div class="stat-item">
-        <strong>{{ n(score.passed) }}</strong><span>{{ t("score.passedName") }}</span>
+        <strong>{{ n(score.passed) }}</strong
+        ><span>{{ t("score.passedName") }}</span>
       </div>
     </div>
   </section>
 
-  <div class="title-row"><h2>{{ t("popup.chooseFormat") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("popup.chooseFormat") }}</h2>
+  </div>
   <div class="surface" style="padding: 0 12px">
     <div v-for="format in formats" :key="format.id" class="row" style="flex-wrap: wrap">
       <span class="mark" :class="format.tone" aria-hidden="true">{{ format.mark }}</span>
@@ -87,13 +114,17 @@ function confirm(format: (typeof formats)[number]) {
           <button type="button" class="button-sm red" @click="confirm(format)">
             {{ t("export.confirmAction") }}
           </button>
-          <button type="button" class="button-sm" @click="pending = null">{{ t("export.cancel") }}</button>
+          <button type="button" class="button-sm" @click="pending = null">
+            {{ t("export.cancel") }}
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="title-row"><h2>{{ t("pm.privacyControls") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.privacyControls") }}</h2>
+  </div>
   <div class="soft">
     <strong class="row-title">{{ t("pm.beforeExporting") }}</strong>
     <p class="helper" style="margin: 6px 0 10px">{{ t("pm.exportSafety") }}</p>

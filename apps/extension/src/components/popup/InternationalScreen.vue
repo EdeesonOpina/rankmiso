@@ -34,11 +34,14 @@ function sameLanguage(tag: string): boolean {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.international") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("pane.international") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
   <div class="title-row" style="margin-top: 0">
     <h2>{{ t("popup.languageTargeting") }}</h2>
-    <span class="badge">{{ t(entries.length === 1 ? "pm.alternate" : "pm.alternates", { count: n(entries.length) }) }}</span>
+    <span class="badge">{{
+      t(entries.length === 1 ? "pm.alternate" : "pm.alternates", { count: n(entries.length) })
+    }}</span>
   </div>
   <section class="surface">
     <div class="pair">
@@ -52,7 +55,8 @@ function sameLanguage(tag: string): boolean {
         }}</span>
       </div>
       <div class="mini-tile tile-plain">
-        <strong>{{ n(entries.length) }}</strong><span>{{ t("pm.hreflangEntries") }}</span>
+        <strong>{{ n(entries.length) }}</strong
+        ><span>{{ t("pm.hreflangEntries") }}</span>
       </div>
     </div>
   </section>
@@ -79,7 +83,10 @@ function sameLanguage(tag: string): boolean {
         <span v-if="!entry.validSyntax" class="badge err" style="margin-top: 5px">{{
           t("value.invalid")
         }}</span>
-        <span v-else-if="entry.lang.toLowerCase() === 'x-default'" class="badge" style="margin-top: 5px"
+        <span
+          v-else-if="entry.lang.toLowerCase() === 'x-default'"
+          class="badge"
+          style="margin-top: 5px"
           >x-default</span
         >
         <span v-else class="badge" style="margin-top: 5px">{{ t("pm.returnNotChecked") }}</span>
@@ -89,20 +96,24 @@ function sameLanguage(tag: string): boolean {
   <p v-else class="note">{{ t("empty.hreflangBody") }}</p>
   <div class="note" style="margin-top: 13px">{{ t("pm.returnNote") }}</div>
 
-  <div class="title-row"><h2>{{ t("pm.validationNotes") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.validationNotes") }}</h2>
+  </div>
   <div class="row">
     <span class="mark" :class="{ green: !invalid, error: invalid }" aria-hidden="true">{{
       invalid ? "!" : "✓"
     }}</span>
     <div class="row-content">
       <strong class="row-title">{{ t("pm.syntaxTitle") }}</strong>
-      <p class="row-sub">{{
-        !entries.length
-          ? t("pm.noHreflang")
-          : invalid
-            ? t("pm.invalidTags", { count: n(invalid) })
-            : t("pm.validTags", { count: n(entries.length) })
-      }}</p>
+      <p class="row-sub">
+        {{
+          !entries.length
+            ? t("pm.noHreflang")
+            : invalid
+              ? t("pm.invalidTags", { count: n(invalid) })
+              : t("pm.validTags", { count: n(entries.length) })
+        }}
+      </p>
     </div>
   </div>
   <button type="button" class="button-sm" @click="emit('report', 'international')">

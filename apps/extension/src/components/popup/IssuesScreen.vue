@@ -41,7 +41,8 @@ function paneFor(category: Category): string {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.issues") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("pane.issues") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
   <section class="navy" :aria-label="t('issues.queue')">
     <div class="pair">
@@ -52,7 +53,9 @@ function paneFor(category: Category): string {
           <span class="nv">{{ t("issues.toReview") }}</span>
         </div>
       </div>
-      <div class="badge nv-badge">{{ t("issues.checks", { count: n(score.applicableChecks) }) }}</div>
+      <div class="badge nv-badge">
+        {{ t("issues.checks", { count: n(score.applicableChecks) }) }}
+      </div>
     </div>
     <div class="bars" style="margin-top: 18px" aria-hidden="true">
       <span v-if="score.errors" class="err" :style="{ width: share(score.errors) }" />
@@ -106,9 +109,12 @@ function paneFor(category: Category): string {
       <span class="row-content">
         <strong class="row-title">{{ check.title }}</strong>
         <span class="row-sub clamp1">{{ check.description }}</span>
-        <span class="badge" :class="check.status === 'ERROR' ? 'err' : 'warn'" style="margin-top: 6px">{{
-          t(categoryLabelKey[check.category])
-        }}</span>
+        <span
+          class="badge"
+          :class="check.status === 'ERROR' ? 'err' : 'warn'"
+          style="margin-top: 6px"
+          >{{ t(categoryLabelKey[check.category]) }}</span
+        >
       </span>
       <span class="row-side" aria-hidden="true">›</span>
     </button>

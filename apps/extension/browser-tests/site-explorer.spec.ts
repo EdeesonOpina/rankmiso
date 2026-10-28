@@ -63,9 +63,7 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     await report.getByRole("button", { name: "Start crawl" }).click();
     const secret = report.getByRole("button", { name: `${origin}/secret` });
     await expect(secret).toBeVisible({ timeout: 20_000 });
-    await report.locator(".crawl-board").screenshot({
-      path: "../../docs/design/reviews/ux9-continuation/final/site-board.png",
-    });
+    await report.locator(".crawl-hero").screenshot({ path: "test-results/site-board.png" });
     await secret.click();
     await expect(report.getByText("robots.txt disallows this crawler")).toBeVisible();
     await expect(report.getByText("Alpha page").first()).toBeVisible();

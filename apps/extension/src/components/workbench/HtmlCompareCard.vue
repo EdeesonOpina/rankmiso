@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { browser } from "wxt/browser";
-import { compareHtml, signalsFromAudit, type CompareRow } from "../services/html-signals";
-import type { MessageKey } from "../locales/en";
-import { useI18n } from "../composables/useI18n";
-import CopyButton from "./CopyButton.vue";
-import LoadingStatus from "./LoadingStatus.vue";
-import type { AuditResult } from "../types/audit";
+import { compareHtml, signalsFromAudit, type CompareRow } from "../../services/html-signals";
+import type { MessageKey } from "../../locales/en";
+import { useI18n } from "../../composables/useI18n";
+import type { AuditResult } from "../../types/audit";
+import WbCard from "./WbCard.vue";
+import { useWorkbench } from "./context";
 
 const props = defineProps<{ audit: AuditResult; network: boolean }>();
 const { t } = useI18n();
+const { copy } = useWorkbench();
 const rows = ref<CompareRow[] | null>(null);
 const source = ref<"fetch" | "file" | null>(null);
 const status = ref("");
@@ -90,7 +91,7 @@ async function compareFetched() {
   controller = new AbortController();
   busy.value = true;
   try {
-    const network = import.meta.env.FIREFOX ? null : await import("../services/html-fetch");
+    const network = import.meta.env.FIREFOX ? null : await import("../../services/html-fetch");
     if (!network) return;
     const result = await network.fetchComparisonHtml(props.audit.page.url, controller.signal);
     if (!result.ok) {
@@ -127,62 +128,75 @@ async function onFile(event: Event) {
 </script>
 
 <template>
-  <section class="report-section-block" aria-labelledby="html-compare-title">
-    <div class="technical-section-heading">
-      <h2 id="html-compare-title">{{ t("compare.title") }}</h2>
-      <p>{{ t("compare.intro") }}</p>
-    </div>
-    <p class="report-note" role="note">{{ t("compare.limit") }}</p>
-    <div class="flex flex-wrap gap-2">
+  <WbCard :title="t('compare.title')" class="compare-card" flat>
+    <template #action>
       <button
         v-if="network"
         type="button"
-        class="inline-flex h-9 items-center rounded-panel bg-primary px-3 text-[13px] text-primary-contrast disabled:opacity-60"
+        class="quiet"
         :disabled="busy"
         :aria-busy="busy"
         @click="compareFetched"
       >
         {{ t("compare.action") }}
       </button>
-      <button v-if="busy" type="button" class="inspector-action" @click="cancel">
+    </template>
+    <p class="hint first">{{ t("compare.intro") }}</p>
+    <p class="hint">{{ t("compare.limit") }}</p>
+    <div class="actions-row">
+      <button v-if="busy" type="button" class="quiet" @click="cancel">
         {{ t("compare.cancel") }}
       </button>
-      <label class="inspector-action inline-flex cursor-pointer items-center">
+      <label class="quiet file-button">
         {{ t("compare.file") }}
         <input class="sr-only" type="file" accept=".html,.htm,text/html" @change="onFile" />
       </label>
     </div>
-    <p v-if="!network" class="report-note" role="note">{{ t("compare.firefox") }}</p>
-    <LoadingStatus v-if="busy" :label="t('compare.working')" />
-    <p v-else-if="status" role="status" class="m-0 text-[13px] text-muted">{{ status }}</p>
-    <p v-if="hops.length" class="m-0 text-[12px] text-muted">
-      {{ t("compare.hops") }} {{ hops.join(" · ") }}
-    </p>
-    <ul v-if="rows" class="compare-list">
-      <li v-for="row in rows" :key="row.id" class="compare-row">
-        <p class="compare-property">{{ labels[row.id] }}</p>
-        <p class="compare-value">
-          <span>{{ source === "file" ? t("compare.fileColumn") : t("compare.fetched") }}</span>
-          {{ show(row.fetched, row.numeric) }}
-          <CopyButton
-            :value="show(row.fetched, row.numeric)"
-            :accessible-name="t('compare.copyFetched')"
-          />
-        </p>
-        <p class="compare-value">
-          <span>{{ t("compare.rendered") }}</span>
-          {{ show(row.rendered, row.numeric) }}
-          <CopyButton
-            :value="show(row.rendered, row.numeric)"
-            :accessible-name="t('compare.copyRendered')"
-          />
-        </p>
-        <p class="compare-state">{{ stateLabel(row.state) }}</p>
-        <details class="compare-why">
-          <summary>{{ t("compare.why") }}</summary>
+    <p v-if="!network" class="hint">{{ t("compare.firefox") }}</p>
+    <p v-if="busy" class="hint" role="status">{{ t("compare.working") }}</p>
+    <p v-else-if="status" class="hint" role="status">{{ status }}</p>
+    <p v-if="hops.length" class="hint">{{ t("compare.hops") }} {{ hops.join(" · ") }}</p>
+    <div v-if="rows" class="compare-rows">
+      <div v-for="row in rows" :key="row.id" class="compare-item">
+        <div class="compare-head">
+          <strong>{{ labels[row.id] }}</strong>
+          <span class="badge" :class="row.state === 'same' ? 'ok' : 'warn'">{{
+            stateLabel(row.state)
+          }}</span>
+        </div>
+        <div class="comparison">
+          <div>
+            <span>{{ source === "file" ? t("compare.fileColumn") : t("compare.fetched") }}</span>
+            <strong>{{ show(row.fetched, row.numeric) }}</strong>
+            <button
+              type="button"
+              class="icon-text"
+              :aria-label="t('compare.copyFetched')"
+              @click="copy(show(row.fetched, row.numeric))"
+            >
+              {{ t("action.copy") }}
+            </button>
+          </div>
+          <div>
+            <span>{{ t("compare.rendered") }}</span>
+            <strong>{{ show(row.rendered, row.numeric) }}</strong>
+            <button
+              type="button"
+              class="icon-text"
+              :aria-label="t('compare.copyRendered')"
+              @click="copy(show(row.rendered, row.numeric))"
+            >
+              {{ t("action.copy") }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <details class="disclosure">
+        <summary>{{ t("compare.why") }}<span aria-hidden="true">⌄</span></summary>
+        <div class="details-body">
           <p>{{ t("compare.whyBody") }}</p>
-        </details>
-      </li>
-    </ul>
-  </section>
+        </div>
+      </details>
+    </div>
+  </WbCard>
 </template>
