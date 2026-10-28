@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useId } from "vue";
+import { computed, nextTick, ref, useId, watch } from "vue";
 import { Search, SearchX } from "lucide-vue-next";
 import type { Category, CheckResult, CheckStatus } from "../types/audit";
 import { useI18n } from "../composables/useI18n";
@@ -9,8 +9,13 @@ import EmptyState from "./EmptyState.vue";
 import IssueCard from "./IssueCard.vue";
 
 const props = withDefaults(
-  defineProps<{ checks: CheckResult[]; title?: string; showCategory?: boolean }>(),
-  { title: "", showCategory: false },
+  defineProps<{
+    checks: CheckResult[];
+    title?: string;
+    showCategory?: boolean;
+    focusId?: string;
+  }>(),
+  { title: "", showCategory: false, focusId: "" },
 );
 const { t } = useI18n();
 const categoryField = useId();
@@ -29,6 +34,17 @@ const visible = computed(() =>
     query: query.value,
     sort: sort.value,
   }),
+);
+
+watch(
+  () => props.focusId,
+  async (id) => {
+    if (!id) return;
+    await nextTick();
+    document.querySelector<HTMLElement>(`[data-check="${CSS.escape(id)}"]`)?.scrollIntoView({
+      block: "nearest",
+    });
+  },
 );
 
 const filters = [
@@ -109,7 +125,7 @@ const filters = [
       <SearchX class="h-4 w-4" />
     </EmptyState>
     <ul v-else class="m-0 list-none space-y-3 p-0">
-      <li v-for="check in visible" :key="check.id">
+      <li v-for="check in visible" :key="check.id" :data-check="check.id">
         <IssueCard :check="check" />
       </li>
     </ul>

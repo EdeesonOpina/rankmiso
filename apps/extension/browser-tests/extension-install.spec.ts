@@ -18,21 +18,21 @@ test("built extension loads and renders its popup", async () => {
     const popup = await context.newPage();
     await popup.goto(`chrome-extension://${extensionId}/popup.html`);
     await popup.setViewportSize({ width: 420, height: 720 });
-    await expect(popup.getByText("RankMiso", { exact: true })).toBeVisible();
-    const overview = popup.getByRole("tab", { name: "Overview" });
+    await expect(popup.getByRole("img", { name: "RankMiso" })).toBeVisible();
+    const overview = popup.getByRole("button", { name: "Overview", exact: true });
     await expect(overview).toBeVisible();
-    await expect(popup.getByRole("tab", { name: "Issues" })).toBeVisible();
-    await expect(popup.getByRole("tab", { name: "Metadata" })).toBeAttached();
+    await expect(popup.getByRole("button", { name: "Issues", exact: true })).toBeVisible();
+    await expect(popup.getByRole("button", { name: "Metadata", exact: true })).toBeAttached();
     await overview.focus();
     await popup.keyboard.press("ArrowRight");
-    await expect(popup.getByRole("tab", { name: "Issues" })).toHaveAttribute(
-      "aria-selected",
-      "true",
+    await expect(popup.getByRole("button", { name: "Issues", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
-    await popup.getByRole("tab", { name: "Headings" }).click();
-    await expect(popup.getByRole("tab", { name: "Headings" })).toHaveAttribute(
-      "aria-selected",
-      "true",
+    await popup.getByRole("button", { name: "Headings", exact: true }).click();
+    await expect(popup.getByRole("button", { name: "Headings", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
     await popup.screenshot({ path: "test-results/popup-420.png" });
     await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));

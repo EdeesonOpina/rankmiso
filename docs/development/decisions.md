@@ -42,9 +42,11 @@ MCP integration is planned, not implemented. Any future MCP surface must consume
 
 `apps/extension/src/config/brand.config.ts` is the only product-identity source. The WXT manifest reads `identity.name`, `identity.description`, and `browser.geckoId` from that module. Vue headers read the same object. Do not add a second brand file.
 
-Visual tokens live in `packages/design-tokens/src/tokens.css`. `--miso-color-*` and `--miso-font-*` are the configurable values. Existing `--background`, `--primary`, and related names alias those tokens so current Tailwind utilities keep working. The palette and the geometric M mark are temporary. They are not the final Miso identity.
+Visual tokens live in `packages/design-tokens/src/tokens.css`. `--miso-color-*` and `--miso-font-*` are the configurable values. Existing `--background`, `--primary`, and related names alias those tokens so current Tailwind utilities keep working. The mark in the extension is the official fox icon from the Miso website, `public/brand/miso-icon.png`.
 
-Light type names Nunito first. Dark type names Inter first. JetBrains Mono is first for monospace. The extension does not download webfonts. If those families are not installed, the system UI and monospace fonts are used.
+RankMiso uses its own white-first application design. Each inspector is laid out for the kind of data it shows. A color or padding change is not a layout change. From 1100px the report overview uses two columns. Narrower windows stack. The sitemap URL table stays full width. The Miso website remains the reference for logos and mascot art, not for canvas color, cards, type, spacing, or layout. Do not restore the cream canvas, ivory cards, or coral card outlines unless the maintainer asks. Miso red is for the mark, the active destination, and the primary action. Status colors stay separate from that red. Dark mode keeps the navy dashboard surfaces. Dark filled buttons use sumi ink on `#ef5340` because white on that red is below 4.5:1.
+
+Type is the platform UI stack in both themes: `ui-sans-serif`, `system-ui`, then the common system faces. Monospace is `ui-monospace`, then the common system mono faces. RankMiso does not name Nunito or M PLUS Rounded 1c and does not request font files. Those faces are not assumed to be installed.
 
 ## Workbench navigation
 
@@ -110,3 +112,11 @@ The Sitemaps report reads files the user asks for. Chromium fetches only the app
 The Firefox package is Manifest V3 via `wxt build -b firefox --mv3`. The id is `rankmiso@rankmiso.extension`. The first accepted addons.mozilla.org upload locks it. Changing it after that makes Firefox treat the add-on as a different extension. `data_collection_permissions.required` is `none`.
 
 Chromium optional host permissions stay out of the required set. **Run optional checks** requests the current origin, then fetches headers, robots.txt, the first listed sitemap, and at most 20 public links per batch. Private and local addresses are skipped. Chromium PageSpeed Insights requires an explicit user action and Google host permission; it sends the selected page URL and user-provided key to Google. Its results stay separate from the local score. Firefox ships neither external request feature, requests no optional host access, and declares no data collection. The JSON-LD rich-result row is a local field list and does not change the score, because that category weight is 0.
+
+## Popup shell
+
+UX-9R replaces the popup’s horizontal tab strip with a vertical rail. The report and the sidebar keep the earlier navigation. Popup destinations are `flatNav`, so Export and Settings are on the rail. The rail and the workspace scroll separately. The header and Open full report stay visible. Performance, International, and Accessibility use the short captions Perf, Intl, and A11y. The accessible name stays the full label. The health hero is a dark surface even in the light theme. Its number is the Rust score. An unavailable score is not shown as zero.
+
+UX-9R.2 keeps that shell and restyles the other popup destinations around the same audit. A destination may show a navy summary only from values the audit already measured. The popup does not start a crawl, fetch a sitemap, or save history by being opened. Optional network checks stay in the report.
+
+The UX-9R.2 exact pass follows the corrected prototype package. The popup Export shows JSON, CSV, and HTML report; the other CSV files are in the report. The popup Settings has no Rules row and no clear button; the report keeps both. Site and Sitemaps show the prototype layout, but their actions open the report because a popup closes when it loses focus. The popup resets Chrome's extension-page `font-size:75%` so it renders like the prototype.

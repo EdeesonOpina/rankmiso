@@ -25,6 +25,7 @@ const props = defineProps<{
   limit: number;
   searching: boolean;
   truncated: boolean;
+  appearance?: "popup";
 }>();
 
 const { t } = useI18n();
@@ -50,6 +51,12 @@ function label(group: LinkGroupName): string {
   if (group === "internal") return t("links.group.internal");
   if (group === "external") return t("links.group.external");
   return t("links.group.other");
+}
+
+function subtitle(group: LinkGroupName): string {
+  if (group === "internal") return t("links.sub.internal");
+  if (group === "external") return t("links.sub.external");
+  return t("links.sub.other");
 }
 
 function onToggle(group: LinkGroupName, event: Event) {
@@ -81,7 +88,10 @@ function openable(link: (typeof props.links)[number]): string | null {
       @toggle="onToggle(group, $event)"
     >
       <summary>
-        <span>{{ label(group) }}</span>
+        <span>
+          <strong>{{ label(group) }}</strong>
+          <span v-if="appearance === 'popup'" class="link-sub">{{ subtitle(group) }}</span>
+        </span>
         <span class="json-hint">{{ grouped[group].length }}</span>
       </summary>
       <ul class="link-records">
@@ -91,8 +101,10 @@ function openable(link: (typeof props.links)[number]): string | null {
         >
           <details class="link-record">
             <summary>
-              <span>{{ link.accessibleName || t("value.noName") }}</span>
-              <span class="link-url">{{ destination(link) }}</span>
+              <span class="link-main">
+                <span class="link-name">{{ link.accessibleName || t("value.noName") }}</span>
+                <span class="link-url">{{ destination(link) }}</span>
+              </span>
               <span v-if="link.nofollow" class="link-badge">{{ t("links.nofollow") }}</span>
               <span v-if="link.sponsored" class="link-badge">{{ t("links.sponsored") }}</span>
               <span v-if="link.ugc" class="link-badge">{{ t("links.ugc") }}</span>
