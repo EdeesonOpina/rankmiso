@@ -2,7 +2,7 @@
 
 Updated: 2026-10-28
 
-Release target: v0.2.0. Branch `release/v0.2.0` is being prepared; Chrome and Firefox store packages for this version have not been submitted.
+Release target: v0.3.0. Branch `release/v0.3.0` is being prepared; Chrome and Firefox store packages for this version have not been submitted.
 
 ## Completed
 
@@ -53,7 +53,7 @@ Release target: v0.2.0. Branch `release/v0.2.0` is being prepared; Chrome and Fi
 ## In progress
 
 - Firefox runtime-install and Edge install automation. Firefox 158.0.1 is installed on this machine, but this session did not load the unsigned package as a temporary add-on. Package metadata and assets are checked automatically.
-- v0.2.0 store submissions and publication. Chrome and Firefox packages for this version have not been submitted.
+- v0.3.0 store submissions and publication. Chrome and Firefox packages for this version have not been submitted.
 
 ## Not started
 
@@ -304,4 +304,4 @@ Playwright 7 passed. Vitest 81 passed. `vue-tsc`, ESLint, and Prettier passed. C
 ## Blockers
 
 - `wasm-bindgen-cli` must stay on 0.2.100. A newer CLI will not match the pinned crate.
-- v0.2.0 store submissions and publication are pending; this branch is for build and review preparation.
+- v0.3.0 store submissions and publication are pending; `release/v0.3.0` is for build and review preparation.
