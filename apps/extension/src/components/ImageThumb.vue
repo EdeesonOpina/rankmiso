@@ -18,15 +18,14 @@ watch(
 </script>
 
 <template>
-  <figure class="m-0 flex items-start gap-3 rounded-panel border border-border bg-surface p-3">
-    <div
-      class="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-panel bg-background"
-    >
+  <figure class="inspector-row m-0">
+    <div class="inspector-thumb grid place-items-center">
       <img
         v-if="src && !failed"
         :src="src"
         :alt="alt"
         class="h-full w-full object-cover"
+        loading="lazy"
         referrerpolicy="no-referrer"
         @error="failed = true"
       />

@@ -61,6 +61,8 @@ fn snapshot(links: usize, images: usize, headings: usize, text_chars: usize) -> 
             loading: Some("lazy".to_string()),
             fetch_priority: None,
             srcset: None,
+            decoding: None,
+            sizes: None,
             in_picture: false,
             broken: Some(false),
             location: format!("main > img:nth-of-type({})", index + 1),

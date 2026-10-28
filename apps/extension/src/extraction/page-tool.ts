@@ -241,6 +241,8 @@ export function runPageTool(command: string, arg?: string): unknown {
           loading: img.getAttribute("loading"),
           fetchPriority: img.getAttribute("fetchpriority"),
           srcset: img.getAttribute("srcset"),
+          decoding: img.getAttribute("decoding"),
+          sizes: img.getAttribute("sizes"),
           inPicture: Boolean(img.closest("picture")),
           broken,
           location: cssPath(img),

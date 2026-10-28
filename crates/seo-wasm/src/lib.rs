@@ -1,5 +1,6 @@
 use seo_core::{AnalyzeOptions, EngineError, PageSnapshot};
-use seo_rules::analyze;
+use seo_rules::{analyze, rankmiso_may_fetch};
+use seo_rules::sitemap::{self, SitemapDocument};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(js_name = engineVersion)]
@@ -22,6 +23,22 @@ pub fn analyze_page(snapshot_json: &str, options_json: &str) -> Result<String, J
             .map_err(|error| js_error(EngineError::new("ENCODE_FAILED", error.to_string()))),
         Err(error) => Err(js_error(error)),
     }
+}
+
+#[wasm_bindgen]
+pub fn analyze_sitemap(document_json: &str) -> Result<String, JsValue> {
+    let document: SitemapDocument = serde_json::from_str(document_json)
+        .map_err(|error| js_error(EngineError::new("INVALID_JSON", error.to_string())))?;
+    match sitemap::analyze(&document) {
+        Ok(result) => serde_json::to_string(&result)
+            .map_err(|error| js_error(EngineError::new("ENCODE_FAILED", error.to_string()))),
+        Err(error) => Err(js_error(error)),
+    }
+}
+
+#[wasm_bindgen]
+pub fn crawl_permitted(robots_body: &str, path: &str) -> bool {
+    rankmiso_may_fetch(robots_body, path)
 }
 
 fn js_error(error: EngineError) -> JsValue {

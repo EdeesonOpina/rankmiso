@@ -571,6 +571,7 @@ fn canonical_checks(snapshot: &PageSnapshot, metadata: &MetadataView) -> Vec<Che
                 "Duplicate canonicals were not evaluated",
                 "There is no canonical link to compare.",
             ),
+            canonical_observation(metadata),
         ];
     }
 
@@ -644,7 +645,41 @@ fn canonical_checks(snapshot: &PageSnapshot, metadata: &MetadataView) -> Vec<Che
         check
     };
 
-    vec![missing, validity, multiple]
+    vec![missing, validity, multiple, canonical_observation(metadata)]
+}
+
+fn canonical_observation(metadata: &MetadataView) -> CheckResult {
+    let mut notes = Vec::new();
+    for href in &metadata.canonicals {
+        if href.contains('#') {
+            notes.push(format!("{href} contains a fragment"));
+        }
+        if !href.contains("://") {
+            notes.push(format!("{href} is relative"));
+        }
+    }
+    if notes.is_empty() {
+        return crate::support::check(
+            "RULE_CANONICAL_OBSERVATION",
+            Category::Metadata,
+            CheckStatus::NotApplicable,
+            1,
+            "Canonical shape was not flagged",
+            "No fragment or relative canonical was collected. A canonical is a preference, not a search engine's selected URL.",
+        );
+    }
+    let mut check = crate::support::check(
+        "RULE_CANONICAL_OBSERVATION",
+        Category::Metadata,
+        CheckStatus::Info,
+        1,
+        "Canonical URL needs a closer look",
+        "A fragment or a relative reference was collected. A canonical states a preference. It is not Google's selected canonical.",
+    );
+    check.evidence = bounded_evidence(&notes, "canonical");
+    check.recommendation =
+        Some("Use one absolute http(s) URL without a fragment when this page should declare a preference.".to_string());
+    check
 }
 
 fn refresh(metadata: &MetadataView) -> CheckResult {

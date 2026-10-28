@@ -17,7 +17,41 @@ test("built extension loads and renders its popup", async () => {
     const extensionId = new URL(worker.url()).host;
     const popup = await context.newPage();
     await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+    await popup.setViewportSize({ width: 420, height: 720 });
     await expect(popup.getByText("RankMiso", { exact: true })).toBeVisible();
+    const overview = popup.getByRole("tab", { name: "Overview" });
+    await expect(overview).toBeVisible();
+    await expect(popup.getByRole("tab", { name: "Issues" })).toBeVisible();
+    await expect(popup.getByRole("tab", { name: "Metadata" })).toBeAttached();
+    await overview.focus();
+    await popup.keyboard.press("ArrowRight");
+    await expect(popup.getByRole("tab", { name: "Issues" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await popup.getByRole("tab", { name: "Headings" }).click();
+    await expect(popup.getByRole("tab", { name: "Headings" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await popup.screenshot({ path: "test-results/popup-420.png" });
+    await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    await popup.screenshot({ path: "test-results/popup-dark.png" });
+
+    const report = await context.newPage();
+    await report.goto(`chrome-extension://${extensionId}/dashboard.html`);
+    await expect(report.getByRole("button", { name: "Metadata", exact: true })).toBeVisible();
+    await expect(report.getByRole("button", { name: "Schema", exact: true })).toBeVisible();
+    await expect(report.getByRole("button", { name: "History" })).toBeVisible();
+    await expect(report.getByRole("button", { name: "Site", exact: true })).toBeVisible();
+    for (const [width, height, name] of [
+      [360, 640, "dashboard-360"],
+      [768, 1024, "dashboard-768"],
+      [1280, 800, "dashboard-1280"],
+    ] as const) {
+      await report.setViewportSize({ width, height });
+      await report.screenshot({ path: `test-results/${name}.png`, fullPage: true });
+    }
   } finally {
     await context.close();
     await rm(userDataDir, { recursive: true, force: true });

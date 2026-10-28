@@ -26,10 +26,68 @@ export interface PopupOverviewModel {
 
 type PopupSource = Pick<AuditResult, "page" | "metrics" | "details">;
 
-export function headingLevelCounts(headings: Array<{ level: number }>): number[] {
+export function headingLevelCounts(headings: readonly { level: number }[]): number[] {
   return [1, 2, 3, 4, 5, 6].map(
     (level) => headings.filter((heading) => heading.level === level).length,
   );
+}
+
+export function selectHeadings<T extends { level: number; text: string }>(
+  headings: readonly T[],
+  query: string,
+  level: number,
+): T[] {
+  const needle = query.trim().toLowerCase();
+  return headings.filter((heading) => {
+    if (level && heading.level !== level) return false;
+    if (!needle) return true;
+    return heading.text.toLowerCase().includes(needle);
+  });
+}
+
+export const linkGroupOrder = ["internal", "external", "other"] as const;
+export type LinkGroupName = (typeof linkGroupOrder)[number];
+
+export function linkGroupName(classification: string): LinkGroupName {
+  if (classification === "internal" || classification === "external") return classification;
+  return "other";
+}
+
+export function groupLinks<T extends { classification: string }>(
+  links: readonly T[],
+): Record<LinkGroupName, T[]> {
+  const groups: Record<LinkGroupName, T[]> = { internal: [], external: [], other: [] };
+  for (const link of links) groups[linkGroupName(link.classification)].push(link);
+  return groups;
+}
+
+export function initialLinkGroups(
+  groups: Record<LinkGroupName, { length: number }>,
+): Record<LinkGroupName, boolean> {
+  if (groups.internal.length) return { internal: true, external: false, other: false };
+  if (groups.external.length) return { internal: false, external: true, other: false };
+  return { internal: false, external: false, other: groups.other.length > 0 };
+}
+
+export function selectLinks<
+  T extends {
+    href: string;
+    resolvedUrl: string | null;
+    accessibleName: string;
+    classification: string;
+    nofollow: boolean;
+  },
+>(links: readonly T[], filter: string, query: string): T[] {
+  const needle = query.trim().toLowerCase();
+  return links.filter((link) => {
+    if (filter === "nofollow" && !link.nofollow) return false;
+    if ((filter === "internal" || filter === "external") && link.classification !== filter)
+      return false;
+    if (!needle) return true;
+    return `${link.accessibleName} ${link.href} ${link.resolvedUrl ?? ""}`
+      .toLowerCase()
+      .includes(needle);
+  });
 }
 
 export function pageHost(url: string): string {

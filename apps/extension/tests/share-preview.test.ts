@@ -71,8 +71,36 @@ describe("share previews", () => {
       ogTitle: "Graph",
     });
     expect(x?.layout).toBe("compact");
+    expect(x?.presentation).toBe("summary");
     expect(x?.title).toBe("Post");
     expect(x?.titleFrom).toBe("declared");
     expect(x?.imageFrom).toBe("declared");
+  });
+
+  it("keeps a large X card only when that type is declared", () => {
+    const [link, large] = previews({
+      ogTitle: "Graph title",
+      ogImage: "https://cdn.example/wide.png",
+      twitterCard: "summary_large_image",
+    });
+    expect(link?.presentation).toBe("open-graph");
+    expect(link?.imageUrl).toBe("https://cdn.example/wide.png");
+    expect(large?.presentation).toBe("summary-large");
+    expect(large?.imageFrom).toBe("openGraph");
+    expect(large?.titleFrom).toBe("openGraph");
+  });
+
+  it("does not treat a missing image or an app card as a large image card", () => {
+    const [link, app] = previews({
+      title: "Only a title",
+      twitterCard: "app",
+      twitterTitle: "Install",
+    });
+    expect(link?.imageUrl).toBeNull();
+    expect(link?.imageFrom).toBe("none");
+    expect(link?.urlFrom).toBe("page");
+    expect(app?.presentation).toBe("unsupported");
+    expect(app?.title).toBe("Install");
+    expect(app?.titleFrom).toBe("declared");
   });
 });

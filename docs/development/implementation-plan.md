@@ -39,7 +39,7 @@ Dashboard field labels now go through `src/locales/en.ts`. The product identity 
 
 Implemented in part: JSON-LD syntax and a local field list, social metadata, and Chromium-only opt-in technical probes for headers, redirects, robots.txt, the first listed sitemap, hreflang return links, and public link responses.
 
-Still unbuilt: official rich-result eligibility, Microdata and RDFa extraction, a comprehensive raw-versus-rendered comparison, and a full crawl. Google Rich Results Test remains an external, user-initiated validation tool.
+Still unbuilt: official rich-result eligibility and a full crawl. Microdata, a bounded RDFa subset, and a fetched-HTML comparison are implemented; see `docs/features/advanced-technical.md`. Google Rich Results Test remains an external, user-initiated validation tool.
 
 ## Phase 4 — Research tools
 
@@ -90,3 +90,43 @@ Initial spike deliverable: a threat model and a small transport prototype over f
 - Firefox MV3 declares no optional host permissions and cannot invoke PageSpeed Insights or optional site probes; Chromium retains those explicit opt-in features
 - INP capture is explicit, remains page-scoped, and has start, running, unsupported, stop, and no-interactions states
 - MCP remains documented as planned and is not represented as an available feature
+
+## Later milestones (not started)
+
+These are constraints for later work. They are not part of the current UI milestone.
+
+### M2 — Sitemap explorer
+
+Implemented. Chromium discovery is user-started and origin-scoped. Firefox imports a local XML file and does not request sitemaps. Parsing is bounded: 8 files, 500 URL entries, 512 KB each. A nested sitemap index is reported and not followed. Sitemap inclusion is not indexing. Details are in `docs/features/sitemaps.md`.
+
+### Capability gaps recorded at UX-2
+
+Compared with public SEOquake, MozBar, Ahrefs SEO Toolbar, and Detailed SEO Extension behavior. The matrix is `docs/features/competitive.md`. These gaps are not part of UX-2.
+
+- Site crawling is M3 and is implemented as a bounded same-origin crawl. Sitemap discovery by itself is still not a crawl of every listed URL.
+- Trend charts are M4 and use explicit page saves. A site crawl is not turned into that history.
+- Fetched HTML comparison, Microdata, and bounded RDFa are implemented in M5. They are not a complete document diff or a complete RDFa processor.
+- MCP stays M6 and is not built.
+- SERP overlays, keyword metrics, backlinks, Domain Authority, Page Authority, Domain Rating, and URL Rating are out of scope. RankMiso does not invent them.
+- People Also Ask and a user-agent switch are out of scope.
+- Keyword n-gram density is not implemented. Repeated-term counts remain the content view.
+
+### M3 — Site explorer
+
+Implemented. A crawl starts only from the report, stays on the exact origin, can be stopped, and marks a page cap as partial. Fetched HTML is source text scored by the existing page engine. It is not the rendered snapshot. The crawl does not run in the background. Firefox does not crawl. See `docs/features/site-explorer.md`.
+
+### M4 — Historical analytics
+
+Implemented. New saves add a versioned summary beside the existing fields. Older saves stay readable. The History screen charts saved scores for one page and compares two saves. Missing values stay “Not recorded”. A site crawl is not added. See `docs/features/history.md`.
+
+### M5 — Advanced technical SEO
+
+Implemented. Technical compares a separately fetched response, or a chosen HTML file, with the rendered snapshot. Schema adds bounded Microdata and RDFa beside JSON-LD. New observations stay informational. See `docs/features/advanced-technical.md`. Do not claim official rich-result eligibility.
+
+### M6 — MCP
+
+A local read-only companion over an audit the user chose to share. Write the threat model before any browser bridge. Do not expose arbitrary tabs, API keys, unrestricted URLs, or saved history. No hosted MCP service.
+
+### M7 — Search Console
+
+Optional OAuth for a verified owner, using real API data. The extension must still work with no account.

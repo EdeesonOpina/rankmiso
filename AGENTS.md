@@ -57,6 +57,18 @@ Do not add empty crates for schema or content until those modules outgrow `seo-r
 
 A feature is done when the engine produces a real result, the UI can show it, empty and error states exist, tests cover the behavior, and the docs do not describe it as more complete than it is.
 
+## Development standards
+
+Ponytail, full mode: make the smallest change that finishes the task, including the callers and tests it touches. Reuse the existing components, crates, and tokens. Prefer the platform and the standard library. Do not add a dependency for a few lines, and do not add an abstraction that has one caller. Do not treat simplicity as a reason to drop validation, error handling, security, or accessibility.
+
+UI work keeps the Miso tokens in `packages/design-tokens/src/tokens.css`. When the UI/UX Pro Max and Web Interface Guidelines skills are installed, read and apply them. Do not install skills or run unreviewed installers. If a skill is missing, follow this file and say which skill was unavailable.
+
+Keep the core audit local. Optional network stays explicit. Do not add a chart library for a bar, a second SEO rules engine, telemetry, a default host permission, or a hosted backend.
+
+Run the commands in this file that the change can affect. Record the result you actually saw. Update `docs/development/progress.md` and `docs/development/handoff.md` when a milestone moves. Later milestones M2–M7 are constraints in `docs/development/implementation-plan.md`; do not start them while M1 is the assignment.
+
+Do not commit, push, or publish a store package unless the maintainer asks.
+
 ## Resume order
 
 1. Read this file.
