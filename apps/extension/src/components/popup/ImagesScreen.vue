@@ -13,8 +13,12 @@ const filter = ref<"all" | "missing">("all");
 const limit = ref(8);
 const failed = ref<Record<string, boolean>>({});
 
-const images = computed(() => props.audit.details.images.map((image, index) => ({ image, key: `${index}` })));
-const failedLoads = computed(() => props.audit.details.images.filter((image) => image.broken === true).length);
+const images = computed(() =>
+  props.audit.details.images.map((image, index) => ({ image, key: `${index}` })),
+);
+const failedLoads = computed(
+  () => props.audit.details.images.filter((image) => image.broken === true).length,
+);
 const rows = computed(() =>
   filter.value === "missing" ? images.value.filter((row) => !row.image.altPresent) : images.value,
 );
@@ -36,7 +40,8 @@ function fileName(src: string | null): string {
 function size(image: PageImage): string {
   const width = image.naturalWidth ?? image.widthAttr;
   const height = image.naturalHeight ?? image.heightAttr;
-  const dims = width != null && height != null ? `${n(width)} × ${n(height)}` : t("popup.notAvailable");
+  const dims =
+    width != null && height != null ? `${n(width)} × ${n(height)}` : t("popup.notAvailable");
   return image.loading ? `${dims} · loading="${image.loading}"` : dims;
 }
 
@@ -49,15 +54,21 @@ function altText(image: PageImage): string {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.images") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("pane.images") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
   <div class="title-row" style="margin-top: 0">
     <h2>{{ t("popup.imageInspector") }}</h2>
-    <span class="badge">{{ t(audit.metrics.counts.images === 1 ? "pm.asset" : "pm.assets", { count: n(audit.metrics.counts.images) }) }}</span>
+    <span class="badge">{{
+      t(audit.metrics.counts.images === 1 ? "pm.asset" : "pm.assets", {
+        count: n(audit.metrics.counts.images),
+      })
+    }}</span>
   </div>
   <div class="grid3" style="margin-bottom: 14px">
     <div class="mini-tile">
-      <strong>{{ n(audit.metrics.counts.images) }}</strong><span>{{ t("popup.images") }}</span>
+      <strong>{{ n(audit.metrics.counts.images) }}</strong
+      ><span>{{ t("popup.images") }}</span>
     </div>
     <div class="mini-tile">
       <strong :class="{ 'status-amber': audit.metrics.counts.imagesMissingAlt > 0 }">{{
@@ -66,7 +77,8 @@ function altText(image: PageImage): string {
       ><span>{{ t("images.missingAltFilter") }}</span>
     </div>
     <div class="mini-tile">
-      <strong>{{ n(failedLoads) }}</strong><span>{{ t("pm.failedLoads") }}</span>
+      <strong>{{ n(failedLoads) }}</strong
+      ><span>{{ t("pm.failedLoads") }}</span>
     </div>
   </div>
   <div class="segmented">

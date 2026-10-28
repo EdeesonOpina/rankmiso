@@ -27,7 +27,8 @@ const host = computed(() => {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.metadata") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("pane.metadata") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
   <div class="title-row" style="margin-top: 0">
     <h2>{{ t("popup.pageIdentity") }}</h2>
@@ -69,7 +70,9 @@ const host = computed(() => {
         <span class="tiny-label">{{ t("pm.metaDescription") }}</span>
         <p v-if="description" class="desc-text">{{ description }}</p>
         <p v-else class="desc-text muted">{{ t("metadata.noDescription") }}</p>
-        <p class="row-sub">{{ t("popup.descriptionLength", { count: n(meta.descriptionLength) }) }}</p>
+        <p class="row-sub">
+          {{ t("popup.descriptionLength", { count: n(meta.descriptionLength) }) }}
+        </p>
       </div>
       <button
         v-if="description"
@@ -125,7 +128,11 @@ const host = computed(() => {
         {{ t("popup.mobile") }}
       </button>
     </div>
-    <div class="surface" :class="device === 'mobile' ? 'serp-mobile' : ''" :style="device === 'desktop' ? 'padding:12px' : ''">
+    <div
+      class="surface"
+      :class="device === 'mobile' ? 'serp-mobile' : ''"
+      :style="device === 'desktop' ? 'padding:12px' : ''"
+    >
       <span class="serp-url">{{ host }}</span>
       <strong class="serp-title">{{ title || t("metadata.untitled") }}</strong>
       <p class="helper" :class="{ clamp2: device === 'mobile' }" style="margin: 0">
@@ -135,7 +142,9 @@ const host = computed(() => {
     <p class="micro" style="margin: 10px 0 0">{{ t("popup.previewNote") }}</p>
   </div>
 
-  <div class="title-row"><h2>{{ t("pm.robotsIndexing") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.robotsIndexing") }}</h2>
+  </div>
   <dl style="margin: 0">
     <div class="property">
       <dt>{{ t("popup.robots") }}</dt>

@@ -1,6 +1,6 @@
 # Design tokens
 
-Tokens are CSS variables in `packages/design-tokens/src/tokens.css`. Tailwind maps them to color utilities such as `bg-surface` and `text-muted`. Components use those utilities.
+Brand values are documented in `packages/design-tokens/src/tokens.css`. Since UX-9R and UX-9R.3, the popup uses `apps/extension/src/styles/popup.css` and the sidebar and report use `apps/extension/src/styles/workbench.css`. Both carry the approved prototype palettes as CSS variables, with dark values keyed off `html[data-theme="dark"]`. Tailwind is no longer loaded by any page. The older notes below describe the pre-UX-9R report and are kept for history.
 
 Light and dark sets cover background, surface, elevated surface, primary, secondary, text, muted text, border, success, warning, error, information, and focus. The light canvas is white. Cards are white with a neutral border. Miso red is the accent, not the card outline. Dark values keep the navy dashboard surfaces. Light primary is `#c42a20` with white text. Dark primary is `#ef5340` with `#0f1424` text. The value table is in `docs/branding/design-tokens.md`.
 

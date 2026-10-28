@@ -39,7 +39,7 @@ test("saved audits stay on this device and compare real measurements", async () 
     await report.goto(
       `chrome-extension://${extensionId}/dashboard.html?tabId=${pageId}&section=reports`,
     );
-    await expect(report.getByRole("heading", { name: "Score history" })).toBeVisible();
+    await expect(report.getByRole("heading", { name: "SEO history" })).toBeVisible();
     await expect(report.getByText("Save the current audit to keep a measurement")).toBeVisible();
     await report.screenshot({ path: "test-results/history-empty-1280.png" });
 
@@ -76,7 +76,13 @@ test("saved audits stay on this device and compare real measurements", async () 
       report.getByRole("cell", { name: "Third measurement of this local history page." }),
     ).toBeVisible();
     await report.getByRole("button", { name: "Save current comparison" }).click();
-    await expect(report.locator(".site-table").first().locator("tbody tr")).toHaveCount(3);
+    await expect(
+      report
+        .locator("section.card", {
+          has: report.getByRole("heading", { name: "Saved comparisons" }),
+        })
+        .locator(".data-row"),
+    ).toHaveCount(3);
     await expect(report.getByText("H1 is missing").last()).toBeVisible();
     const chartButton = report.getByRole("button", { name: /On-page check score/ }).first();
     await chartButton.focus();
@@ -164,7 +170,7 @@ test("saved audits stay on this device and compare real measurements", async () 
     await report.screenshot({ path: "test-results/history-compare-1280.png" });
 
     const categoryCard = report
-      .locator("section.miso-card")
+      .locator("section.card")
       .filter({ has: report.getByRole("heading", { name: "Category", exact: true }) });
     await categoryCard.getByRole("combobox").selectOption({ label: "Performance" });
     await expect(categoryCard.getByText("Not measured").first()).toBeVisible();
@@ -194,7 +200,7 @@ test("saved audits stay on this device and compare real measurements", async () 
     await sidebar.goto(
       `chrome-extension://${extensionId}/sidepanel.html?tabId=${pageId}&section=reports`,
     );
-    await expect(sidebar.getByRole("heading", { name: "Score history" })).toBeVisible();
+    await expect(sidebar.getByRole("heading", { name: "Health timeline" })).toBeVisible();
     expect(await overflows(sidebar)).toBe(false);
     await sidebar.screenshot({ path: "test-results/history-sidebar-350.png" });
     await page.close();

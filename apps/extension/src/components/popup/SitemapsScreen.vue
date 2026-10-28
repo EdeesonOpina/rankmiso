@@ -14,7 +14,8 @@ const ran = computed(() => site.value.requested);
 const findings = computed(
   () =>
     props.audit.checks.filter(
-      (check) => check.id.includes("sitemap") && (check.status === "ERROR" || check.status === "WARNING"),
+      (check) =>
+        check.id.includes("sitemap") && (check.status === "ERROR" || check.status === "WARNING"),
     ).length,
 );
 const fileName = (url: string) => {
@@ -28,7 +29,8 @@ const fileName = (url: string) => {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.sitemaps") }}</span><span class="minor">{{ t("pm.sameOrigin") }}</span>
+    <span>{{ t("pane.sitemaps") }}</span
+    ><span class="minor">{{ t("pm.sameOrigin") }}</span>
   </div>
   <div class="title-row" style="margin-top: 0">
     <h2>{{ t("pm.sitemapExplorer") }}</h2>
@@ -38,7 +40,8 @@ const fileName = (url: string) => {
   </div>
   <div class="grid3">
     <div class="mini-tile">
-      <strong>{{ ran ? n(site.sitemapUrls.length) : "–" }}</strong><span>{{ t("pm.files") }}</span>
+      <strong>{{ ran ? n(site.sitemapUrls.length) : "–" }}</strong
+      ><span>{{ t("pm.files") }}</span>
     </div>
     <div class="mini-tile">
       <strong>{{ ran && site.sitemapUrlCount != null ? n(site.sitemapUrlCount) : "–" }}</strong
@@ -83,7 +86,9 @@ const fileName = (url: string) => {
   </div>
   <p v-else class="note">{{ t("pane.sitemapInReport") }}</p>
 
-  <div class="title-row"><h2>{{ t("pm.urlsInFiles") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.urlsInFiles") }}</h2>
+  </div>
   <label class="field-label" for="sitemap-search">{{ t("pm.searchSitemapUrls") }}</label>
   <input id="sitemap-search" class="field" :placeholder="t('pm.findPath')" disabled />
   <p class="note" style="margin-top: 12px">{{ t("pm.sitemapUrlsInReport") }}</p>
