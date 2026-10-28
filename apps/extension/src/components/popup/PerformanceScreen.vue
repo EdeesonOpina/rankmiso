@@ -17,7 +17,8 @@ function seconds(ms: number | null): string {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.performance") }}</span><span class="minor">{{ t("pm.thisLoad") }}</span>
+    <span>{{ t("pane.performance") }}</span
+    ><span class="minor">{{ t("pm.thisLoad") }}</span>
   </div>
   <div class="title-row" style="margin-top: 0">
     <h2>{{ t("pm.browserObservations") }}</h2>
@@ -29,12 +30,18 @@ function seconds(ms: number | null): string {
       <strong class="nv-strong" style="font-size: 48px"
         >{{ seconds(perf.lcpMs) }}<span v-if="perf.lcpMs != null" class="unit">s</span></strong
       >
-      <span class="nv">{{ perf.lcpMs == null ? t("status.unavailable") : t("pm.thisLoadLower") }}</span>
+      <span class="nv">{{
+        perf.lcpMs == null ? t("status.unavailable") : t("pm.thisLoadLower")
+      }}</span>
     </div>
-    <p class="nv" style="font-size: 10px; line-height: 1.6; margin-bottom: 0">{{ t("pm.perfNote") }}</p>
+    <p class="nv" style="font-size: 10px; line-height: 1.6; margin-bottom: 0">
+      {{ t("pm.perfNote") }}
+    </p>
     <div class="stat-grid divide">
       <div class="stat-item">
-        <strong style="font-size: 18px">{{ perf.cls == null ? "–" : n(Math.round(perf.cls * 100) / 100) }}</strong
+        <strong style="font-size: 18px">{{
+          perf.cls == null ? "–" : n(Math.round(perf.cls * 100) / 100)
+        }}</strong
         ><span>CLS</span>
       </div>
       <div class="stat-item">
@@ -52,17 +59,22 @@ function seconds(ms: number | null): string {
     </div>
   </section>
 
-  <div class="title-row"><h2>{{ t("pm.measurementAvailability") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.measurementAvailability") }}</h2>
+  </div>
   <div class="surface" style="padding: 0 13px">
     <div class="row">
-      <span class="mark" :class="perf.domContentLoadedMs != null ? 'green' : 'blue'" aria-hidden="true">{{
-        perf.domContentLoadedMs != null ? "✓" : "i"
-      }}</span>
+      <span
+        class="mark"
+        :class="perf.domContentLoadedMs != null ? 'green' : 'blue'"
+        aria-hidden="true"
+        >{{ perf.domContentLoadedMs != null ? "✓" : "i" }}</span
+      >
       <div class="row-content">
         <strong class="row-title">{{ t("pm.navigationTiming") }}</strong>
-        <p class="row-sub">{{
-          perf.domContentLoadedMs != null ? t("pm.availableHere") : t("pm.noTimingEntries")
-        }}</p>
+        <p class="row-sub">
+          {{ perf.domContentLoadedMs != null ? t("pm.availableHere") : t("pm.noTimingEntries") }}
+        </p>
       </div>
       <span class="badge" :class="{ ok: perf.domContentLoadedMs != null }">{{
         perf.domContentLoadedMs != null ? t("pm.observed") : t("status.unavailable")
@@ -74,7 +86,9 @@ function seconds(ms: number | null): string {
       }}</span>
       <div class="row-content">
         <strong class="row-title">{{ t("pm.interaction") }}</strong>
-        <p class="row-sub">{{ perf.inpMs != null ? t("pm.availableHere") : t("pm.noInteraction") }}</p>
+        <p class="row-sub">
+          {{ perf.inpMs != null ? t("pm.availableHere") : t("pm.noInteraction") }}
+        </p>
       </div>
       <span class="badge" :class="{ ok: perf.inpMs != null }">{{
         perf.inpMs != null ? t("pm.observed") : t("status.unavailable")
@@ -90,7 +104,9 @@ function seconds(ms: number | null): string {
     </div>
   </div>
 
-  <div class="title-row"><h2>{{ t("pm.optionalDiagnostics") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.optionalDiagnostics") }}</h2>
+  </div>
   <div class="soft">
     <strong class="row-title">PageSpeed Insights</strong>
     <p class="helper" style="margin: 5px 0 11px">{{ t("pm.pagespeedHelp") }}</p>

@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { mount } from "@vue/test-utils";
-import StatusBadge from "../src/components/StatusBadge.vue";
+import { statusKey } from "../src/components/workbench/checks";
+import { translate } from "../src/composables/useI18n";
 import { runPageTool } from "../src/extraction/page-tool";
 import { vi } from "vitest";
 
-describe("StatusBadge", () => {
+describe("status labels", () => {
   it("shows a text label for an error", () => {
-    const wrapper = mount(StatusBadge, { props: { status: "ERROR" } });
-    expect(wrapper.text()).toContain("Error");
+    expect(translate(statusKey.ERROR)).toBe("Error");
   });
 });
 

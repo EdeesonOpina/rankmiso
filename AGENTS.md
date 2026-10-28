@@ -2,7 +2,7 @@
 
 ## Mission
 
-Build RankMiso, a free, open-source, cross-browser SEO extension in the Miso ecosystem. Rust owns SEO rules. TypeScript owns the browser. Vue renders the result. There is no backend, account, payment, or telemetry. The product name, tagline, and asset paths come from `apps/extension/src/config/brand.config.ts`. Colors and fonts come from `packages/design-tokens/src/tokens.css`.
+Build RankMiso, a free, open-source, cross-browser SEO extension in the Miso ecosystem. Rust owns SEO rules. TypeScript owns the browser. Vue renders the result. There is no backend, account, payment, or telemetry. The product name, tagline, and asset paths come from `apps/extension/src/config/brand.config.ts`. Brand values are recorded in `packages/design-tokens/src/tokens.css`; the popup styles live in `apps/extension/src/styles/popup.css` and the sidebar and report styles in `apps/extension/src/styles/workbench.css`, ported from the approved HTML prototypes.
 
 The local website at `~/Projects/Next/misoecosystem.com` is the source for official logos and mascot art when it is available. Read it for those assets. Do not modify it, and do not make the extension build depend on it. RankMiso's interface is a white-first workbench. Visual changes have to change how a screen presents its data, not only colors and spacing. Do not restore the website's cream canvas, ivory cards, or coral outlines unless the maintainer asks.
 

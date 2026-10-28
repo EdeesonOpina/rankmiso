@@ -1,16 +1,12 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import AnalysisApp from "../../src/components/AnalysisApp.vue";
+import WorkbenchApp from "../../src/components/workbench/WorkbenchApp.vue";
 
-const tabId = computed(() => {
-  const value = Number(new URLSearchParams(location.search).get("tabId"));
-  return Number.isInteger(value) && value > 0 ? value : undefined;
-});
-const initialSection = computed(
-  () => new URLSearchParams(location.search).get("section") || "overview",
-);
+const params = new URLSearchParams(location.search);
+const value = Number(params.get("tabId"));
+const tabId = Number.isInteger(value) && value > 0 ? value : undefined;
+const initialSection = params.get("section") || "overview";
 </script>
 
 <template>
-  <AnalysisApp layout="sidepanel" :tab-id="tabId" :initial-section="initialSection" />
+  <WorkbenchApp surface="sidebar" :tab-id="tabId" :initial-section="initialSection" />
 </template>

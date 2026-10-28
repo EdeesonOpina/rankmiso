@@ -44,7 +44,8 @@ function paneFor(category: Category): string {
 
 <template>
   <div class="kicker">
-    <span>{{ t("overview.snapshot") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("overview.snapshot") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
   <section class="navy" :aria-label="t('overview.health')">
     <div class="pair" style="position: relative; align-items: flex-start">
@@ -94,7 +95,8 @@ function paneFor(category: Category): string {
     </div>
     <div class="stat-grid divide">
       <div class="stat-item">
-        <strong>{{ n(score.errors) }}</strong><span>{{ t("score.errorName") }}</span>
+        <strong>{{ n(score.errors) }}</strong
+        ><span>{{ t("score.errorName") }}</span>
       </div>
       <div class="stat-item">
         <strong class="status-amber">{{ n(score.warnings) }}</strong

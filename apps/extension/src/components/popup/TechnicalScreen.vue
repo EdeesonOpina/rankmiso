@@ -12,7 +12,8 @@ const meta = computed(() => props.audit.details.metadata);
 const response = computed(() => props.audit.details.response);
 const xRobots = computed(() =>
   response.value.headersAvailable
-    ? (response.value.headers.find((header) => header.name.toLowerCase() === "x-robots-tag")?.value ?? "")
+    ? (response.value.headers.find((header) => header.name.toLowerCase() === "x-robots-tag")
+        ?.value ?? "")
     : null,
 );
 const hops = computed(() => props.audit.details.site.redirectHops);
@@ -25,7 +26,8 @@ const titlesDiffer = computed(() => {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.technical") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("pane.technical") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
   <div class="title-row" style="margin-top: 0">
     <h2>{{ t("popup.technicalSignals") }}</h2>
@@ -39,7 +41,9 @@ const titlesDiffer = computed(() => {
       <span class="row-content">
         <strong class="row-title">{{ t("pm.robotsDirectives") }}</strong>
         <span class="row-sub">{{
-          meta.robots.length ? t("pm.observedInMeta", { value: meta.robots.join(", ") }) : t("pm.notDeclared")
+          meta.robots.length
+            ? t("pm.observedInMeta", { value: meta.robots.join(", ") })
+            : t("pm.notDeclared")
         }}</span>
       </span>
       <span class="badge" :class="{ ok: meta.robots.length }">{{
@@ -52,7 +56,9 @@ const titlesDiffer = computed(() => {
       }}</span>
       <span class="row-content">
         <strong class="row-title">{{ t("pm.canonicalDeclarations") }}</strong>
-        <span class="row-sub">{{ t("pm.canonicalCount", { count: n(meta.canonicals.length) }) }}</span>
+        <span class="row-sub">{{
+          t("pm.canonicalCount", { count: n(meta.canonicals.length) })
+        }}</span>
       </span>
       <span class="badge" :class="meta.canonicals.length === 1 ? 'ok' : 'warn'">{{
         meta.canonicals.length === 1 ? t("pm.seen") : t("pm.review")
@@ -118,16 +124,22 @@ const titlesDiffer = computed(() => {
     </div>
   </div>
 
-  <div class="title-row"><h2>{{ t("pm.redirectTrace") }}</h2></div>
+  <div class="title-row">
+    <h2>{{ t("pm.redirectTrace") }}</h2>
+  </div>
   <div v-if="hops.length || response.status != null" class="timeline">
     <div v-for="(hop, index) in hops" :key="`${hop}-${index}`" class="t-row">
       <div class="t-code ok">↪</div>
-      <div class="t-content"><strong>{{ hop }}</strong><small>{{ t("pm.observedRedirect") }}</small></div>
+      <div class="t-content">
+        <strong>{{ hop }}</strong
+        ><small>{{ t("pm.observedRedirect") }}</small>
+      </div>
     </div>
     <div v-if="response.status != null" class="t-row">
       <div class="t-code ok">{{ response.status }}</div>
       <div class="t-content">
-        <strong>{{ audit.page.url }}</strong><small>{{ t("pm.finalResponse") }}</small>
+        <strong>{{ audit.page.url }}</strong
+        ><small>{{ t("pm.finalResponse") }}</small>
       </div>
     </div>
   </div>

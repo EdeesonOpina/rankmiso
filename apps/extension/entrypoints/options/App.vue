@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import AnalysisApp from "../../src/components/AnalysisApp.vue";
+import WorkbenchApp from "../../src/components/workbench/WorkbenchApp.vue";
 </script>
 
 <template>
-  <AnalysisApp layout="dashboard" initial-section="settings" />
+  <WorkbenchApp surface="report" initial-section="settings" />
 </template>

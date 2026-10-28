@@ -88,7 +88,7 @@ test("sitemap explorer reads a local site and an imported file", async () => {
     await report.goto(
       `chrome-extension://${extensionId}/dashboard.html?tabId=${tab}&section=sitemaps`,
     );
-    await expect(report.getByRole("heading", { name: "Sitemaps" })).toBeVisible();
+    await expect(report.getByRole("heading", { name: "Sitemap Explorer" })).toBeVisible();
     await report.getByRole("button", { name: "Discover sitemaps" }).click();
     await expect(report.getByText("This page Found").locator("visible=true")).toBeVisible();
     await report.screenshot({ path: "test-results/audit-sitemaps.png", fullPage: true });

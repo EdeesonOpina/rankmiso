@@ -35,7 +35,9 @@ const shown = computed(() => {
   return matched.slice(0, LIMIT);
 });
 const outline = computed(() =>
-  headings.value.map((heading) => `H${heading.level} ${heading.text || t("value.empty")}`).join("\n"),
+  headings.value
+    .map((heading) => `H${heading.level} ${heading.text || t("value.empty")}`)
+    .join("\n"),
 );
 
 function indent(level: number): string {
@@ -46,7 +48,8 @@ function indent(level: number): string {
 
 <template>
   <div class="kicker">
-    <span>{{ t("pane.headings") }}</span><span class="minor">{{ t("pm.localAudit") }}</span>
+    <span>{{ t("pane.headings") }}</span
+    ><span class="minor">{{ t("pm.localAudit") }}</span>
   </div>
   <div class="pair" style="align-items: flex-end">
     <div>
@@ -65,18 +68,20 @@ function indent(level: number): string {
   </div>
   <div class="grid3" style="margin: 15px 0">
     <div class="mini-tile">
-      <strong :class="{ 'status-red': counts.h1 !== 1 }">{{ n(counts.h1) }}</strong><span>H1</span>
+      <strong :class="{ 'status-red': counts.h1 !== 1 }">{{ n(counts.h1) }}</strong
+      ><span>H1</span>
     </div>
-    <div class="mini-tile"><strong>{{ n(counts.h2) }}</strong><span>H2</span></div>
-    <div class="mini-tile"><strong>{{ n(counts.rest) }}</strong><span>H3–H6</span></div>
+    <div class="mini-tile">
+      <strong>{{ n(counts.h2) }}</strong
+      ><span>H2</span>
+    </div>
+    <div class="mini-tile">
+      <strong>{{ n(counts.rest) }}</strong
+      ><span>H3–H6</span>
+    </div>
   </div>
   <label class="field-label" for="head-search">{{ t("popup.findHeading") }}</label>
-  <input
-    id="head-search"
-    v-model="query"
-    class="field"
-    :placeholder="t('outline.search')"
-  />
+  <input id="head-search" v-model="query" class="field" :placeholder="t('outline.search')" />
 
   <div class="title-row">
     <h2>{{ t("popup.pageOutline") }}</h2>
