@@ -12,3 +12,7 @@ test-results/
 
 # Local design-review screenshots (large binaries; text reports stay tracked)
 docs/design/reviews/local/
+
+# Generated marketing captures and store exports
+marketing/captures/
+marketing/output/
