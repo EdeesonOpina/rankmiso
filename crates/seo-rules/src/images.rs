@@ -173,9 +173,9 @@ fn display_size(images: &[ImageSnapshot]) -> CheckResult {
         })
         .map(image_label)
         .collect();
-    let measured = images.iter().any(|image| {
-        image.natural_width.is_some() && image.rendered_width.is_some()
-    });
+    let measured = images
+        .iter()
+        .any(|image| image.natural_width.is_some() && image.rendered_width.is_some());
     if !measured {
         return crate::support::check(
             "RULE_IMAGE_DISPLAY",
