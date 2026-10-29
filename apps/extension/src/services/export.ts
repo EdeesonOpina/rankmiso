@@ -1,5 +1,5 @@
 import { renderHtmlReport, safeFilename, toCsv } from "@rankmiso/report-formats";
-import { appConfig } from "../config/app.config";
+import { browser } from "wxt/browser";
 import type { AuditResult } from "../types/audit";
 
 function download(filename: string, content: string, type: string) {
@@ -100,7 +100,7 @@ export function exportHtmlReport(audit: AuditResult) {
     title: audit.page.title || audit.page.url,
     url: audit.page.url,
     analyzedAt: audit.analyzedAt,
-    version: appConfig.version,
+    version: browser.runtime.getManifest().version,
     rulesetVersion: audit.rulesetVersion,
     score: audit.score.available ? String(audit.score.value) : "unavailable",
     disclaimer: audit.score.disclaimer,

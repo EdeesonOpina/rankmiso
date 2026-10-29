@@ -2,7 +2,9 @@
 
 ## Mission
 
-Build RankMiso, a free, open-source, cross-browser SEO extension in the Miso ecosystem. Rust owns SEO rules. TypeScript owns the browser. Vue renders the result. There is no backend, account, payment, or telemetry. The product name, tagline, and asset paths come from `apps/extension/src/config/brand.config.ts`. Colors and fonts come from `packages/design-tokens/src/tokens.css`.
+Build RankMiso, a free, open-source, cross-browser SEO extension in the Miso ecosystem. Rust owns SEO rules. TypeScript owns the browser. Vue renders the result. There is no backend, account, payment, or telemetry. The product name, tagline, and asset paths come from `apps/extension/src/config/brand.config.ts`. Brand values are recorded in `packages/design-tokens/src/tokens.css`; the popup styles live in `apps/extension/src/styles/popup.css` and the sidebar and report styles in `apps/extension/src/styles/workbench.css`, ported from the approved HTML prototypes.
+
+The local website at `~/Projects/Next/misoecosystem.com` is the source for official logos and mascot art when it is available. Read it for those assets. Do not modify it, and do not make the extension build depend on it. RankMiso's interface is a white-first workbench. Visual changes have to change how a screen presents its data, not only colors and spacing. Do not restore the website's cream canvas, ivory cards, or coral outlines unless the maintainer asks.
 
 ## Architecture rules
 
@@ -56,6 +58,18 @@ Do not add empty crates for schema or content until those modules outgrow `seo-r
 ## Definition of done
 
 A feature is done when the engine produces a real result, the UI can show it, empty and error states exist, tests cover the behavior, and the docs do not describe it as more complete than it is.
+
+## Development standards
+
+Ponytail, full mode: make the smallest change that finishes the task, including the callers and tests it touches. Reuse the existing components, crates, and tokens. Prefer the platform and the standard library. Do not add a dependency for a few lines, and do not add an abstraction that has one caller. Do not treat simplicity as a reason to drop validation, error handling, security, or accessibility.
+
+UI work keeps the Miso tokens in `packages/design-tokens/src/tokens.css`. When the UI/UX Pro Max and Web Interface Guidelines skills are installed, read and apply them. Do not install skills or run unreviewed installers. If a skill is missing, follow this file and say which skill was unavailable.
+
+Keep the core audit local. Optional network stays explicit. Do not add a chart library for a bar, a second SEO rules engine, telemetry, a default host permission, or a hosted backend.
+
+Run the commands in this file that the change can affect. Record the result you actually saw. Update `docs/development/progress.md` and `docs/development/handoff.md` when a milestone moves. Later milestones M2–M7 are constraints in `docs/development/implementation-plan.md`; do not start them while M1 is the assignment.
+
+Do not commit, push, or publish a store package unless the maintainer asks.
 
 ## Resume order
 

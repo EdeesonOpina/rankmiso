@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  groupLinks,
   headingLevelCounts,
+  initialLinkGroups,
   popupOverview,
+  selectHeadings,
+  selectLinks,
   type PopupOverviewModel,
 } from "../src/services/popup-summary";
 import type { AuditResult } from "../src/types/audit";
@@ -106,5 +110,116 @@ describe("popup overview", () => {
     expect(result.schemaTypes).toEqual(["Article", "FAQPage"]);
     expect(result.words).toBe(240);
     expect(result.imagesMissingAlt).toBe(1);
+  });
+
+  it("filters headings and links without treating a sample as the full set", () => {
+    const headings = [
+      { level: 1, text: "First topic" },
+      { level: 2, text: "" },
+      { level: 2, text: "Details" },
+    ];
+    expect(selectHeadings(headings, "detail", 0)).toEqual([{ level: 2, text: "Details" }]);
+    expect(selectHeadings(headings, "", 1)).toEqual([{ level: 1, text: "First topic" }]);
+    const links = [
+      {
+        href: "https://example.com/a",
+        resolvedUrl: "https://example.com/a",
+        accessibleName: "Read the guide",
+        classification: "internal",
+        nofollow: false,
+      },
+      {
+        href: "https://other.example/b",
+        resolvedUrl: "https://other.example/b",
+        accessibleName: "Outside",
+        classification: "external",
+        nofollow: true,
+      },
+    ];
+    expect(selectLinks(links, "nofollow", "").map((link) => link.accessibleName)).toEqual([
+      "Outside",
+    ]);
+    expect(selectLinks(links, "all", "guide")).toHaveLength(1);
+  });
+
+  it("keeps each link in one group and leaves attributes off the group key", () => {
+    const links = [
+      {
+        href: "/a",
+        resolvedUrl: "https://example.com/a",
+        accessibleName: "Inside",
+        classification: "internal",
+        rel: ["nofollow", "sponsored", "ugc"],
+        nofollow: true,
+        sponsored: true,
+        ugc: true,
+      },
+      {
+        href: "https://other.example/b",
+        resolvedUrl: "https://other.example/b",
+        accessibleName: "Outside",
+        classification: "external",
+        rel: [],
+        nofollow: false,
+        sponsored: false,
+        ugc: false,
+      },
+      {
+        href: "#top",
+        resolvedUrl: null,
+        accessibleName: "Top",
+        classification: "anchor",
+        rel: [],
+        nofollow: false,
+        sponsored: false,
+        ugc: false,
+      },
+      {
+        href: "mailto:ada@example.com",
+        resolvedUrl: null,
+        accessibleName: "Email",
+        classification: "mailto",
+        rel: [],
+        nofollow: false,
+        sponsored: false,
+        ugc: false,
+      },
+      {
+        href: "tel:+15551212",
+        resolvedUrl: null,
+        accessibleName: "Call",
+        classification: "tel",
+        rel: [],
+        nofollow: false,
+        sponsored: false,
+        ugc: false,
+      },
+      {
+        href: "javascript:void(0)",
+        resolvedUrl: null,
+        accessibleName: "Script",
+        classification: "javascript",
+        rel: [],
+        nofollow: false,
+        sponsored: false,
+        ugc: false,
+      },
+    ];
+    const groups = groupLinks(links);
+    expect(groups.internal).toHaveLength(1);
+    expect(groups.external).toHaveLength(1);
+    expect(groups.other.map((link) => link.classification)).toEqual([
+      "anchor",
+      "mailto",
+      "tel",
+      "javascript",
+    ]);
+    expect(groups.internal[0]?.nofollow).toBe(true);
+    expect(initialLinkGroups(groups).internal).toBe(true);
+    expect(initialLinkGroups({ internal: [], external: groups.external, other: [] }).external).toBe(
+      true,
+    );
+    expect(selectLinks(links, "all", "ada@example.com")).toEqual([links[3]]);
+    expect(selectLinks(links, "all", "no-such-link")).toEqual([]);
   });
 });

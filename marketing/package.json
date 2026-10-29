@@ -1,0 +1,16 @@
+{
+  "name": "@rankmiso/marketing",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "capture": "node --experimental-strip-types src/capture.ts",
+    "build": "node --experimental-strip-types src/compose.ts",
+    "generate": "node --experimental-strip-types src/generate.ts",
+    "validate": "node --experimental-strip-types src/validate.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
+    "sharp": "^0.34.4"
+  }
+}

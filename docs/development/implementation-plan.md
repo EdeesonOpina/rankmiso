@@ -1,5 +1,9 @@
 # Implementation plan
 
+## v0.3.0 — release preparation
+
+Version 0.3.0 collects M1–M5 and the UX-9R popup, sidebar, and full-report redesign. Packages are built from `release/v0.3.0`. Store submission and publication remain separate release actions. The ruleset version stays 1.0.0 so saved history keeps comparing.
+
 ## v0.2.0 — release preparation
 
 The current release branch consolidates the completed report improvements, saved comparisons, editable snippet drafts, Chromium-only optional PageSpeed Insights lab results and technical probes, browser performance observations, and explicit page-scoped INP capture. Firefox builds omit those external requests and retain the no-data-collection declaration. Version 0.2.0 is being prepared for Chrome and Firefox builds; store submission and publication remain separate release actions.
@@ -17,7 +21,7 @@ Status: documented in this repository.
 Status: in place for the vertical slice.
 
 - pnpm workspace and Cargo workspace
-- WXT extension with Vue 3, TypeScript, and Tailwind tokens
+- WXT extension with Vue 3, TypeScript, and plain CSS per surface (`popup.css`, `workbench.css`)
 - Rust crates `seo-core`, `seo-rules`, `seo-scoring`, and `seo-wasm`
 - Theme preference in extension storage
 - GitHub Actions workflow for format, Clippy, tests, and browser builds
@@ -39,7 +43,7 @@ Dashboard field labels now go through `src/locales/en.ts`. The product identity 
 
 Implemented in part: JSON-LD syntax and a local field list, social metadata, and Chromium-only opt-in technical probes for headers, redirects, robots.txt, the first listed sitemap, hreflang return links, and public link responses.
 
-Still unbuilt: official rich-result eligibility, Microdata and RDFa extraction, a comprehensive raw-versus-rendered comparison, and a full crawl. Google Rich Results Test remains an external, user-initiated validation tool.
+Still unbuilt: official rich-result eligibility and a full crawl. Microdata, a bounded RDFa subset, and a fetched-HTML comparison are implemented; see `docs/features/advanced-technical.md`. Google Rich Results Test remains an external, user-initiated validation tool.
 
 ## Phase 4 — Research tools
 
@@ -86,7 +90,67 @@ Initial spike deliverable: a threat model and a small transport prototype over f
 - `vue-tsc` passes
 - Chrome MV3 and Firefox MV3 builds emit a local `.wasm` asset
 - The report distinguishes measured issues from checks that did not run
-- Chrome MV3 and Firefox MV3 package versions are 0.2.0
+- Chrome MV3 and Firefox MV3 package versions are 0.3.0
 - Firefox MV3 declares no optional host permissions and cannot invoke PageSpeed Insights or optional site probes; Chromium retains those explicit opt-in features
 - INP capture is explicit, remains page-scoped, and has start, running, unsupported, stop, and no-interactions states
 - MCP remains documented as planned and is not represented as an available feature
+
+## Later milestones (not started)
+
+These are constraints for later work. They are not part of the current UI milestone.
+
+### M2 — Sitemap explorer
+
+Implemented. Chromium discovery is user-started and origin-scoped. Firefox imports a local XML file and does not request sitemaps. Parsing is bounded: 8 files, 500 URL entries, 512 KB each. A nested sitemap index is reported and not followed. Sitemap inclusion is not indexing. Details are in `docs/features/sitemaps.md`.
+
+### Capability gaps recorded at UX-2
+
+Compared with public SEOquake, MozBar, Ahrefs SEO Toolbar, and Detailed SEO Extension behavior. The matrix is `docs/features/competitive.md`. These gaps are not part of UX-2.
+
+- Site crawling is M3 and is implemented as a bounded same-origin crawl. Sitemap discovery by itself is still not a crawl of every listed URL.
+- Trend charts are M4 and use explicit page saves. A site crawl is not turned into that history.
+- Fetched HTML comparison, Microdata, and bounded RDFa are implemented in M5. They are not a complete document diff or a complete RDFa processor.
+- MCP stays M6 and is not built.
+- SERP overlays, keyword metrics, backlinks, Domain Authority, Page Authority, Domain Rating, and URL Rating are out of scope. RankMiso does not invent them.
+- People Also Ask and a user-agent switch are out of scope.
+- Keyword n-gram density is not implemented. Repeated-term counts remain the content view.
+
+### M3 — Site explorer
+
+Implemented. A crawl starts only from the report, stays on the exact origin, can be stopped, and marks a page cap as partial. Fetched HTML is source text scored by the existing page engine. It is not the rendered snapshot. The crawl does not run in the background. Firefox does not crawl. See `docs/features/site-explorer.md`.
+
+### M4 — Historical analytics
+
+Implemented. New saves add a versioned summary beside the existing fields. Older saves stay readable. The History screen charts saved scores for one page and compares two saves. Missing values stay “Not recorded”. A site crawl is not added. See `docs/features/history.md`.
+
+### M5 — Advanced technical SEO
+
+Implemented. Technical compares a separately fetched response, or a chosen HTML file, with the rendered snapshot. Schema adds bounded Microdata and RDFa beside JSON-LD. New observations stay informational. See `docs/features/advanced-technical.md`. Do not claim official rich-result eligibility.
+
+### UX-7 — Official brand alignment
+
+Recorded. The fox icon came from the website. The cream canvas from that pass is no longer the RankMiso interface. See UX-8.
+
+### UX-8 — White workbench
+
+RankMiso uses a white application canvas, neutral cards, and the platform UI font. The website remains the logo and mascot reference. Do not restore the cream canvas unless the maintainer asks. Details are in `docs/branding/design-tokens.md`.
+
+### UX-9 — Purpose-built presentation
+
+Recorded. A layout change has to change how a screen presents its data. From 1100px the report overview, history charts, and a selected crawl page use two columns. Narrow reports stack. The sitemap URL table stays full width. Details are in the UX-9 completion checkpoint. Do not start M6 unless the maintainer asks.
+
+### UX-9R.2 — Popup inspectors
+
+Recorded. The popup rail and Overview stay. The other 17 destinations use the approved HTML compositions with live audit data. Site and Sitemaps in the popup open the report; they do not run the crawl or discover files. The next visual pass is the sidebar and the full report, and it has not started.
+
+### UX-9R.3 / UX-9R.4 — Sidebar and full report
+
+Recorded. The sidebar and report follow the approved HTML prototypes through one workbench shell. Visual sign-off is pending. Do not start M6 unless the maintainer asks.
+
+### M6 — MCP
+
+A local read-only companion over an audit the user chose to share. Write the threat model before any browser bridge. Do not expose arbitrary tabs, API keys, unrestricted URLs, or saved history. No hosted MCP service.
+
+### M7 — Search Console
+
+Optional OAuth for a verified owner, using real API data. The extension must still work with no account.
