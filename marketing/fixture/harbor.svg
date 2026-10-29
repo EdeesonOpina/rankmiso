@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400">
+  <rect width="640" height="400" fill="#182333"/>
+  <circle cx="470" cy="148" r="72" fill="#c42a20"/>
+  <rect x="48" y="250" width="220" height="8" fill="#f3f5f8"/>
+  <text x="48" y="220" fill="#ffffff" font-family="sans-serif" font-size="42">Harbor</text>
+</svg>
