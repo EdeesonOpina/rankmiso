@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Field notes from the harbor workshop</title>
+    <meta
+      name="description"
+      content="A local sample page about a harbor workshop, used so RankMiso can show a real analysis without calling another website."
+    />
+    <link rel="canonical" href="http://127.0.0.1/field-notes" />
+    <meta name="robots" content="index,follow" />
+    <meta property="og:title" content="Field notes from the harbor workshop" />
+    <meta
+      property="og:description"
+      content="A local sample page about a harbor workshop, used so RankMiso can show a real analysis."
+    />
+    <meta property="og:image" content="harbor.svg" />
+    <meta name="twitter:card" content="summary" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "Field notes from the harbor workshop",
+        "datePublished": "2026-04-02",
+        "author": { "@type": "Organization", "name": "Harbor Workshop" },
+        "image": "harbor.svg"
+      }
+    </script>
+    <script>
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.href = location.href.split("#")[0];
+      const image = document.querySelector('meta[property="og:image"]');
+      if (image) image.content = new URL("harbor.svg", location.href).href;
+    </script>
+  </head>
+  <body>
+    <article>
+      <h1>Field notes from the harbor workshop</h1>
+      <p>
+        This is a local sample page. RankMiso reads it in the browser and reports only what it can
+        measure. Nothing here is a search ranking.
+      </p>
+      <h2>What this page includes</h2>
+      <h3>Title and description</h3>
+      <p>The title names the workshop. The description says this page stays on this computer.</p>
+      <h3>Pictures</h3>
+      <p>
+        <img src="harbor.svg" width="640" height="400" alt="A red circle on a dark harbor mark" />
+      </p>
+      <h2>Notes from the room</h2>
+      <h3>Morning</h3>
+      <p>The group compared headings, links, and the article markup already on the page.</p>
+      <h3>Afternoon</h3>
+      <p>They kept the outline to one topic and one supporting section.</p>
+      <h2>Links on this page</h2>
+      <h3>On this sample</h3>
+      <p><a href="#notes">Harbor notes</a></p>
+      <p><a href="page.html">Open this sample again</a></p>
+      <h3>Other sites</h3>
+      <p><a href="https://example.org/charts">Example charts</a></p>
+      <p><a href="https://example.org/notes">Example notes</a></p>
+      <h2 id="notes">Closing notes</h2>
+      <p>
+        The workshop ended when the outline, the article markup, and the link list were all visible
+        without leaving the page.
+      </p>
+    </article>
+  </body>
+</html>

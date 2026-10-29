@@ -1,0 +1,14 @@
+UX-9 continuation evidence. These PNGs were not committed with the product.
+
+baseline/ is the partial UX-9 Playwright run from 2026-10-28 16:04, copied before the remaining inspectors changed. It is not a UX-8 archive. UX-8 shots were not reconstructed.
+
+final/ is the later Playwright run. site-board.png is the crawl summary element, captured while a crawl was running. The other files are the usual fixture screenshots.
+
+What changed, checked against the images:
+- Report overview is two columns from a wide window: score and essentials, then findings and limits.
+- Popup metadata lists H1, title, description, canonical, and robots, then the snippet.
+- Images lead with counts, then filename, alt state, and dimensions.
+- Technical values are rows. Google index status stays Unknown. The comparison stays side by side on a wide report.
+- History comparison is two columns and still says when a score change is not comparable.
+- Sitemaps lead with file, URL, and finding counts. The URL table is full width.
+- The crawl board shows listed, fetched, failed, and skipped counts and a budget meter. It is not a site score.

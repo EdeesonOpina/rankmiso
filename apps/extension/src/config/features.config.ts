@@ -11,6 +11,8 @@ export const supportsOptionalExternalChecks = !import.meta.env.FIREFOX;
 
 export const featuresConfig: FeatureDefinition[] = [
   { id: "overview", status: "available", phase: 2, summaryKey: "features.overview" },
+  { id: "issues", status: "available", phase: 2, summaryKey: "features.issues" },
+  { id: "export", status: "available", phase: 2, summaryKey: "features.export" },
   { id: "metadata", status: "available", phase: 2, summaryKey: "features.metadata" },
   { id: "content", status: "partial", phase: 2, summaryKey: "features.content" },
   { id: "headings", status: "available", phase: 2, summaryKey: "features.headings" },
@@ -23,6 +25,8 @@ export const featuresConfig: FeatureDefinition[] = [
   { id: "international", status: "partial", phase: 3, summaryKey: "features.international" },
   { id: "accessibility", status: "partial", phase: 4, summaryKey: "features.accessibility" },
   { id: "reports", status: "available", phase: 2, summaryKey: "features.reports" },
+  { id: "site", status: "available", phase: 3, summaryKey: "features.site" },
+  { id: "sitemaps", status: "available", phase: 3, summaryKey: "features.sitemaps" },
   { id: "settings", status: "available", phase: 1, summaryKey: "features.settings" },
   { id: "serp", status: "partial", phase: 4, summaryKey: "features.serp" },
   { id: "comparison", status: "partial", phase: 4, summaryKey: "features.comparison" },

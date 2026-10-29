@@ -495,9 +495,16 @@ struct RobotsDecision {
     blocked: bool,
 }
 
+pub fn rankmiso_may_fetch(body: &str, path: &str) -> bool {
+    !robots_decision_for(body, path, "rankmiso").blocked
+}
+
 fn robots_decision(body: &str, path: &str) -> RobotsDecision {
+    robots_decision_for(body, path, "googlebot")
+}
+
+fn robots_decision_for(body: &str, path: &str, product: &str) -> RobotsDecision {
     let groups = parse_groups(body);
-    let product = "googlebot";
     let specific = groups.iter().filter_map(|group| {
         group
             .agents
@@ -639,6 +646,14 @@ mod tests {
         let decision = robots_decision(body, "/");
         assert_eq!(decision.agent, "Googlebot");
         assert!(!decision.blocked);
+    }
+
+    #[test]
+    fn rankmiso_uses_its_own_group_when_one_exists() {
+        let body = "User-agent: *\nAllow: /\n\nUser-agent: RankMiso\nDisallow: /\nAllow: /docs\nDisallow: /docs/private\n";
+        assert!(rankmiso_may_fetch(body, "/docs/guide"));
+        assert!(!rankmiso_may_fetch(body, "/docs/private"));
+        assert!(!rankmiso_may_fetch(body, "/blog"));
     }
 
     #[test]

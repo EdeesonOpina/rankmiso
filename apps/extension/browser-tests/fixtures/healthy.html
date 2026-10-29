@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Healthy guide for a local page with a deliberately long document title that should wrap
+    </title>
+    <meta
+      name="description"
+      content="A complete local page used to check that RankMiso can score a normal document."
+    />
+    <link rel="canonical" href="https://example.com/placeholder" />
+    <meta property="og:title" content="Healthy guide" />
+    <meta
+      property="og:description"
+      content="A complete local page used to check that RankMiso can score a normal document."
+    />
+    <meta property="og:image" content="https://example.com/card.png" />
+    <meta name="twitter:card" content="summary" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "Healthy guide"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": ["Organization", "LocalBusiness"],
+            "@id": "https://example.com/#org",
+            "name": "Example Company",
+            "sameAs": ["https://example.com/a", "https://example.com/b", "https://example.com/c"]
+          }
+        ]
+      }
+    </script>
+    <script>
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.href = location.href.split("#")[0];
+    </script>
+  </head>
+  <body>
+    <h1>Healthy topic</h1>
+    <h2>Details</h2>
+    <p>
+      This paragraph explains the healthy fixture so the page has visible text for the audit. It is
+      a local test page and nothing else.
+    </p>
+    <p><a href="healthy.html">Read the guide</a></p>
+    <p><a id="details" href="#details">On this page</a></p>
+    <p>
+      <a href="https://example.org/outside" rel="nofollow sponsored ugc">Outside reference</a>
+    </p>
+    <p><a href="mailto:ada@example.com">Email</a></p>
+    <p><a href="tel:+15551212">Call</a></p>
+    <p>
+      <img
+        src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        alt="A one pixel sample"
+      />
+    </p>
+  </body>
+</html>

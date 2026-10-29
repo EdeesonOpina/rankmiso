@@ -9,10 +9,13 @@ mod international;
 mod links;
 mod metadata;
 mod performance;
+pub mod sitemap;
 mod social;
 mod structured_data;
 mod support;
 mod technical;
+
+pub use technical::rankmiso_may_fetch;
 
 use seo_core::{
     AnalyzeOptions, AuditDetails, AuditMetrics, AuditResult, CheckResult, CheckStatus,
@@ -302,6 +305,8 @@ mod tests {
             loading: Some("lazy".to_string()),
             fetch_priority: None,
             srcset: None,
+            decoding: None,
+            sizes: None,
             in_picture: false,
             broken: Some(false),
             location: "img".to_string(),
