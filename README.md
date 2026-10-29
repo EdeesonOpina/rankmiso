@@ -1,44 +1,92 @@
-# RankMiso
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/hero-dark.jpg" />
+    <img src="docs/assets/readme/hero-light.jpg" alt="RankMiso: your website, clearly understood. Free, open source, no account." width="100%" />
+  </picture>
+</p>
 
-**Every page. Every detail.**
+<h3 align="center">Every page. Every detail.</h3>
 
-RankMiso is a free, open-source SEO browser extension for developers, marketers, and website owners. Open it on the page you are viewing. It reads that page in your browser, scores the checks it can actually measure, and shows the rest as not measured.
+<p align="center">
+  A free, open-source SEO browser extension with a fox's nose for detail.<br />
+  Click the fox, read the page. No account, no subscription, no telemetry, no ads, no backend.
+</p>
 
-It belongs to the Miso ecosystem. The idea is simple: powerful tools, less overhead. No account. No subscription. No telemetry. No ads. No backend.
+<p align="center">
+  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-c42a20" />
+  <img alt="Version 0.3.0" src="https://img.shields.io/badge/version-0.3.0-14161c" />
+  <img alt="Chrome, Edge and Firefox" src="https://img.shields.io/badge/browsers-Chrome%20·%20Edge%20·%20Firefox-f2a93b" />
+  <img alt="Built with Rust and Vue" src="https://img.shields.io/badge/built%20with-Rust%20%2B%20Vue-5fd39a" />
+</p>
+
+---
+
+## 🦊 Meet the fox
+
+RankMiso is for developers, marketers, and anyone who owns a website. Open it on the page you are viewing. It reads that page **in your browser**, scores the checks it can actually measure, and shows the rest as *not measured*. No guessing, no made-up numbers.
+
+<p align="center">
+  <img src="docs/assets/readme/demo.gif" alt="Clicking the RankMiso fox in the toolbar opens the popup with the page score" width="720" />
+</p>
+
+It belongs to the Miso ecosystem, where the recipe is simple: powerful tools, less overhead.
 
 RankMiso is available in the Chrome Web Store and Firefox Add-ons. Edge builds are available for sideloading. Release maintenance notes are in [docs/releases](docs/releases/).
-Version 0.3.0 is in build preparation and has not yet been submitted to either store. MCP integration is a documented future plan; no MCP server or browser bridge is included in this release.
 
-## What you see
+> [!NOTE]
+> Version 0.3.0 is in build preparation and has not yet been submitted to either store. MCP integration is a documented future plan; no MCP server or browser bridge is included in this release.
 
-The popup is the short read. The full report is one click away.
+## 🍜 What's in the bowl
 
-- **Overview.** Score, title, description, counts, H1, canonical, robots, language, and schema types.
-- **JSON-LD.** Labeled fields you can scan, plus a copy of the formatted source.
-- **Headings.** The outline, with copy on each heading.
-- **Links.** Internal, external, and nofollow, with addresses you can open.
-- **Images.** Thumbnail, bold name, then the image address.
-- **Social.** Approximate link and X cards, including the share image when it loads.
+The popup is the quick taste. The full report is one click away.
 
-The dashboard keeps the same analysis and adds the longer tables: metadata, content, technical details, performance observations, international tags, a small accessibility sample, and exports. JSON, CSV, and HTML download only after you confirm.
+| | |
+| --- | --- |
+| <img src="docs/assets/readme/schema.jpg" alt="Structured data view" /> | <img src="docs/assets/readme/headings.jpg" alt="Headings outline" /> |
+| **JSON-LD.** Labeled fields you can scan, plus a copy of the formatted source. | **Headings.** The whole outline, with copy on each heading. |
+| <img src="docs/assets/readme/links.jpg" alt="Links view" /> | <img src="docs/assets/readme/images.jpg" alt="Images view" /> |
+| **Links.** Internal, external, and nofollow, with addresses you can open. | **Images.** Thumbnail, bold name, then the image address. |
+| <img src="docs/assets/readme/social.jpg" alt="Social card preview" /> | <img src="docs/assets/readme/full-report.jpg" alt="Full report" /> |
+| **Social.** Approximate link and X cards, including the share image when it loads. | **Full report.** The same analysis, with room for the long tables. |
 
-Counts use thousands separators. Long addresses truncate. Web links open in a new tab. Light, dark, and system themes stay in the extension.
+The **overview** puts the essentials up front: score, title, description, counts, H1, canonical, robots, language, and schema types.
 
-## A score you can trust
+The full report adds metadata, content, technical details, performance observations, international tags, a small accessibility sample, and exports. JSON, CSV, and HTML download only after you confirm.
 
-The number is a weighted summary of the checks that ran. Errors, warnings, and passes are counted. Checks that could not be evaluated stay out of the score.
+The little things are handled too. Counts use thousands separators, long addresses truncate, and web links open in a new tab. Light, dark, and system themes are all in the box.
 
-RankMiso will not invent search volume, keyword difficulty, traffic, backlinks, or index status. A missing measurement is shown as unavailable. The result includes a disclaimer: this is not a Google ranking.
+## 🎯 A score you can trust
 
-Chromium builds can check one site after you allow it: response headers, robots.txt for the Googlebot group or `*`, whether the open URL is in the first sitemap, redirect hops, hreflang return links, and public links 20 at a time. The report also has a Sitemaps section. In Chromium it can read the sitemap files named by robots.txt, two common paths, or a URL you enter, after you allow that site. It does not fetch a sitemap on another host, and it does not crawl the listed pages. Firefox imports an XML file from this device and does not request sitemaps. Those requests stay off until you start them. Local and private addresses are skipped. Firefox keeps these optional external checks disabled and requests no optional host permissions.
+The number is a weighted summary of the checks that ran. Errors, warnings, and passes are counted. Checks that could not be evaluated stay out of the score, so a missing measurement never sneaks in as a pass.
+
+**The fox's oath.** RankMiso will not invent:
+
+- search volume or keyword difficulty
+- traffic or backlinks
+- index status
+
+A missing measurement is shown as unavailable. The result includes a disclaimer: this is not a Google ranking.
+
+<details>
+<summary><b>Optional checks that reach the network (off until you start them)</b></summary>
+
+<br />
+
+Chromium builds can check one site after you allow it: response headers, robots.txt for the Googlebot group or `*`, whether the open URL is in the first sitemap, redirect hops, hreflang return links, and public links 20 at a time.
+
+The report also has a Sitemaps section. In Chromium it can read the sitemap files named by robots.txt, two common paths, or a URL you enter, after you allow that site. It does not fetch a sitemap on another host, and it does not crawl the listed pages. Firefox imports an XML file from this device and does not request sitemaps.
+
+Those requests stay off until you start them. Local and private addresses are skipped. Firefox keeps these optional external checks disabled and requests no optional host permissions.
 
 The Performance section shows browser-observed LCP and CLS when available, plus an INP estimate from exposed event entries. These are not field data. Chromium builds offer an optional mobile PageSpeed Insights check that sends the page URL and a user-provided API key to Google only after explicit consent; its lab results do not affect RankMiso's score. Firefox omits this external check.
 
 Reports can save comparison fields locally after you choose to save them. RankMiso still does not measure search rankings, traffic, backlinks, index coverage, or official rich-result eligibility. See [progress](docs/development/progress.md).
 
-## Try it
+</details>
 
-Firefox, from this repository:
+## 🚀 Take it for a spin
+
+**Firefox**, from this repository:
 
 ```bash
 source "$HOME/.cargo/env"
@@ -53,7 +101,7 @@ Open `about:debugging`, choose **This Firefox**, then **Load Temporary Add-on**.
 
 Choose the file, not the folder. The add-on disappears when Firefox quits. After a rebuild, click **Reload** on that same entry.
 
-Chrome and Edge:
+**Chrome and Edge:**
 
 ```bash
 pnpm --filter @rankmiso/extension build
@@ -62,7 +110,7 @@ pnpm --filter @rankmiso/extension build:edge
 
 Load the unpacked folder `apps/extension/.output/chrome-mv3` or `apps/extension/.output/edge-mv3`. Safari is not produced by these commands.
 
-## Develop
+## 🛠️ In the kitchen
 
 Requirements: Rust stable, the `wasm32-unknown-unknown` target, `wasm-bindgen-cli` 0.2.100, Node.js 22+, and pnpm 10.
 
@@ -73,9 +121,9 @@ pnpm build:wasm
 pnpm dev
 ```
 
-The Rust crates stay named `seo-core`, `seo-rules`, `seo-scoring`, and `seo-wasm`. They own the rules. Vue owns the screen.
+**Rust owns the rules. Vue owns the screen.** The Rust crates stay named `seo-core`, `seo-rules`, `seo-scoring`, and `seo-wasm`.
 
-|                               |                                                                          |
+| Want to change…               | Look here                                                                |
 | ----------------------------- | ------------------------------------------------------------------------ |
 | Product name, tagline, assets | `apps/extension/src/config/brand.config.ts`                              |
 | Colors and type               | `packages/design-tokens/src/tokens.css`                                  |
@@ -88,7 +136,9 @@ pnpm brand:icons
 
 That reads `apps/extension/public/brand/icon.png` and writes the 16, 32, 48, and 128 toolbar icons. Reload the extension after rebuilding. The current artwork is the fox sticker.
 
-## Docs
+Store screenshots, promo tiles, and the images in this README come from the [marketing pipeline](marketing/README.md).
+
+## 📚 Docs
 
 - [What the product includes](docs/features/overview.md)
 - [How the pieces fit](docs/architecture/overview.md)
@@ -99,4 +149,8 @@ That reads `apps/extension/public/brand/icon.png` and writes the 16, 32, 48, and
 
 ## License
 
-MIT. See `LICENSE`.
+MIT. See `LICENSE`. Made with care (and a little miso) by the Miso ecosystem.
+
+<p align="center">
+  <img src="apps/extension/public/brand/icon.png" alt="" width="56" />
+</p>
