@@ -52,13 +52,9 @@ pub fn checks(views: &[StructuredDataView]) -> Vec<CheckResult> {
     ]
 }
 
-fn extracted(
-    views: &[StructuredDataView],
-    format: &str,
-    id: &str,
-    label: &str,
-) -> CheckResult {
-    let found: Vec<&StructuredDataView> = views.iter().filter(|view| view.format == format).collect();
+fn extracted(views: &[StructuredDataView], format: &str, id: &str, label: &str) -> CheckResult {
+    let found: Vec<&StructuredDataView> =
+        views.iter().filter(|view| view.format == format).collect();
     if found.is_empty() {
         return crate::support::check(
             id,
@@ -366,13 +362,25 @@ mod field_tests {
             raw: r#"{"items":[{"@type":"Article","properties":{"name":["Ada"]}}],"limitations":["An itemscope has no itemtype."]}"#.to_string(),
         }]);
         let results = checks(&views);
-        let syntax = results.iter().find(|check| check.id == "RULE_JSONLD_SYNTAX").unwrap();
-        let rich = results.iter().find(|check| check.id == "RULE_SCHEMA_RICH_RESULTS").unwrap();
-        let micro = results.iter().find(|check| check.id == "RULE_MICRODATA_EXTRACTED").unwrap();
+        let syntax = results
+            .iter()
+            .find(|check| check.id == "RULE_JSONLD_SYNTAX")
+            .unwrap();
+        let rich = results
+            .iter()
+            .find(|check| check.id == "RULE_SCHEMA_RICH_RESULTS")
+            .unwrap();
+        let micro = results
+            .iter()
+            .find(|check| check.id == "RULE_MICRODATA_EXTRACTED")
+            .unwrap();
         assert_eq!(syntax.status, CheckStatus::Info);
         assert_eq!(rich.status, CheckStatus::Unavailable);
         assert_eq!(micro.status, CheckStatus::Info);
-        assert!(micro.evidence.iter().any(|item| item.value.contains("Article")));
+        assert!(micro
+            .evidence
+            .iter()
+            .any(|item| item.value.contains("Article")));
     }
 
     #[test]
