@@ -219,7 +219,11 @@ pub fn analyze(document: &SitemapDocument) -> Result<SitemapReport, EngineError>
     })
 }
 
-fn validate_children(file: &SitemapFile, document: &SitemapDocument, findings: &mut Vec<CheckResult>) {
+fn validate_children(
+    file: &SitemapFile,
+    document: &SitemapDocument,
+    findings: &mut Vec<CheckResult>,
+) {
     let mut seen = Vec::new();
     for child in &file.children {
         let key = child.trim();
@@ -437,7 +441,15 @@ fn file_note(
     description: &str,
     recommendation: &str,
 ) -> CheckResult {
-    with_evidence(file, id, status, title, description, recommendation, &file.url)
+    with_evidence(
+        file,
+        id,
+        status,
+        title,
+        description,
+        recommendation,
+        &file.url,
+    )
 }
 
 fn with_evidence(
@@ -502,9 +514,13 @@ fn canonical_key(url: &Url) -> String {
         "{}://{}{}{}{}",
         url.scheme(),
         url.host_str().unwrap_or(""),
-        url.port().map(|port| format!(":{port}")).unwrap_or_default(),
+        url.port()
+            .map(|port| format!(":{port}"))
+            .unwrap_or_default(),
         path,
-        url.query().map(|query| format!("?{query}")).unwrap_or_default()
+        url.query()
+            .map(|query| format!("?{query}"))
+            .unwrap_or_default()
     )
 }
 
@@ -539,7 +555,9 @@ fn valid_lastmod(value: &str) -> bool {
 }
 
 fn valid_priority(value: &str) -> bool {
-    value.parse::<f32>().is_ok_and(|number| (0.0..=1.0).contains(&number))
+    value
+        .parse::<f32>()
+        .is_ok_and(|number| (0.0..=1.0).contains(&number))
 }
 
 fn valid_changefreq(value: &str) -> bool {
@@ -605,7 +623,11 @@ mod tests {
         let mut broken = file("invalid", vec![], vec![]);
         broken.url = "https://example.com/bad.xml".to_string();
         let report = analyze(&document(vec![broken, nested])).unwrap();
-        let ids: Vec<_> = report.findings.iter().map(|item| item.id.as_str()).collect();
+        let ids: Vec<_> = report
+            .findings
+            .iter()
+            .map(|item| item.id.as_str())
+            .collect();
         assert!(ids.contains(&"SITEMAP_XML_INVALID"));
         assert!(ids.contains(&"SITEMAP_NESTED_INDEX"));
         assert_ne!(report.page_match, "absent");
@@ -628,7 +650,11 @@ mod tests {
             vec![],
         )]))
         .unwrap();
-        let ids: Vec<_> = report.findings.iter().map(|item| item.id.as_str()).collect();
+        let ids: Vec<_> = report
+            .findings
+            .iter()
+            .map(|item| item.id.as_str())
+            .collect();
         assert!(ids.contains(&"SITEMAP_DUPLICATE_URL"));
         assert!(ids.contains(&"SITEMAP_LOC_RELATIVE"));
         assert!(ids.contains(&"SITEMAP_LOC_SCHEME"));
@@ -640,11 +666,18 @@ mod tests {
 
     #[test]
     fn an_incomplete_read_is_unknown_when_the_page_was_not_seen() {
-        let mut doc = document(vec![file("urlset", vec![entry("https://example.com/other")], vec![])]);
+        let mut doc = document(vec![file(
+            "urlset",
+            vec![entry("https://example.com/other")],
+            vec![],
+        )]);
         doc.partial = true;
         let report = analyze(&doc).unwrap();
         assert_eq!(report.page_match, "unknown");
-        assert!(report.findings.iter().any(|item| item.id == "SITEMAP_LIMIT"));
+        assert!(report
+            .findings
+            .iter()
+            .any(|item| item.id == "SITEMAP_LIMIT"));
     }
 
     #[test]
@@ -671,7 +704,11 @@ mod tests {
             ],
         )]))
         .unwrap();
-        let ids: Vec<_> = report.findings.iter().map(|item| item.id.as_str()).collect();
+        let ids: Vec<_> = report
+            .findings
+            .iter()
+            .map(|item| item.id.as_str())
+            .collect();
         assert!(ids.contains(&"SITEMAP_DUPLICATE_CHILD"));
         assert!(ids.contains(&"SITEMAP_CHILD_URL"));
         assert!(ids.contains(&"SITEMAP_EXTERNAL"));
@@ -685,7 +722,11 @@ mod tests {
             file("unknown", vec![], vec![]),
         ]))
         .unwrap();
-        let ids: Vec<_> = report.findings.iter().map(|item| item.id.as_str()).collect();
+        let ids: Vec<_> = report
+            .findings
+            .iter()
+            .map(|item| item.id.as_str())
+            .collect();
         assert!(ids.contains(&"SITEMAP_DTD"));
         assert!(ids.contains(&"SITEMAP_UNSUPPORTED"));
     }

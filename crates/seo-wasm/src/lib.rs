@@ -1,6 +1,6 @@
 use seo_core::{AnalyzeOptions, EngineError, PageSnapshot};
-use seo_rules::{analyze, rankmiso_may_fetch};
 use seo_rules::sitemap::{self, SitemapDocument};
+use seo_rules::{analyze, rankmiso_may_fetch};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(js_name = engineVersion)]
