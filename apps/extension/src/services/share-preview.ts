@@ -2,15 +2,21 @@ import type { AuditResult } from "../types/audit";
 
 export type ShareFieldSource = "declared" | "openGraph" | "page" | "none";
 
+export type SharePresentation =
+  "open-graph" | "summary" | "summary-large" | "undeclared" | "unsupported";
+
 export interface SharePreview {
   id: "openGraph" | "x";
   layout: "large" | "compact";
+  presentation: SharePresentation;
   title: string | null;
   titleFrom: ShareFieldSource;
   description: string | null;
   descriptionFrom: ShareFieldSource;
   imageUrl: string | null;
   imageFrom: ShareFieldSource;
+  url: string;
+  urlFrom: ShareFieldSource;
   host: string;
   cardType: string | null;
 }
@@ -64,7 +70,9 @@ export function sharePreviews(audit: ShareSource): SharePreview[] {
   const twitterDescription = present(social.twitterDescription);
   const twitterImage = resolveShareImage(audit.page.url, present(social.twitterImage));
   const cardType = present(social.twitterCard)?.toLowerCase() ?? null;
-  const host = shareHost(present(social.ogUrl) ?? audit.page.url);
+  const declaredUrl = resolveShareImage(audit.page.url, present(social.ogUrl));
+  const url = declaredUrl ?? audit.page.url;
+  const host = shareHost(url);
   const linkTitle = chosen(ogTitle, null, pageTitle);
   const linkDescription = chosen(ogDescription, null, pageDescription);
   const xTitle = chosen(twitterTitle, ogTitle, pageTitle);
@@ -81,20 +89,33 @@ export function sharePreviews(audit: ShareSource): SharePreview[] {
       descriptionFrom: linkDescription.from,
       imageUrl: ogImage,
       imageFrom: ogImage ? "declared" : "none",
+      url,
+      urlFrom: declaredUrl ? "declared" : "page",
       host,
       cardType: present(social.ogType),
+      presentation: "open-graph",
     },
     {
       id: "x",
       layout: cardType === "summary" ? "compact" : "large",
+      presentation: xPresentation(cardType),
       title: xTitle.value,
       titleFrom: xTitle.from,
       description: xDescription.value,
       descriptionFrom: xDescription.from,
       imageUrl: xImage.value,
       imageFrom: xImage.from,
+      url,
+      urlFrom: declaredUrl ? "declared" : "page",
       host,
       cardType,
     },
   ];
+}
+
+function xPresentation(cardType: string | null): SharePreview["presentation"] {
+  if (cardType === "summary") return "summary";
+  if (cardType === "summary_large_image") return "summary-large";
+  if (!cardType) return "undeclared";
+  return "unsupported";
 }

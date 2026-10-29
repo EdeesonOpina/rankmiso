@@ -17,6 +17,7 @@ export interface SiteProbe {
   redirectHops: string[];
   hreflangChecked: number;
   hreflangMissing: number;
+  hreflangSkipped: number;
   notes: string[];
 }
 
@@ -53,6 +54,7 @@ export function emptySiteProbe(): SiteProbe {
     redirectHops: [],
     hreflangChecked: 0,
     hreflangMissing: 0,
+    hreflangSkipped: 0,
     notes: [],
   };
 }
@@ -274,13 +276,38 @@ async function checkHreflang(
     })
     .filter((href) => href && !samePage(href, snapshot.url) && !isBlockedHref(href));
   const unique = [...new Set(alternates)];
-  if (unique.length > 8) notes.push("Only the first 8 hreflang alternates were fetched.");
+  if (unique.length > 8) notes.push("Only the first 8 hreflang alternates were considered.");
+  let notedSkip = false;
+  const pageOrigin = new URL(snapshot.url).origin;
   for (const href of unique.slice(0, 8)) {
-    const page = await fetchText(href, 100_000);
-    site.hreflangChecked += 1;
-    if (!page || page.status >= 400 || !alternatePointsBack(page.text, snapshot.url)) {
-      site.hreflangMissing += 1;
+    let target: URL;
+    try {
+      target = new URL(href);
+    } catch {
+      site.hreflangSkipped += 1;
+      continue;
     }
+    if (target.origin !== pageOrigin) {
+      site.hreflangSkipped += 1;
+      if (!notedSkip) {
+        notes.push("A return link on another host was not checked.");
+        notedSkip = true;
+      }
+      continue;
+    }
+    const page = await fetchText(href, 100_000);
+    if (!page || page.status >= 400) {
+      site.hreflangSkipped += 1;
+      if (!notedSkip) {
+        notes.push(
+          "A same-host alternate could not be fetched, so its return link was not checked.",
+        );
+        notedSkip = true;
+      }
+      continue;
+    }
+    site.hreflangChecked += 1;
+    if (!alternatePointsBack(page.text, snapshot.url)) site.hreflangMissing += 1;
   }
 }
 

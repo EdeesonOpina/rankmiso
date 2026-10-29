@@ -1,6 +1,6 @@
 # Firefox release
 
-Release target: v0.2.0 (prepared, not submitted). The package id is `rankmiso@rankmiso.extension`. The first accepted upload on addons.mozilla.org locks that id. Changing it later makes Firefox treat the file as a different add-on. This id is not an email address.
+Release target: v0.3.0 (prepared, not submitted). The package id is `rankmiso@rankmiso.extension`. The first accepted upload on addons.mozilla.org locks that id. Changing it later makes Firefox treat the file as a different add-on. This id is not an email address.
 
 The GitHub repository is private. A private link cannot be the privacy policy URL on the listing. Put the text of `PRIVACY.md` on a public HTTPS page before you submit that field. Publishing this repository is one way to do that. Do not paste a private GitHub URL.
 
@@ -21,7 +21,7 @@ Confirm `apps/extension/.output/firefox-mv3/manifest.json` before you zip it:
 
 - `manifest_version` is 3
 - `name` is RankMiso
-- `version` is 0.2.0
+- `version` is 0.3.0
 - `browser_specific_settings.gecko.id` is `rankmiso@rankmiso.extension`
 - `browser_specific_settings.gecko.strict_min_version` is 140.0
 - `browser_specific_settings.gecko.data_collection_permissions.required` is `["none"]`
@@ -33,7 +33,7 @@ Zip the files inside the output folder, so `manifest.json` is at the root of the
 
 ```bash
 cd apps/extension/.output/firefox-mv3
-zip -r -FS "$OLDPWD/rankmiso-0.2.0-firefox.zip" . -x '*.git*'
+zip -r -FS "$OLDPWD/rankmiso-0.3.0-firefox.zip" . -x '*.git*'
 ```
 
 Load that same folder once as a temporary add-on before you upload. In Firefox, open `about:debugging` → **This Firefox** → **Load Temporary Add-on**, and select `manifest.json` inside `apps/extension/.output/firefox-mv3`. Choose the file, not the folder. If an older temporary add-on with `rankmiso@local.dev` is still listed, remove it first. The new id is a different add-on. After a rebuild, click **Reload** on that entry. The temporary add-on disappears when Firefox quits.
@@ -47,7 +47,7 @@ The Firefox package contains bundled JavaScript and a WebAssembly file. On the u
 The source archive has to be the same tree you just built. Commit that tree first, then from the repository root:
 
 ```bash
-git archive --format=zip --output rankmiso-0.2.0-source.zip HEAD
+git archive --format=zip --output rankmiso-0.3.0-source.zip HEAD
 ```
 
 Reviewers reproduce the package with the commands in [Build the package](#build-the-package). Dependencies come from `pnpm-lock.yaml` and `Cargo.lock` through pnpm and Cargo. The archive must stay under 200 MB, so leave out `node_modules`, `target`, and `.output`.
@@ -94,7 +94,7 @@ Leave the homepage and support site empty until those pages exist. The Mozilla a
 | --------------------- | ------------------------------------------------------------ |
 | Where to distribute   | On this site, so it is listed on addons.mozilla.org          |
 | Platforms             | Firefox                                                      |
-| Source code required  | Yes. Upload `rankmiso-0.2.0-source.zip`                      |
+| Source code required  | Yes. Upload `rankmiso-0.3.0-source.zip`                      |
 | Privacy policy        | Yes. Paste the public URL of `PRIVACY.md`                    |
 | Data collection       | None. This must match `data_collection_permissions.required` |
 | Account for reviewers | None. Open any public `https` page                           |

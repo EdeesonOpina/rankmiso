@@ -200,6 +200,10 @@ pub struct ImageSnapshot {
     pub loading: Option<String>,
     pub fetch_priority: Option<String>,
     pub srcset: Option<String>,
+    #[serde(default)]
+    pub decoding: Option<String>,
+    #[serde(default)]
+    pub sizes: Option<String>,
     pub in_picture: bool,
     pub broken: Option<bool>,
     pub location: String,
@@ -289,6 +293,9 @@ pub struct SiteProbe {
     pub hreflang_checked: u32,
     #[serde(default)]
     pub hreflang_missing: u32,
+    /// Alternates that were not fetched. A skipped return link is not a missing one.
+    #[serde(default)]
+    pub hreflang_skipped: u32,
     pub notes: Vec<String>,
 }
 

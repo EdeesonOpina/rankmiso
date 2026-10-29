@@ -1,0 +1,119 @@
+html,
+body {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #f3f5f8;
+  color: #17191f;
+  font-family:
+    Inter,
+    "Liberation Sans",
+    "Nimbus Sans",
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+html {
+  font-size: calc(100vw / 80);
+}
+.frame {
+  box-sizing: border-box;
+  width: 100vw;
+  height: 100vh;
+  padding: 3.4rem 3.6rem;
+  background:
+    radial-gradient(46rem 34rem at 82% 42%, rgb(196 42 32 / 13%), transparent 68%),
+    #f3f5f8;
+}
+body.popup .frame {
+  display: grid;
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  align-items: center;
+  gap: 1.2rem;
+}
+body.report .frame {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1.15rem;
+  padding: 2.15rem 2.3rem 1.7rem;
+}
+.brandline {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1.15rem;
+}
+.brandline img {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: contain;
+}
+.brandline strong {
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+h1 {
+  margin: 0;
+  max-width: 11em;
+  font-size: 3.15rem;
+  font-weight: 650;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+.sub {
+  margin: 1rem 0 0;
+  max-width: 26em;
+  color: #5c6778;
+  font-size: 1.18rem;
+  line-height: 1.35;
+}
+.note {
+  margin: 1.5rem 0 0;
+  max-width: 32em;
+  color: #7d8796;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.stage {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stage img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid rgb(23 25 31 / 8%);
+  box-shadow: 0 22px 55px rgb(23 25 31 / 14%);
+}
+body.report .copy {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+body.report h1 {
+  font-size: 2.25rem;
+  max-width: none;
+}
+body.report .brandline {
+  margin-bottom: 0.55rem;
+}
+body.report .sub {
+  margin-top: 0.35rem;
+}
+body.report .note {
+  margin: 0 0 0.15rem;
+  max-width: 22em;
+  text-align: right;
+}
+body.report .stage {
+  align-items: center;
+}

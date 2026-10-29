@@ -1,10 +1,10 @@
 {
   "name": "rankmiso",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "packageManager": "pnpm@10.27.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": ["esbuild", "sharp"]
   },
   "scripts": {
     "build:wasm": "bash scripts/build-wasm.sh",
@@ -16,6 +16,10 @@
     "bench:rules": "cargo bench -p seo-rules --bench analyze",
     "lint": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm --filter @rankmiso/extension lint && pnpm --filter @rankmiso/extension format",
     "build": "pnpm build:wasm && pnpm --filter @rankmiso/extension build",
-    "dev": "pnpm --filter @rankmiso/extension dev"
+    "dev": "pnpm --filter @rankmiso/extension dev",
+    "marketing:capture": "pnpm --filter @rankmiso/marketing capture",
+    "marketing:build": "pnpm --filter @rankmiso/marketing build",
+    "marketing:generate": "pnpm --filter @rankmiso/marketing generate",
+    "marketing:validate": "pnpm --filter @rankmiso/marketing validate"
   }
 }

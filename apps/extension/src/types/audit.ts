@@ -155,6 +155,8 @@ export interface AuditResult {
       loading: string | null;
       fetchPriority: string | null;
       srcset: string | null;
+      decoding?: string | null;
+      sizes?: string | null;
       inPicture: boolean;
       broken: boolean | null;
       location: string;
@@ -224,6 +226,7 @@ export interface SiteProbeResult {
   redirectHops: string[];
   hreflangChecked: number;
   hreflangMissing: number;
+  hreflangSkipped?: number;
   notes: string[];
 }
 
@@ -232,6 +235,7 @@ export interface PageSnapshot {
   url: string;
   collectedAt: string;
   collection: { method: string; domGeneration: number; limitations: string[] };
+  structuredData?: Array<{ format: string; raw: string }>;
   links?: Array<{ href: string; resolvedUrl?: string | null }>;
   linksRel?: Array<{ rel: string; href: string; hreflang?: string | null }>;
   response?: {

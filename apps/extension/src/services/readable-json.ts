@@ -1,39 +1,42 @@
 export type JsonNode =
-  | { kind: "text"; text: string }
-  | { kind: "list"; items: JsonNode[] }
-  | { kind: "fields"; fields: Array<{ key: string; value: JsonNode }> };
+  | { kind: "value"; type: "string" | "number" | "boolean" | "null"; text: string }
+  | { kind: "list"; items: JsonNode[]; hidden: number }
+  | { kind: "fields"; fields: Array<{ key: string; value: JsonNode }>; hidden: number }
+  | { kind: "limit"; text: string };
 
 export type ReadableJson =
   { ok: true; node: JsonNode; copyText: string } | { ok: false; copyText: string };
 
 const MAX_DEPTH = 8;
-
-function textNode(value: string): JsonNode {
-  return { kind: "text", text: value };
-}
+const MAX_ITEMS = 40;
 
 function toNode(value: unknown, depth: number): JsonNode {
-  if (value == null) return textNode("—");
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return textNode(String(value));
+  if (value === null) return { kind: "value", type: "null", text: "null" };
+  if (typeof value === "string") return { kind: "value", type: "string", text: value };
+  if (typeof value === "number") return { kind: "value", type: "number", text: String(value) };
+  if (typeof value === "boolean") {
+    return { kind: "value", type: "boolean", text: value ? "true" : "false" };
   }
-  if (depth >= MAX_DEPTH) return textNode(JSON.stringify(value));
+  if (depth >= MAX_DEPTH) return { kind: "limit", text: JSON.stringify(value) };
   if (Array.isArray(value)) {
-    if (value.length === 0) return textNode("—");
-    const scalars = value.every((item) => item == null || typeof item !== "object");
-    if (scalars)
-      return textNode(value.map((item) => (item == null ? "—" : String(item))).join(", "));
-    return { kind: "list", items: value.map((item) => toNode(item, depth + 1)) };
+    return {
+      kind: "list",
+      hidden: Math.max(0, value.length - MAX_ITEMS),
+      items: value.slice(0, MAX_ITEMS).map((item) => toNode(item, depth + 1)),
+    };
   }
   if (typeof value === "object") {
-    const fields = Object.entries(value as Record<string, unknown>).map(([key, child]) => ({
-      key,
-      value: toNode(child, depth + 1),
-    }));
-    if (fields.length === 0) return textNode("—");
-    return { kind: "fields", fields };
+    const entries = Object.entries(value as Record<string, unknown>);
+    return {
+      kind: "fields",
+      hidden: Math.max(0, entries.length - MAX_ITEMS),
+      fields: entries.slice(0, MAX_ITEMS).map(([key, child]) => ({
+        key,
+        value: toNode(child, depth + 1),
+      })),
+    };
   }
-  return textNode(String(value));
+  return { kind: "value", type: "string", text: String(value) };
 }
 
 export function readableJson(raw: string): ReadableJson {
@@ -43,4 +46,49 @@ export function readableJson(raw: string): ReadableJson {
   } catch {
     return { ok: false, copyText: raw };
   }
+}
+
+export function schemaIdentity(node: JsonNode): {
+  types: string[];
+  id: string | null;
+  graph: boolean;
+} {
+  if (node.kind !== "fields") return { types: [], id: null, graph: false };
+  const typeField = node.fields.find((field) => field.key === "@type");
+  const idField = node.fields.find((field) => field.key === "@id");
+  const id = idField?.value.kind === "value" ? idField.value.text : null;
+  return {
+    types: valueTexts(typeField?.value),
+    id,
+    graph: node.fields.some((field) => field.key === "@graph"),
+  };
+}
+
+export function valueTexts(node: JsonNode | undefined): string[] {
+  if (!node) return [];
+  if (node.kind === "value") return [node.text];
+  if (node.kind === "list") return node.items.flatMap((item) => valueTexts(item));
+  return [];
+}
+
+export function jsonCopy(node: JsonNode): string {
+  if (node.kind === "value" || node.kind === "limit") return node.text;
+  return JSON.stringify(reconstruct(node));
+}
+
+function reconstruct(node: JsonNode): unknown {
+  if (node.kind === "value") {
+    if (node.type === "null") return null;
+    if (node.type === "number") return Number(node.text);
+    if (node.type === "boolean") return node.text === "true";
+    return node.text;
+  }
+  if (node.kind === "limit") return node.text;
+  if (node.kind === "list") return node.items.map((item) => reconstruct(item));
+  return Object.fromEntries(node.fields.map((field) => [field.key, reconstruct(field.value)]));
+}
+
+export function jsonPath(parent: string, key: string): string {
+  if (!parent) return key;
+  return key.startsWith("[") ? `${parent}${key}` : `${parent}.${key}`;
 }

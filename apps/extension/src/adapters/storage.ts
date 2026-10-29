@@ -29,8 +29,33 @@ export async function writeThemePreference(preference: ThemePreference): Promise
 
 export async function clearStoredSettings(): Promise<void> {
   localStorage.removeItem(appConfig.themeKey);
+  localStorage.removeItem(appConfig.navHintKey);
+  localStorage.removeItem(appConfig.siteCrawlKey);
   try {
-    await browser.storage.local.remove([appConfig.themeKey, appConfig.pageSpeedKey]);
+    await browser.storage.local.remove([
+      appConfig.themeKey,
+      appConfig.pageSpeedKey,
+      appConfig.navHintKey,
+    ]);
+  } catch {
+    // Extension storage is unavailable in unit tests and some restricted pages.
+  }
+}
+
+export async function readNavHintDismissed(): Promise<boolean> {
+  try {
+    const stored = await browser.storage.local.get(appConfig.navHintKey);
+    if (stored[appConfig.navHintKey] === true) return true;
+  } catch {
+    // Extension storage is unavailable in unit tests and some restricted pages.
+  }
+  return localStorage.getItem(appConfig.navHintKey) === "1";
+}
+
+export async function dismissNavHint(): Promise<void> {
+  localStorage.setItem(appConfig.navHintKey, "1");
+  try {
+    await browser.storage.local.set({ [appConfig.navHintKey]: true });
   } catch {
     // Extension storage is unavailable in unit tests and some restricted pages.
   }

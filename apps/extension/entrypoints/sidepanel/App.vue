@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import AnalysisApp from "../../src/components/AnalysisApp.vue";
+import WorkbenchApp from "../../src/components/workbench/WorkbenchApp.vue";
+
+const params = new URLSearchParams(location.search);
+const value = Number(params.get("tabId"));
+const tabId = Number.isInteger(value) && value > 0 ? value : undefined;
+const initialSection = params.get("section") || "overview";
 </script>
 
 <template>
-  <AnalysisApp layout="sidepanel" />
+  <WorkbenchApp surface="sidebar" :tab-id="tabId" :initial-section="initialSection" />
 </template>
