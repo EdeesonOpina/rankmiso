@@ -18,9 +18,9 @@ Record browser/version, build path, profile isolation, permission prompt wording
 
 Use an unpacked build and a local HTML file, not only a production website.
 
-For current post-release F1 evidence and the status of all 18 destinations, see [`functional-matrix.md`](functional-matrix.md). v0.3.0 is published; this checklist does not authorize a version bump or store submission.
+This checklist does not authorize a version bump or store submission.
 
-For the remaining native browser interactions (Chrome installed-extension acceptance, Firefox HTML comparison/exports/history, permission denial/revocation, and request-log-backed crawl cancellation), use the [F1-D manual browser handoff](f1-d-manual-handoff.md). These actions are still unverified until the maintainer returns results. The product owner has separately verified Chrome and Firefox A/B sidebar switching after initial authorization; see the current F1-F evidence in the functional matrix.
+Native browser interactions (installed-Chrome acceptance, Firefox HTML comparison, exports and history, permission denial and revocation, and request-log-backed crawl cancellation) stay unverified until someone runs them and records the result. The product owner has verified Chrome and Firefox A/B sidebar switching after initial authorization.
 
 - The popup Overview tab shows the page title, description, H1, canonical, robots, counts, and a score, or a clear error on `chrome://` and `about:` pages.
 - A long page title truncates, and the refresh control stays one line.

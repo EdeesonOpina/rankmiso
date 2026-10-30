@@ -1,6 +1,6 @@
 # Privacy
 
-This document describes the v0.4.0 release candidate. The published v0.3.0 extension remains governed by the privacy disclosures shown on its store listing until v0.4.0 is approved and released. RankMiso reads pages only with access granted through the browser.
+This document describes v0.4.0, which has been submitted for store review. The published v0.3.0 extension remains governed by the privacy disclosures shown on its store listing until v0.4.0 is approved and released. RankMiso reads pages only with access granted through the browser.
 
 ## What stays on your computer
 

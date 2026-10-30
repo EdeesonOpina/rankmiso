@@ -1,8 +1,8 @@
 # Firefox release
 
-Published version: v0.3.0. The unsubmitted release candidate is v0.4.0. Preserve the existing package id `rankmiso@rankmiso.extension` so Firefox treats it as an update to the existing add-on.
+Published version: v0.3.0. v0.4.0 has been submitted for review. Preserve the existing package id `rankmiso@rankmiso.extension` so Firefox treats it as an update to the existing add-on.
 
-The GitHub repository is private. A private link cannot be the privacy policy URL on the listing. Put the text of `PRIVACY.md` on a public HTTPS page before you submit that field. Publishing this repository is one way to do that. Do not paste a private GitHub URL.
+The listing's privacy policy URL must be a public HTTPS page that matches `PRIVACY.md`.
 
 ## Build the package
 
@@ -113,4 +113,4 @@ Add at least one screenshot of the popup and one of the full report on a normal 
 
 Mozilla validates the zip, then a reviewer builds the source and tries the add-on. Approval signs the file. Users install the signed version from the listing. The temporary add-on in `about:debugging` is not that signed version.
 
-This file does not mean the add-on has been submitted.
+v0.4.0 was submitted on 2026-10-30 with `rankmiso-v0.4.0-firefox.zip` and `rankmiso-v0.4.0-firefox-sources.zip`.

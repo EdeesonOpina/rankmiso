@@ -14,7 +14,8 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-c42a20" />
-  <img alt="Version 0.4.0" src="https://img.shields.io/badge/version-0.4.0-14161c" />
+  <img alt="In stores: v0.3.0" src="https://img.shields.io/badge/in%20stores-v0.3.0-14161c" />
+  <img alt="In review: v0.4.0" src="https://img.shields.io/badge/in%20review-v0.4.0-7a7f8c" />
   <img alt="Chrome, Edge and Firefox" src="https://img.shields.io/badge/browsers-Chrome%20·%20Edge%20·%20Firefox-f2a93b" />
   <img alt="Built with Rust and Vue" src="https://img.shields.io/badge/built%20with-Rust%20%2B%20Vue-5fd39a" />
 </p>
@@ -31,10 +32,10 @@ RankMiso is for developers, marketers, and anyone who owns a website. Open it on
 
 It belongs to the Miso ecosystem, where the recipe is simple: powerful tools, less overhead.
 
-RankMiso is available in the Chrome Web Store and Firefox Add-ons. Edge builds are available for sideloading. Release maintenance notes are in [docs/releases](docs/releases/).
+RankMiso is on the Chrome Web Store and Firefox Add-ons. Edge runs the Chromium build, sideloaded. Safari is not supported.
 
 > [!NOTE]
-> v0.3.0 remains the published store version. v0.4.0 is being prepared; candidate packages have not been submitted. MCP integration is a future plan; no MCP server or browser bridge is included.
+> v0.3.0 is the version in the stores today. v0.4.0 has been submitted to Chrome and Firefox and is waiting on review. The new features below arrive when it is approved. Release notes: [docs/releases/v0.4.0.md](docs/releases/v0.4.0.md).
 
 ## 🍜 What's in the bowl
 
@@ -54,6 +55,27 @@ The **overview** puts the essentials up front: score, title, description, counts
 The full report adds metadata, content, technical details, performance observations, international tags, a small accessibility sample, and exports. JSON, CSV, and HTML download only after you confirm.
 
 The little things are handled too. Counts use thousands separators, long addresses truncate, and web links open in a new tab. Light, dark, and system themes are all in the box.
+
+## ✨ Fresh from the kitchen
+
+New in v0.4.0, now in store review:
+
+- **Automatic Website Checks.** Open the sidebar and the fox reads each page you switch to. This is opt-in. You grant optional website access first, and you can revoke it in your browser at any time.
+- **Individual Website Access.** Rather allow sites one at a time? Approve only the websites you pick.
+- **Smart Refresh.** Changed the page? Refresh takes a fresh look and re-scores it without reloading the website.
+- **A sidebar that keeps up.** It follows the active tab in its own window and drops stale results when you navigate.
+- **Site Explorer in Firefox.** The crawler that Chrome already had now runs in Firefox too.
+
+### 🔍 Site Explorer
+
+Point the fox at a website and press **Start crawl**. It stays on that one origin, follows robots.txt, and stops at 100 pages, depth 3, or two minutes. Watch the progress, open any page's findings, press **Stop** whenever you like, and export the results. Nothing crawls until you press Start, and your browsing history is never crawled.
+
+### 📈 History
+
+Save a report when you want a before and after. Saved comparisons stay on your device, and RankMiso only saves when you ask it to.
+
+> [!NOTE]
+> Firefox doesn't have everything yet. Standalone sitemap discovery, PageSpeed Insights, and some optional remote technical checks are Chromium only. See [browser compatibility](docs/browser-support/compatibility.md).
 
 ## 🎯 A score you can trust
 
@@ -80,9 +102,13 @@ Those requests stay off until you start them. Site Explorer is limited to the se
 
 The Performance section shows browser-observed LCP and CLS when available, plus an INP estimate from exposed event entries. These are not field data. Chromium builds offer an optional mobile PageSpeed Insights check that sends the page URL and a user-provided API key to Google only after explicit consent; its lab results do not affect RankMiso's score. Firefox omits this external check.
 
-Reports can save comparison fields locally after you choose to save them. RankMiso still does not measure search rankings, traffic, backlinks, index coverage, or official rich-result eligibility. See [progress](docs/development/progress.md).
+Reports can save comparison fields locally after you choose to save them. RankMiso still does not measure search rankings, traffic, backlinks, index coverage, or official rich-result eligibility. See [what the product includes](docs/features/overview.md).
 
 </details>
+
+## 🔐 Privacy first
+
+The audit runs in your browser. No account, no telemetry, no RankMiso servers. Website access is optional and you have to grant it. Anything that touches the network waits until you start it. The details are in [PRIVACY.md](PRIVACY.md).
 
 ## 🚀 Take it for a spin
 
@@ -143,13 +169,16 @@ Store screenshots, promo tiles, and the images in this README come from the [mar
 - [What the product includes](docs/features/overview.md)
 - [How the pieces fit](docs/architecture/overview.md)
 - [Brand and the fox mark](docs/branding/overview.md)
+- [Browser support](docs/browser-support/compatibility.md) and [permissions](docs/browser-support/permissions.md)
+- [Release notes](CHANGELOG.md)
 - [Privacy](PRIVACY.md)
 - [Contributing](CONTRIBUTING.md)
-- [Implementation plan, including MCP roadmap](docs/development/implementation-plan.md)
+- [Using the name and fox](TRADEMARKS.md)
+- [Roadmap](docs/development/implementation-plan.md). MCP integration is a future plan; none ships today.
 
 ## License
 
-MIT. See `LICENSE`. Made with care (and a little miso) by the Miso ecosystem.
+MIT. See [LICENSE](LICENSE). Made with care (and a little miso) by the Miso ecosystem.
 
 <p align="center">
   <img src="apps/extension/public/brand/icon.png" alt="" width="56" />

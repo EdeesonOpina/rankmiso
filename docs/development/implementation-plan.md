@@ -2,7 +2,7 @@
 
 ## F1-E status note — 2026-10-30
 
-F1 continues from the preceding checkpoint; it is not restarted. The P1 stale-sidebar defect is fixed and automated tests pass. Evidence and current limitations are in `docs/testing/functional-matrix.md`. The repeatable local performance baseline remains in `docs/testing/performance-baseline.md`; outstanding native interactions are listed in `docs/testing/f1-d-manual-handoff.md` and `docs/testing/manual-checklist.md`. F1-H.1 adds opt-in Automatic website checks and fresh local Smart Refresh; implementation and automated verification pass, while native Chrome/Firefox permission prompts remain pending. F1 technical sign-off remains blocked on the native security and remaining browser acceptance cases. Do not begin M6 until F1 closes and the maintainer authorizes it. v0.3.0 is already published; no versioning or release state changed.
+F1 continues from the preceding checkpoint; it is not restarted. The P1 stale-sidebar defect is fixed and automated tests pass. The repeatable local performance baseline remains in `docs/testing/performance-baseline.md`; outstanding native interactions are listed in `docs/testing/manual-checklist.md`. F1-H.1 adds opt-in Automatic website checks and fresh local Smart Refresh; implementation and automated verification pass, while native Chrome/Firefox permission prompts remain pending. F1 technical sign-off remains blocked on the native security and remaining browser acceptance cases. Do not begin M6 until F1 closes and the maintainer authorizes it. v0.3.0 is already published; no versioning or release state changed.
 
 ## F1-F status note — 2026-10-30
 

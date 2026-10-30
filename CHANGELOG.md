@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 — release candidate
+## 0.4.0 — submitted for store review (2026-10-30)
 
 - Add opt-in Automatic Website Checks with optional broad HTTP/HTTPS access, and retain Individual Website Access.
 - Add Smart Refresh for a fresh local snapshot and SEO audit without reloading the page.
@@ -10,7 +10,7 @@
 - Use RankMiso’s head-only fox in the Score History empty state.
 - Keep Firefox standalone sitemap discovery and other Chromium-only remote checks unavailable.
 
-This candidate has not been submitted or published. v0.3.0 remains the published release.
+Submitted to the Chrome Web Store and Firefox Add-ons. v0.3.0 stays the published release until review completes.
 
 ## 0.3.0 — published (2026-10-28)
 
