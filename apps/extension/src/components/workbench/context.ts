@@ -1,5 +1,6 @@
 import { inject, type InjectionKey, type Ref } from "vue";
 import type { ThemePreference } from "../../config/theme.config";
+import type { InspectionMode } from "../../adapters/storage";
 import type { Category } from "../../types/audit";
 
 export type Surface = "sidebar" | "report";
@@ -18,6 +19,8 @@ export interface WorkbenchContext {
   probing: Ref<boolean>;
   probeMessage: Ref<string>;
   preference: Ref<ThemePreference>;
+  inspectionMode: Ref<InspectionMode | null>;
+  automaticAccessGranted: Ref<boolean>;
   issueFocus: Ref<IssueFocus | null>;
   go: (section: string, focus?: IssueFocus) => void;
   toast: (message: string) => void;
@@ -27,6 +30,9 @@ export interface WorkbenchContext {
   refresh: () => Promise<void>;
   runSiteProbe: (more?: boolean) => Promise<void>;
   setPreference: (value: ThemePreference) => Promise<void>;
+  setInspectionMode: (value: InspectionMode) => Promise<void>;
+  enableAutomaticChecks: () => Promise<void>;
+  revokeAutomaticAccess: () => Promise<boolean>;
   openReport: (section?: string) => Promise<void>;
 }
 

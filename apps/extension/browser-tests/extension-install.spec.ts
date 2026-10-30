@@ -79,7 +79,9 @@ test("Firefox package includes its add-on id and local WASM asset", async () => 
     browser_specific_settings?: {
       gecko?: { id?: string; data_collection_permissions?: { required?: string[] } };
     };
+    host_permissions?: string[];
     optional_host_permissions?: string[];
+    permissions?: string[];
   };
   const assets = await readdir(join(extensionPath, "assets"));
   const chunks = await readdir(join(extensionPath, "chunks"));
@@ -95,10 +97,28 @@ test("Firefox package includes its add-on id and local WASM asset", async () => 
   expect(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.required).toEqual([
     "none",
   ]);
-  expect(manifest.optional_host_permissions).toBeUndefined();
+  expect(manifest.host_permissions).toBeUndefined();
+  expect(manifest.permissions).toEqual(["storage", "activeTab", "scripting"]);
+  expect(manifest.optional_host_permissions).toEqual(["http://*/*", "https://*/*"]);
   expect(builtCode).not.toContain("pagespeedonline/v5/runPagespeed");
   expect(builtCode).not.toContain("https://www.googleapis.com");
-  expect(builtCode).not.toContain("/robots.txt");
+  expect(builtCode).toContain("/robots.txt");
+  expect(builtCode).toContain("A redirect left this host and was not followed.");
   expect(assets.some((asset) => asset.endsWith(".wasm"))).toBe(true);
   await expect(access(join(extensionPath, "popup.html"))).resolves.toBeUndefined();
+});
+
+test("Chromium declares optional HTTP/HTTPS access without requiring it", async () => {
+  const extensionPath = resolve(".output/chrome-mv3");
+  const manifest = JSON.parse(await readFile(join(extensionPath, "manifest.json"), "utf8")) as {
+    host_permissions?: string[];
+    optional_host_permissions?: string[];
+    permissions?: string[];
+    optional_permissions?: string[];
+  };
+
+  expect(manifest.host_permissions).toBeUndefined();
+  expect(manifest.permissions).toEqual(["storage", "activeTab", "scripting", "sidePanel"]);
+  expect(manifest.optional_permissions).toEqual(["tabs"]);
+  expect(manifest.optional_host_permissions).toEqual(["http://*/*", "https://*/*"]);
 });

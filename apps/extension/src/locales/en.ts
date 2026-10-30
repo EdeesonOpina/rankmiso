@@ -2,6 +2,9 @@ export const messages = {
   "brand.tagline": "Every page. Every detail.",
   "action.refresh": "Refresh analysis",
   "action.openReport": "Open full report",
+  "action.openReportFailed": "The full report could not be opened. Try again.",
+  "action.sidebarCloseFailed":
+    "The report opened, but RankMiso could not close the sidebar. Use the browser's sidebar control to close it.",
   "action.sidebar": "Sidebar",
   "action.sidebarUnavailable": "This browser cannot open the RankMiso sidebar from the popup.",
   "action.exportJson": "Export JSON",
@@ -64,7 +67,7 @@ export const messages = {
   "reports.limited":
     "These scores use different measurements, so the change is not a ranking result.",
   "reports.coverage": "Measured checks",
-  "reports.coverageChanged": "The number of measured checks changed.",
+  "reports.coverageChanged": "The measured checks differ between these saves.",
   "reports.noFindingDetail":
     "These saves do not include check-by-check results, so individual issues cannot be compared.",
   "reports.ruleMismatch": "The rule set differs, so individual issues are not compared.",
@@ -99,6 +102,63 @@ export const messages = {
   "state.stale": "This result is from an earlier page. Refresh to read the current one.",
   "state.refreshDenied": "This site was not allowed, so the open page was not read.",
   "state.refreshAgain": "Click Refresh again to allow {site}.",
+  "state.firefoxToolbarAccess":
+    "Firefox grants temporary inspection access when you click RankMiso in the toolbar. Use the toolbar icon; its popup will inspect this page and update the sidebar.",
+  "state.autoPermissionRequired":
+    "This page needs inspection access. Select Refresh to allow RankMiso to read it.",
+  "permission.checkTitle": "Check this website",
+  "permission.description":
+    "Allow {name} to check pages on this website while you're using the sidebar. Your SEO results stay in your browser.",
+  "permission.allow": "Allow this website",
+  "permission.notNow": "Not now",
+  "permission.deniedTitle": "Website access wasn't allowed",
+  "permission.deniedDescription":
+    "{name} can't check this website automatically without your permission.",
+  "permission.tryAgain": "Try again",
+  "permission.errorTitle": "Website access couldn't be requested",
+  "permission.requestError":
+    "The browser couldn't start the permission request. Try again or use the toolbar icon to check this page once.",
+  "permission.contextChanged": "The active page changed. Select the current website and try again.",
+  "permission.notNowMessage":
+    "No access was requested. You can allow this website later or use the toolbar icon to check it once.",
+  "permission.toolbarFallback": "Or click {name} in your browser toolbar to check this page once.",
+  "permission.addressUnavailable":
+    "The browser did not provide this page's website address. Use the toolbar icon to check it once.",
+  "permission.autoTitle": "Enable automatic website checks",
+  "permission.autoDescription":
+    "Allow {name} to check the website you're viewing automatically while the sidebar is open. Your SEO analysis stays on your device.",
+  "permission.autoDisclosure":
+    "This grants {name} broad access to HTTP and HTTPS websites. {name} uses it to inspect the active page, not to collect your browsing history.",
+  "permission.autoAllow": "Enable automatic checks",
+  "permission.individualMode": "Allow websites individually",
+  "permission.autoDenied":
+    "Website access wasn't enabled. You can keep using individual website access.",
+  "permission.preferenceError": "The website inspection preference couldn't be saved.",
+  "permission.revokeError":
+    "The browser couldn't remove website access. Use its extension permission settings instead.",
+  "permission.unsupportedPage":
+    "RankMiso can inspect regular HTTP or HTTPS webpages, not this browser page.",
+  "permission.modeIndividual": "Individual website access",
+  "permission.modeAutomatic": "Automatic checks (recommended)",
+  "permission.modeTitle": "Website inspection",
+  "permission.modeHelp":
+    "Automatic checks need broad HTTP and HTTPS website access. RankMiso inspects only the active page while its sidebar is open. Turning this preference off does not revoke browser access.",
+  "permission.accessGranted":
+    "The browser currently allows RankMiso to access HTTP and HTTPS websites.",
+  "permission.accessNotGranted": "Broad website access has not been granted.",
+  "permission.manageAccess":
+    "Manage or revoke website access in your browser's extension settings.",
+  "permission.revokeAccess": "Revoke broad website access",
+  "permission.confirmRevoke":
+    "Remove RankMiso's optional access to all HTTP and HTTPS websites? Individual website grants, if any, are not removed.",
+  "permission.accessRevoked":
+    "Broad website access was removed. Individual website grants remain unchanged.",
+  "permission.individualIntro":
+    "Choose which websites RankMiso can inspect. Access is requested one website at a time.",
+  "permission.switchToAuto": "Enable automatic checks instead",
+  "permission.retryAuto": "Try again",
+  "permission.nativeError":
+    "The browser couldn't complete this permission request. Check the browser's extension permission controls and try again.",
   "state.scoreUnavailable": "Not enough measured checks for a score.",
   "score.errors": "{count} errors",
   "score.warnings": "{count} warnings",
@@ -531,10 +591,15 @@ export const messages = {
   "site.running": "Running",
   "site.noOrigin": "No page address",
   "site.firefox":
-    "This Firefox build does not request other pages. Open the report in Chromium to crawl this host.",
+    "Firefox Site Explorer can crawl this website after you approve access and choose Start crawl.",
   "site.start": "Start crawl",
   "site.stop": "Stop",
   "site.permissionDenied": "This host was not allowed, so the crawl did not start.",
+  "site.permissionUnavailable":
+    "RankMiso couldn't confirm website access. Try starting the crawl again.",
+  "site.permissionRevoked":
+    "Website access was revoked. The crawl stopped, and results collected so far are available.",
+  "site.authorizing": "Checking website access…",
   "site.failed": "The crawl stopped because of an unexpected error.",
   "site.scoreFailed": "The page could not be scored.",
   "site.failedShort": "Failed",

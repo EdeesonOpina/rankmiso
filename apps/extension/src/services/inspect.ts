@@ -5,8 +5,10 @@ import type { PageSnapshot } from "../types/audit";
 
 export interface InspectedTab {
   id: number;
+  windowId?: number;
   url?: string;
   title?: string;
+  status?: string;
 }
 
 export interface InpCaptureSnapshot {
@@ -15,9 +17,15 @@ export interface InpCaptureSnapshot {
   interactions: Array<[number, number]>;
 }
 
-function inspected(tab: { id?: number; url?: string; title?: string }): InspectedTab | null {
+function inspected(tab: {
+  id?: number;
+  windowId?: number;
+  url?: string;
+  title?: string;
+  status?: string;
+}): InspectedTab | null {
   if (!tab.id) return null;
-  return { id: tab.id, url: tab.url, title: tab.title };
+  return { id: tab.id, windowId: tab.windowId, url: tab.url, title: tab.title, status: tab.status };
 }
 
 export async function activeTab(): Promise<InspectedTab | null> {
@@ -43,6 +51,13 @@ export async function inspectTab(tabId: number): Promise<PageSnapshot> {
       world: "MAIN",
       func: runPageTool,
       args: ["marker"],
+    })
+    .catch(() => undefined);
+  await browser.scripting
+    .executeScript({
+      target: { tabId },
+      world: "ISOLATED",
+      func: listenForRouteChanges,
     })
     .catch(() => undefined);
   const [captureResult] = await browser.scripting
@@ -78,6 +93,21 @@ export async function inspectTab(tabId: number): Promise<PageSnapshot> {
     );
   }
   return snapshot;
+}
+
+function listenForRouteChanges() {
+  const page = window as Window & { __rankmisoRouteListener?: boolean };
+  if (page.__rankmisoRouteListener) return;
+  page.__rankmisoRouteListener = true;
+  document.addEventListener("rankmiso:route-change", () => {
+    const extension = globalThis as typeof globalThis & {
+      browser?: { runtime?: { sendMessage?: (message: unknown) => Promise<unknown> } };
+      chrome?: { runtime?: { sendMessage?: (message: unknown) => Promise<unknown> } };
+    };
+    const sendMessage =
+      extension.browser?.runtime?.sendMessage ?? extension.chrome?.runtime?.sendMessage;
+    void sendMessage?.({ type: "rankmiso:route-change" }).catch(() => undefined);
+  });
 }
 
 export async function readInpCapture(tabId: number): Promise<InpCaptureSnapshot> {

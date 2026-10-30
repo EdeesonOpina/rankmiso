@@ -22,7 +22,7 @@ Ahrefs, SEOquake, and similar products show domain rating, traffic, keyword volu
 
 ## Permissions
 
-Default permissions are `storage`, `activeTab`, and `scripting`. The extension injects a page tool when the user opens it. It does not register a content script for every site. Chromium builds request optional host access only when the user starts **Run optional checks** or PageSpeed Insights. Firefox has no optional host permissions and omits both external-request features; its manifest declares `data_collection_permissions.required: ["none"]`.
+Required permissions are `storage`, `activeTab`, and `scripting`. The extension injects a page tool when the user opens it; it does not register a content script for every site. Current Chromium and Firefox builds declare HTTP/HTTPS host patterns as optional eligibility for local inspection and supported Chromium network actions. Automatic inspection remains off until the user explicitly enables it and grants access. Firefox's optional network features remain absent, and its manifest declares `data_collection_permissions.required: ["none"]`.
 
 ## A fetched response is not the navigation response
 
@@ -59,7 +59,7 @@ These identifiers stay technical and are not product branding:
 - Rust crates remain `seo-core`, `seo-rules`, `seo-scoring`, and `seo-wasm`.
 - `ENGINE_NAME` remains `seo-toolkit` inside audit JSON.
 - The theme storage key remains `seoToolkit.theme`.
-- In-page highlight markers remain `data-seo-toolkit-mark`, `seo-toolkit-highlight`, and `data-seo-toolkit-generation`.
+- The `data-seo-toolkit-mark` attribute remains for compatibility. RankMiso-owned values use the `rankmiso:` namespace; clear removes only RankMiso-owned markers and preserves pre-existing page values.
 
 ## Localization
 
@@ -95,13 +95,23 @@ The crawl coordinator stays in TypeScript because fetch, permissions, and HTML p
 
 The crawler identity is `rankmiso` when robots.txt has that group. A matching group replaces `*`. It does not merge with it. The page audit's robots check remains Googlebot-specific. The extension cannot set the request User-Agent, so the browser sends its own.
 
+## F1-E active-tab synchronization
+
+The persistent sidebar follows the active tab in the browser window where it was opened. Reports and popup audits remain pinned to the tab they were opened for. `tabs.onActivated` selects the new target; `tabs.onUpdated` invalidates results during navigation and refreshes after completion; window focus refreshes the active tab for the owning window; tab removal drops its local cache. The sidebar is never allowed to adopt an activation from another window.
+
+Automatic inspection tries the existing `scripting`/`activeTab` capability and does not call `permissions.request`. If the browser has not authorized a page, the old result is cleared and the UI directs the user to its explicit Refresh action. This preserves the per-site permission prompt's user gesture. Firefox keeps its current activeTab-only inspection behavior and optional network features stay disabled there.
+
+Same-document route tracking reuses the page-tool's existing History API wrapper and generation counter. It dispatches a small document event; an isolated-world listener installed only after RankMiso has accessed that tab forwards the event to extension contexts. The sidebar checks that the sender belongs to its active tab/window. This avoids polling and the additional `webNavigation` permission. Cache entries live only in the composable, are capped at five, and are reused only when tab ID, URL, and observed route generation agree. Navigation and tab removal invalidate them; a monotonic request revision prevents late extraction/WASM responses from changing the selected page.
+
+## Site Explorer network boundaries
+
 Default scope is the exact origin. Optional host permission is requested only when Start is clicked, and only in Chromium. Firefox does not receive the network module, so the Firefox package does not contain the robots address. A failed robots.txt read allows no further fetches. A 404 allows them. Closing the report aborts the session. One stored session is a local record, not a resumed crawl.
 
 ## History
 
 Saved comparisons stay in `chrome.storage.local` under `rankmiso.savedReports`, capped at 20. New records are schema version 2 and are written with `JSON.stringify`, so a Vue proxy is not stored. A record that already has the original summary fields is kept even when it has no history block, and even when its schema version is newer than 2. Unknown extra fields are dropped on the next write. A history block with a broken findings list is kept as counts only, and individual issues are then “Cannot determine”, not an empty resolved list.
 
-A score change is comparable only when both saves record the same rule-set version and the same number of measured checks. Category changes also require the same applicable-check count for that category. The chart is an SVG of those saved points. It is not a second score.
+A score change is comparable only when both saves record the same rule-set version and the same eligible measured rule identifiers. Matching counts alone do not establish comparable coverage. Category changes also require matching measured identifiers within that category. Legacy records without enough check detail are marked as indeterminate. The chart is an SVG of comparable saved points and leaves gaps across incompatible coverage. It is not a second score.
 
 ## Sitemaps
 
@@ -128,4 +138,46 @@ The approved prototypes share one stylesheet with `.sidebar` and `.report` modif
 `workbench.css` is the prototype stylesheet with the demo frame removed, plus production rules for forms, confirmations, evidence, crawl, and history controls. Like `popup.css`, it carries the approved prototype palette directly instead of mapping `tokens.css` through Tailwind. Neither surface loads Tailwind now. Chrome's extension-page `font-size:75%` is reset so the pages render at prototype size.
 
 The sidebar does not crawl. Its Site view reads the last saved crawl and opens the report. Sitemap discovery still runs in the sidebar because its results are not stored and the earlier sidebar offered it. Each inspector ends with that category's checks, linking to Issues, so the report keeps per-category evidence that the prototype does not draw. The sidebar lists only errors and warnings there. The prototype's Compact results and Reduced motion settings were not added because RankMiso has no such settings.
+
+### F1-C verification decision (2026-10-30)
+
+Do not interpret a missing service-worker target as an extension defect by itself. Chrome 156 no longer honors the previous `--load-extension` test launch path; `Extensions.loadUnpacked` successfully loaded the actual build in an isolated profile and showed its worker target. Keep installed-Chrome UI verification open because CDP could not trigger the toolbar action against the Playwright page target. Do not add keepalive behavior for testing. Keep real permission denial/revocation and performance measurements as separate evidence requirements; mocks and package sizes do not substitute for them. Firefox stays without host permissions or optional network features. No release metadata changes are authorized by this checkpoint.
+
+### F1-F cancellation decision (2026-10-30)
+
+The existing permission model and crawl architecture remain unchanged. Cancellation is checked after asynchronous robots policy evaluation and before network dispatch so Stop cannot schedule a new page request after its signal is aborted; page and sitemap helpers also return without dispatch when called with an already-aborted signal. The product owner's A/B sidebar observation is recorded separately from unverified native permission denial/revocation and other navigation cases. No new browser permissions are justified or added.
+
+### F1-G Firefox inspection and sidebar transition (2026-10-30)
+
+Firefox does not use Chromium's optional-origin permission flow for core DOM inspection. The manifest already declares optional `tabs`, but calling `permissions.request` from the sidebar after asynchronous tab lookups fails its user-action requirement and does not grant page inspection access. The toolbar action grants temporary `activeTab` access in the user-action context; access can be unavailable in a persistent sidebar after a tab switch. Therefore the sidebar must not request `tabs`. It displays toolbar guidance, and a successful popup audit may signal the authorized tab back to the matching active sidebar window. This preserves the existing manifest and privacy boundary.
+
+The default Chrome side panel is global to a window in this extension configuration, so the report transition closes it by its originating `windowId`. Firefox closes its native sidebar using `sidebarAction.close()` from the click handler before awaiting either operation. In both cases report creation is allowed to succeed even if close fails, and the interface communicates that fallback. The full report is targeted to Site Explorer and does not start a crawl. History branding uses the configured head-only icon; no image assets were added.
+
+### F1-H optional site access (2026-10-30)
+
+Declare `http://*/*` and `https://*/*` in `optional_host_permissions` for both browser packages. This is eligibility to request access, not a runtime grant ([Mozilla optional host permissions](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/optional_host_permissions)). The user-driven request names only the selected tab's scheme and hostname; host match patterns do not restrict ports ([Mozilla match patterns](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns)). Do not request global `tabs` access as a shortcut to identify a website. Firefox sidebar permission requests are called synchronously by the Allow button before any asynchronous work, then the extension rechecks active tab, URL pattern, grant state, and request revision before extraction; Mozilla requires `permissions.request()` to be invoked from a user action ([Mozilla permissions.request](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/permissions/request)). Existing `activeTab` toolbar authorization remains the fallback when the browser does not expose a trustworthy URL.
+
+Firefox keeps `supportsOptionalExternalChecks=false` regardless of optional host grants. A site grant authorizes local page inspection only in this milestone; it does not enable crawling, sitemap discovery, remote probes, or PageSpeed. Permission revocation clears matching current and bounded in-memory cached audits. The browser permission API is the grant source; RankMiso does not persist a parallel permission registry. No new required API permissions or dependencies are justified.
+
+### F1-H.1 — Automatic checks and Smart Refresh
+
+Automatic checks are a user-selected inspection preference, separate from browser authorization. The request for `http://*/*` and `https://*/*` is issued directly in the Enable automatic checks user handler; these optional patterns do not grant access until the browser approves. The disclosure says the grant is broad. Individual mode remains available, and broad access alone is ignored in that mode. No optional `tabs` request is added for this feature.
+
+When the sidebar is visible, existing event-driven tracking inspects only the active eligible page in its owning window. It does not iterate background tabs. The existing bounded cache and request revision are retained. Manual Refresh bypasses that cache and performs a fresh snapshot and Rust/WASM audit; it does not reload the page. The preference is stored locally, browser permissions remain authoritative, and saved comparisons are still explicit-save only. Revoking broad access invalidates affected in-memory current/cache state; independent individual grants remain usable. Host access does not enable Firefox external features or trigger optional network work.
+
+Before release, coordinate new privacy-policy text and store permission disclosures explaining optional broad HTTP/HTTPS access, the active-page/sidebar lifecycle, Individual mode, denial/revocation, local processing, and the separate user initiation required for network features. The published v0.3.0 package is unchanged; no website policy or store listing is changed from this repository.
+# F1-I — Firefox Site Explorer uses the shared crawler
+
+Firefox Site Explorer is enabled independently from the general external-check capability flag. Its report view uses the existing `runSiteCrawl`, URL scope checks, robots policy, sitemap discovery parser, page extraction, and Rust/WASM analysis. Firefox-only support is limited to a purpose-tagged use of the existing sitemap network parser from an explicitly started site crawl; standalone Sitemaps and other Firefox remote probes remain gated. The report requests only the selected HTTP(S) origin in the Start click handler, confirms the browser grant, rechecks that grant before every network request, and aborts on permission removal or report disposal. Requests omit credentials and referrers. No installation permission, API permission, dependency, or crawler limit was added.
+
+# R0.4.0 version decision
+
+The product owner selected v0.4.0 to consolidate the F1 changes; no v0.3.1 is to be created. Extension/root package versions move to 0.4.0 for the candidate. Rust crate versions are independent and remain unchanged. v0.3.0 is already published and must remain unchanged. Candidate generation is not store submission.
+# R0.4.0 candidate decision (2026-10-30)
+
+The consolidated release candidate remains v0.4.0; v0.3.0 remains the published baseline. Package/root metadata and generated extension manifests use 0.4.0, while Rust crate versions are independently versioned and unchanged. The candidate is isolated from unrelated dirty marketing and design-review files; no Git commit or release tag is created during preparation. Store submission remains gated on native browser security evidence and privacy-policy alignment. Firefox basic Site Explorer runtime confirmation from the product owner is recorded narrowly and does not substitute for request-log/security tests.
+
+## R0.4.0-G1 browser network boundary (2026-10-30)
+
+Do not treat DNS preflight as DNS-rebinding protection: neither supported extension fetch path exposes a portable way to pin the resolved address used by the connection. Do not add a DNS permission for a check that remains racy. Literal local-address and redirect checks are defense in depth, but the remaining public-host-to-private-address exposure is not accepted for store sign-off without demonstrated browser enforcement or a safe feature restriction. The candidate remains blocked for submission pending that resolution.
 

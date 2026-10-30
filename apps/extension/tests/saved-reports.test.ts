@@ -153,7 +153,6 @@ describe("history records", () => {
       finding("RULE_META_TITLE_MISSING", "PASS", "Title is missing"),
       finding("RULE_META_DESCRIPTION_LENGTH", "WARNING", "Description length"),
       finding("RULE_H1_MISSING", "ERROR", "H1 is missing"),
-      finding("RULE_NOT_IN_BASELINE", "ERROR", "New check"),
     ]);
 
     const compared = compareRecords(before, after);
@@ -162,8 +161,33 @@ describe("history records", () => {
     expect(compared.resolved.map((item) => item.id)).toEqual(["RULE_META_TITLE_MISSING"]);
     expect(compared.unchanged.map((item) => item.id)).toEqual(["RULE_META_DESCRIPTION_LENGTH"]);
     expect(compared.introduced.map((item) => item.id)).toEqual(["RULE_H1_MISSING"]);
-    expect(compared.undetermined.map((item) => item.id)).toEqual(["RULE_NOT_IN_BASELINE"]);
+    expect(compared.undetermined).toEqual([]);
     expect(compared.findings).toBe("ready");
+
+    const changedCoverage = record("c", "2026-10-28T03:00:00.000Z", 85);
+    changedCoverage.comparison.history = detail([
+      finding("RULE_META_TITLE_MISSING", "ERROR", "Title is missing"),
+      finding("RULE_META_CANONICAL_MISSING", "PASS", "Canonical is present"),
+    ]);
+    const limitedCoverage = compareRecords(before, changedCoverage);
+    expect(limitedCoverage.score.kind).toBe("limited");
+    expect(limitedCoverage.errors.kind).toBe("limited");
+    expect(limitedCoverage.coverageChanged).toBe(true);
+
+    const reordered = record("d", "2026-10-28T04:00:00.000Z", 80);
+    reordered.comparison.history = detail([
+      finding("RULE_H1_MISSING", "ERROR", "H1 is missing"),
+      finding("RULE_META_DESCRIPTION_LENGTH", "WARNING", "Description length"),
+      finding("RULE_META_TITLE_MISSING", "PASS", "Title is present"),
+    ]);
+    expect(compareRecords(before, reordered).score.kind).toBe("delta");
+
+    const categoryCoverage = record("e", "2026-10-28T05:00:00.000Z", 88);
+    categoryCoverage.comparison.history = detail([
+      finding("RULE_META_TITLE_MISSING", "ERROR", "Title is missing"),
+      finding("RULE_META_CANONICAL_MISSING", "PASS", "Canonical is present"),
+    ]);
+    expect(categoryChange(before, categoryCoverage, "metadata").kind).toBe("limited");
 
     after.comparison.history = {
       ...detail([finding("RULE_META_TITLE_MISSING", "UNAVAILABLE", "Title is missing")]),

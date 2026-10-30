@@ -1585,6 +1585,23 @@ svg.ic {
 .callout strong {
   color: var(--ink);
 }
+.site-access h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+}
+.site-access .site-access-host {
+  color: var(--ink);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.site-access .site-access-disclosure {
+  color: var(--muted);
+  font-size: 10px;
+}
+.site-access .site-access-fallback {
+  margin-top: 12px;
+}
 .crawl-hero {
   padding: 22px;
   border: 1px solid var(--border);
@@ -1762,6 +1779,13 @@ svg.ic {
   color: var(--muted);
   display: block;
   margin-top: 4px;
+}
+.inspection-mode-help {
+  max-width: 60ch;
+  margin: 4px 0 10px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
 }
 .setting-row input {
   accent-color: var(--accent);

@@ -10,9 +10,24 @@ coverage/
 playwright-report/
 test-results/
 
-# Local design-review screenshots (large binaries; text reports stay tracked)
-docs/design/reviews/local/
+# Design-review captures. Playwright rewrites these on each run; keep them local.
+docs/design/reviews/
+
+# Agent session logs and local QA evidence. Kept on disk, not published.
+docs/development/progress.md
+docs/development/handoff.md
+docs/testing/f1-d-manual-handoff.md
+docs/testing/functional-matrix.md
+docs/releases/*-qa.md
 
 # Generated marketing captures and store exports
 marketing/captures/
 marketing/output/
+
+# Local environment and editor files
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+Thumbs.db

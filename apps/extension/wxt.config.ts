@@ -28,8 +28,8 @@ export default defineConfig({
       ...(browser === "firefox" ? [] : ["sidePanel"]),
     ],
     optional_permissions: ["tabs"],
-    optional_host_permissions:
-      browser === "firefox" ? undefined : [...permissionsConfig.optionalHosts],
+    // Runtime requests still name a single selected scheme and hostname.
+    optional_host_permissions: [...permissionsConfig.optionalHosts],
     content_security_policy: {
       extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
     },

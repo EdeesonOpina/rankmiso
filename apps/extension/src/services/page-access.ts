@@ -1,6 +1,45 @@
 export type AccessRequest =
   { type: "none" } | { type: "tabs" } | { type: "origin"; origin: string };
 
+export interface SitePermission {
+  origin: string;
+  hostname: string;
+  pattern: string;
+}
+
+export function sitePermission(url: string | undefined): SitePermission | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if ((parsed.protocol !== "http:" && parsed.protocol !== "https:") || !parsed.hostname) {
+      return null;
+    }
+    return {
+      origin: parsed.origin,
+      hostname: parsed.hostname,
+      // WebExtension match patterns do not scope access by port.
+      pattern: `${parsed.protocol}//${parsed.hostname}/*`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function permissionPatternMatchesUrl(pattern: string, url: string | undefined): boolean {
+  const site = sitePermission(url);
+  const match = /^(\*|http|https):\/\/([^/]+)\/\*$/.exec(pattern);
+  if (!site || !match) return false;
+  const scheme = match[1];
+  const hostPattern = match[2];
+  if (scheme !== "*" && `${scheme}:` !== new URL(url!).protocol) return false;
+  if (hostPattern === "*") return true;
+  if (hostPattern?.startsWith("*.")) {
+    const base = hostPattern.slice(2);
+    return site.hostname === base || site.hostname.endsWith(`.${base}`);
+  }
+  return hostPattern === site.hostname;
+}
+
 export function webOrigin(url: string | undefined): string | null {
   if (!url) return null;
   try {

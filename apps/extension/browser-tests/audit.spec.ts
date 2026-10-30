@@ -41,14 +41,26 @@ test("scored fixtures render in the popup and the report", async () => {
     await popup.goto(`chrome-extension://${extensionId}/popup.html?tabId=${healthyId}`);
     await expect(popup.getByRole("heading", { name: "Healthy guide" })).toBeVisible();
     await expect(popup.getByText("Not enough measured checks for a score.")).toHaveCount(0);
-    await expect(popup.getByText(/\d+ measured checks/)).toBeVisible();
+    await expect(popup.getByText(/\d+ measured checks/).first()).toBeVisible();
+    console.log(`popup audit ms ${Date.now() - popupStarted}`);
     await popup.getByRole("button", { name: "All tools", exact: true }).click();
     const toolsMenu = popup.getByRole("dialog", { name: "All RankMiso tools" });
     await expect(toolsMenu.getByRole("button", { name: "Dark", exact: true })).toBeVisible();
+    await toolsMenu.getByRole("button", { name: "Settings", exact: true }).click();
+    const inspectionModes = popup.locator(".inspection-mode-segmented");
+    await expect(inspectionModes).toBeVisible();
+    expect(
+      await inspectionModes.evaluate((element) =>
+        Array.from(element.children).every(
+          (button) => button.scrollWidth <= button.clientWidth + 1,
+        ),
+      ),
+    ).toBe(true);
+    await popup.screenshot({ path: reviewScreenshot("popup-settings.png") });
+    await popup.getByRole("button", { name: "Overview", exact: true }).click();
     await popup.keyboard.press("Escape");
     await expect(popup.locator(".main-btn")).toHaveCount(1);
     await expect(popup.getByRole("button", { name: "Sidebar", exact: true })).toBeVisible();
-    console.log(`popup audit ms ${Date.now() - popupStarted}`);
     await popup.setViewportSize({ width: 420, height: 650 });
     const needs = popup.getByRole("heading", { name: "Fix next" });
     await expect(needs).toBeVisible();
@@ -62,20 +74,20 @@ test("scored fixtures render in the popup and the report", async () => {
     await popup.setViewportSize({ width: 420, height: 720 });
     await popup.screenshot({ path: "test-results/audit-popup-overview-720.png" });
     await popup.screenshot({
-      path: "../../docs/design/reviews/ux9r/final/overview-420.png",
+      path: reviewScreenshot("overview-420.png"),
     });
     // A toolbar popup sizes to its page, so the page keeps 420px even in a narrow window.
     await popup.setViewportSize({ width: 360, height: 640 });
     expect(await popup.evaluate(() => document.body.getBoundingClientRect().width)).toBe(420);
     await popup.screenshot({
-      path: "../../docs/design/reviews/ux9r/final/overview-360.png",
+      path: reviewScreenshot("overview-360.png"),
     });
     await popup.setViewportSize({ width: 420, height: 735 });
     expect(await overflows(popup)).toBe(false);
     await popup.setViewportSize({ width: 420, height: 720 });
     await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
     await popup.screenshot({
-      path: "../../docs/design/reviews/ux9r/final/overview-dark.png",
+      path: reviewScreenshot("overview-dark.png"),
     });
     await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
     const tools = popup.locator(".rail-nav");
@@ -89,15 +101,15 @@ test("scored fixtures render in the popup and the report", async () => {
     });
     expect(await tools.evaluate((el) => el.scrollTop)).toBeGreaterThan(20);
     expect(await workspace.evaluate((el) => el.scrollTop)).toBe(0);
-    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/nav-middle.png" });
+    await popup.screenshot({ path: reviewScreenshot("nav-middle.png") });
     await tools.evaluate((el) => {
       el.scrollTop = el.scrollHeight;
     });
-    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/nav-bottom.png" });
+    await popup.screenshot({ path: reviewScreenshot("nav-bottom.png") });
     await tools.evaluate((el) => {
       el.scrollTop = 0;
     });
-    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/nav-top.png" });
+    await popup.screenshot({ path: reviewScreenshot("nav-top.png") });
     await workspace.evaluate((el) => {
       el.scrollTop = 80;
     });
@@ -118,15 +130,15 @@ test("scored fixtures render in the popup and the report", async () => {
     await popup.getByRole("button", { name: "Metadata", exact: true }).click();
     await expect(popup.getByRole("heading", { name: "Page identity" })).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-metadata.png" });
-    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/metadata.png" });
+    await popup.screenshot({ path: reviewScreenshot("metadata.png") });
     await popup.getByRole("button", { name: "Headings", exact: true }).click();
     await expect(popup.getByText("Healthy topic")).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-headings.png" });
-    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/headings.png" });
+    await popup.screenshot({ path: reviewScreenshot("headings.png") });
     await popup.getByRole("button", { name: "Links", exact: true }).click();
     await expect(popup.getByText("Read the guide")).toBeVisible();
     await popup.screenshot({ path: "test-results/audit-popup-links.png" });
-    await popup.screenshot({ path: "../../docs/design/reviews/ux9r/final/links.png" });
+    await popup.screenshot({ path: reviewScreenshot("links.png") });
     await popup.locator("summary", { hasText: "External links" }).click();
     await expect(popup.getByText("Outside reference")).toBeVisible();
     for (const flag of ["nofollow", "sponsored", "ugc"]) {
@@ -163,7 +175,9 @@ test("scored fixtures render in the popup and the report", async () => {
     await popup.screenshot({ path: "test-results/audit-popup-dark.png" });
     await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
 
-    const review = resolve("../../docs/design/reviews/ux9r2/final");
+    const review = process.env.RANKMISO_REVIEW_SCREENSHOT_DIR
+      ? resolve(process.env.RANKMISO_REVIEW_SCREENSHOT_DIR)
+      : resolve("../../docs/design/reviews/ux9r2/final");
     const shots: Array<[string, string]> = [
       ["Content", "content"],
       ["Technical", "technical"],
@@ -394,12 +408,15 @@ test("scored fixtures render in the popup and the report", async () => {
 
     const panel = await context.newPage();
     await panel.setViewportSize({ width: 350, height: 720 });
+    const sidebarStarted = Date.now();
     await panel.goto(
       `chrome-extension://${extensionId}/sidepanel.html?tabId=${issuesId}&section=metadata`,
     );
     await expect(panel.getByLabel("Current view")).toHaveCount(0);
     await expect(panel.locator(".top-title")).toContainText("Issues");
+    console.log(`sidebar audit ms ${Date.now() - sidebarStarted}`);
     await panel.getByRole("button", { name: "Overview", exact: true }).click();
+    await expect(panel.locator(".score-figure")).toBeVisible();
     await panel.screenshot({ path: "test-results/audit-sidebar-overview.png" });
     await panel.getByRole("button", { name: "Metadata", exact: true }).click();
     await panel.screenshot({ path: "test-results/audit-sidebar-metadata.png" });
@@ -456,6 +473,26 @@ test("scored fixtures render in the popup and the report", async () => {
       sparseReport.getByRole("heading", { name: "PageSpeed Insights was not requested" }),
     ).toHaveCount(0);
     await sparse.close();
+
+    const largePage = await openFixture(context, `${served.origin}/large.html`);
+    const largeId = await tabId(worker, "/large.html");
+    const largeReport = await context.newPage();
+    const largeStarted = Date.now();
+    await largeReport.goto(
+      `chrome-extension://${extensionId}/dashboard.html?tabId=${largeId}&section=overview`,
+    );
+    await expect(largeReport.getByText("Audit available")).toBeVisible();
+    await expect(largeReport.getByText(/\d+ measured checks/).first()).toBeVisible();
+    console.log(`large-page audit ms ${Date.now() - largeStarted}`);
+    const heapBytes = await largeReport.evaluate(() => {
+      const browserPerformance = window.performance as unknown as Performance & {
+        memory?: { usedJSHeapSize?: number };
+      };
+      return browserPerformance.memory?.usedJSHeapSize ?? null;
+    });
+    console.log(`large-page JS heap bytes ${heapBytes ?? "unavailable"}`);
+    await largeReport.close();
+    await largePage.close();
   } finally {
     await context.close();
     await rm(userDataDir, { recursive: true, force: true });
@@ -475,7 +512,8 @@ async function serveFixtures() {
   const server = createServer(async (request, response) => {
     const name = new URL(request.url || "/", "http://127.0.0.1").pathname.replace(/^\//, "");
     try {
-      const body = await readFile(join(root, name));
+      const body =
+        name === "large.html" ? Buffer.from(largePageFixture()) : await readFile(join(root, name));
       const type = name.endsWith(".png")
         ? "image/png"
         : name.endsWith(".svg")
@@ -492,6 +530,15 @@ async function serveFixtures() {
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("fixture server did not start");
   return { server, origin: `http://127.0.0.1:${address.port}` };
+}
+
+function largePageFixture() {
+  const sections = Array.from(
+    { length: 500 },
+    (_, index) =>
+      `<section><h2>Section ${index + 1}</h2><p>Representative audit text for section ${index + 1}.</p><a href="#section-${index + 1}">Read section ${index + 1}</a></section>`,
+  ).join("");
+  return `<!doctype html><html lang="en"><head><title>Large audit fixture</title><meta name="description" content="A deterministic page with 500 sections and 500 links."></head><body><h1>Large audit fixture</h1>${sections}</body></html>`;
 }
 
 async function extensionForLocalFixtures() {
@@ -543,6 +590,13 @@ async function overflows(page: Page) {
       : document.documentElement;
     return root.scrollWidth > root.clientWidth + 1;
   });
+}
+
+function reviewScreenshot(name: string) {
+  const outputDirectory = process.env.RANKMISO_REVIEW_SCREENSHOT_DIR;
+  return outputDirectory
+    ? join(outputDirectory, name)
+    : join("../../docs/design/reviews/ux9r/final", name);
 }
 
 async function downloadText(page: Page, name: string) {

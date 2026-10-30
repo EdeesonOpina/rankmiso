@@ -2,7 +2,7 @@
 
 The report section **Site** crawls one origin after you choose **Start crawl**. The popup **Site** tab only opens that report. It does not start a crawl.
 
-Chromium asks for that origin when you start. A denial shows one message and sends no crawl request. The product manifest still has no host permission. Firefox has no optional host permission and does not ship the crawl network module. That build explains the limit and has no Start button.
+Both Chromium and Firefox ask for the starting origin when you start. A denial shows one message and sends no crawl request. The manifests have no required host permission; optional host eligibility is not a grant. Firefox uses the same report-owned crawl controller and network safety functions as Chromium. Automatic Checks never starts a crawl; Site Explorer remains an explicit action. Firefox's standalone Sitemap Explorer and other remote probes remain disabled.
 
 The crawl stays in the open report. Closing the report or choosing Stop aborts it. It does not continue in the background and does not resume by itself. One previous session for the same origin can be shown from local storage. Raw HTML is not stored.
 
@@ -17,3 +17,7 @@ Defaults: 100 pages, depth 3, 2 concurrent requests, 10 second timeout, 1 MB bod
 Fetched HTML is parsed as source and scored with the existing page engine. That score stays on the page. The site view has no second score. Duplicate titles and descriptions are comparisons across fetched pages. A shared title is not duplicate content. An orphan candidate is a sitemap URL with no incoming link from the pages this crawl fetched, and only after a finished crawl that did not hit a limit.
 
 CSV and JSON export the session, not raw HTML. CSV formula characters are prefixed.
+
+## F1-I verification note
+
+Firefox Site Explorer parity is implemented in the 0.4.0 development tree, not in the published v0.3.0 package. The generated Firefox package and shared crawler tests pass. Actual native Firefox grant/denial, crawl request logs, cancellation, and redirect acceptance still require runtime verification; see `docs/testing/manual-checklist.md`. Do not describe this development capability as available in v0.3.0.

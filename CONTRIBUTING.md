@@ -32,7 +32,7 @@ pnpm --filter @rankmiso/extension typecheck
 - Do not treat an unavailable check as a pass.
 - Keep brand strings in `apps/extension/src/config`.
 - Keep SEO rules in the Rust crates. Vue renders results.
-- Update `docs/development/progress.md` and `docs/development/handoff.md` when you stop.
+- Note decisions that future contributors need in `docs/development/decisions.md`.
 
 ## Conduct
 
