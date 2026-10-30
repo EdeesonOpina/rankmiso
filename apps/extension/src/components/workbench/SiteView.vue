@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { browser } from "wxt/browser";
 import { safeFilename } from "@rankmiso/report-formats";
-import { supportsOptionalExternalChecks } from "../../config/features.config";
+import { supportsSiteCrawling } from "../../config/features.config";
 import { useI18n } from "../../composables/useI18n";
 import { analyzeSnapshot } from "../../services/engine";
 import {
@@ -18,6 +18,13 @@ import {
   type CrawlSession,
 } from "../../services/site-crawl";
 import { extractCrawlPage, snapshotFromHtml } from "../../services/site-extract";
+import { permissionPatternMatchesUrl, sitePermission } from "../../services/page-access";
+import {
+  discoverSitemapUrls,
+  fetchCrawlPage,
+  mayFetchPath,
+  readRobots,
+} from "../../services/site-crawl-network";
 import type { AuditResult } from "../../types/audit";
 import { useWorkbench } from "./context";
 import PageHeading from "./PageHeading.vue";
@@ -30,6 +37,7 @@ const report = surface === "report";
 const pageUrl = computed(() => props.audit.page.url);
 const session = ref<CrawlSession | null>(null);
 const running = ref(false);
+const permissionPending = ref(false);
 const message = ref("");
 const query = ref("");
 const filter = ref("all");
@@ -37,6 +45,7 @@ const sort = ref("url");
 const shown = ref(40);
 const selectedUrl = ref("");
 let controller: AbortController | null = null;
+let disposed = false;
 
 const origin = computed(() => {
   try {
@@ -68,43 +77,102 @@ const crawlShare = computed(() => {
 onMounted(() => {
   if (origin.value) session.value = loadCrawl(origin.value);
 });
-onUnmounted(() => controller?.abort());
+onUnmounted(() => {
+  disposed = true;
+  controller?.abort();
+});
 
 async function start() {
-  if (import.meta.env.FIREFOX || running.value || !origin.value) return;
+  if (!supportsSiteCrawling || running.value || permissionPending.value || !origin.value) return;
   message.value = "";
-  const granted = await browser.permissions.request({ origins: [`${origin.value}/*`] });
+  const page = pageUrl.value;
+  const permission = sitePermission(page);
+  if (!permission || permission.origin !== origin.value) {
+    message.value = t("site.noOrigin");
+    return;
+  }
+
+  permissionPending.value = true;
+  let request: Promise<boolean>;
+  try {
+    // Keep this request in the Start button's user-action context in Firefox.
+    request = browser.permissions.request({ origins: [permission.pattern] });
+  } catch {
+    permissionPending.value = false;
+    message.value = t("site.permissionDenied");
+    return;
+  }
+
+  let granted = false;
+  try {
+    granted = await request;
+    if (granted) {
+      granted = await browser.permissions.contains({ origins: [permission.pattern] });
+    }
+  } catch {
+    message.value = t("site.permissionUnavailable");
+    return;
+  } finally {
+    permissionPending.value = false;
+  }
   if (!granted) {
     message.value = t("site.permissionDenied");
     return;
   }
-  controller = new AbortController();
+  if (disposed) return;
+  if (pageUrl.value !== page) {
+    message.value = t("site.permissionUnavailable");
+    return;
+  }
+
+  const crawlController = new AbortController();
+  controller = crawlController;
   running.value = true;
   shown.value = 40;
+  let permissionRevoked = false;
+  const stopForRevocation = () => {
+    permissionRevoked = true;
+    message.value = t("site.permissionRevoked");
+    crawlController.abort();
+  };
+  const onPermissionRemoved = (removed: { origins?: string[] }) => {
+    if (!removed.origins?.some((pattern) => permissionPatternMatchesUrl(pattern, page))) return;
+    void browser.permissions
+      .contains({ origins: [permission.pattern] })
+      .then((stillAllowed) => {
+        if (!stillAllowed) stopForRevocation();
+      })
+      .catch(stopForRevocation);
+  };
+  const authorizedFetch: typeof fetch = async (input, init) => {
+    if (crawlController.signal.aborted) throw new DOMException("Stopped", "AbortError");
+    const target =
+      typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    if (new URL(target).origin !== permission.origin) {
+      throw new TypeError("A crawl request left the selected origin.");
+    }
+    if (!(await browser.permissions.contains({ origins: [permission.pattern] }))) {
+      stopForRevocation();
+      throw new DOMException("Website access was removed", "AbortError");
+    }
+    if (crawlController.signal.aborted) throw new DOMException("Stopped", "AbortError");
+    return fetch(input, { ...init, referrerPolicy: "no-referrer" });
+  };
+
+  browser.permissions.onRemoved.addListener(onPermissionRemoved);
   try {
-    const network = import.meta.env.FIREFOX
-      ? null
-      : await import("../../services/site-crawl-network");
-    if (!network) return;
     let robotsBody = "";
     const next = await runSiteCrawl({
-      startUrl: pageUrl.value,
-      signal: controller.signal,
-      readRobots: async () => {
-        const result = await network.readRobots(
-          origin.value,
-          controller?.signal ?? new AbortController().signal,
-        );
+      startUrl: page,
+      signal: crawlController.signal,
+      readRobots: async (signal) => {
+        const result = await readRobots(permission.origin, signal, authorizedFetch);
         robotsBody = result.body;
         return result;
       },
-      discoverSitemaps: () =>
-        network.discoverSitemapUrls(
-          pageUrl.value,
-          controller?.signal ?? new AbortController().signal,
-        ),
-      mayFetch: (path) => network.mayFetchPath(robotsBody, path),
-      fetchPage: (url, signal) => network.fetchCrawlPage(url, pageUrl.value, signal),
+      discoverSitemaps: (signal) => discoverSitemapUrls(page, signal, authorizedFetch),
+      mayFetch: (path) => mayFetchPath(robotsBody, path),
+      fetchPage: (url, signal) => fetchCrawlPage(url, permission.origin, signal, authorizedFetch),
       inspect: async (page, html) => {
         const extracted = extractCrawlPage(html, page.finalUrl || page.url);
         try {
@@ -135,13 +203,16 @@ async function start() {
         session.value = { ...current, pages: current.pages.slice() };
       },
     });
-    session.value = next;
-    saveCrawl(next);
+    if (!disposed) {
+      session.value = next;
+      saveCrawl(next);
+    }
   } catch {
-    message.value = t("site.failed");
+    if (!disposed && !permissionRevoked) message.value = t("site.failed");
   } finally {
+    browser.permissions.onRemoved.removeListener(onPermissionRemoved);
     running.value = false;
-    controller = null;
+    if (controller === crawlController) controller = null;
   }
 }
 
@@ -162,6 +233,7 @@ function download(kind: "csv" | "json") {
 }
 
 function crawlState(): string {
+  if (permissionPending.value) return t("site.authorizing");
   if (running.value) return t("site.running");
   if (!session.value || session.value.status === "idle") return t("site.idle");
   if (session.value.status === "complete") return t("site.stateComplete");
@@ -180,7 +252,7 @@ function sitemapLine(): string {
 }
 
 function stateBadge(): "ok" | "warn" | "err" | "gray" {
-  if (running.value) return "warn";
+  if (running.value || permissionPending.value) return "warn";
   if (session.value?.status === "complete") return session.value.partial ? "warn" : "ok";
   if (session.value?.status === "error") return "err";
   if (session.value?.status === "stopped") return "warn";
@@ -252,9 +324,14 @@ function statusLabel(page: CrawlPage): string {
         ><span>{{ t("site.skippedCount") }}</span>
       </div>
     </div>
-    <div v-if="report && supportsOptionalExternalChecks" class="actions-row">
-      <button type="button" class="primary" :disabled="running || !origin" @click="start">
-        {{ t("site.start") }}
+    <div v-if="report && supportsSiteCrawling" class="actions-row">
+      <button
+        type="button"
+        class="primary"
+        :disabled="running || permissionPending || !origin"
+        @click="start"
+      >
+        {{ permissionPending ? t("site.authorizing") : t("site.start") }}
       </button>
       <button type="button" class="secondary" :disabled="!running" @click="stop">
         {{ t("site.stop") }}
@@ -265,7 +342,6 @@ function statusLabel(page: CrawlPage): string {
         {{ t("wb.si.inReport") }}
       </button>
     </div>
-    <p v-if="report && !supportsOptionalExternalChecks">{{ t("site.firefox") }}</p>
   </div>
   <p v-if="message" class="callout" role="status">{{ message }}</p>
   <p v-if="session?.note" class="hint">{{ session.note }}</p>

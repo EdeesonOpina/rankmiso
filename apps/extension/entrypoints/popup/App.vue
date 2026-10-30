@@ -32,9 +32,19 @@ import SettingsScreen from "../../src/components/popup/SettingsScreen.vue";
 const { t } = useI18n();
 const { preference, setPreference } = useTheme();
 const requestedTabId = Number(new URLSearchParams(location.search).get("tabId"));
-const { status, error, audit, tab, stale, refresh } = useAudit(
-  Number.isInteger(requestedTabId) && requestedTabId > 0 ? requestedTabId : undefined,
-);
+const {
+  status,
+  error,
+  audit,
+  tab,
+  stale,
+  refresh,
+  inspectionMode,
+  automaticAccessGranted,
+  enableAutomaticChecks,
+  setInspectionMode,
+  revokeAutomaticAccess,
+} = useAudit(Number.isInteger(requestedTabId) && requestedTabId > 0 ? requestedTabId : undefined);
 const canOpenSidebar = sidebarAvailable();
 
 const pane = ref("overview");
@@ -120,6 +130,13 @@ onMounted(() => {
   void refresh();
 });
 
+watch(status, (value) => {
+  if (value !== "ready" || !tab.value?.id) return;
+  void browser.runtime
+    .sendMessage({ type: "rankmiso:inspection-ready", tabId: tab.value.id })
+    .catch(() => undefined);
+});
+
 watch(pane, async () => {
   menuOpen.value = false;
   await nextTick();
@@ -139,6 +156,11 @@ function toast(message: string) {
   toastTimer = window.setTimeout(() => {
     toastShown.value = false;
   }, 2600);
+}
+
+async function revokeAccess() {
+  const removed = await revokeAutomaticAccess();
+  toast(t(removed ? "permission.accessRevoked" : "permission.revokeError"));
 }
 
 function go(id: string, check = "") {
@@ -225,7 +247,7 @@ const themeKey: Record<ThemePreference, MessageKey> = {
           :aria-busy="status === 'loading'"
           :aria-label="t('action.refresh')"
           :title="t('action.refresh')"
-          @click="refresh"
+          @click="refresh()"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M20 11a8 8 0 1 0-2 5.5M20 4v7h-7" />
@@ -246,12 +268,17 @@ const themeKey: Record<ThemePreference, MessageKey> = {
           :audit="audit"
           :focus-id="focusCheck"
           :preference="preference"
+          :inspection-mode="inspectionMode"
+          :automatic-access-granted="automaticAccessGranted"
           @go="go"
           @report="openReport"
           @copy="copy"
           @toast="toast"
           @highlight="highlight"
           @theme="setPreference"
+          @automatic="enableAutomaticChecks"
+          @inspection-mode="setInspectionMode"
+          @revoke-access="revokeAccess"
         />
       </main>
       <footer class="foot">

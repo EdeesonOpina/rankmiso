@@ -41,13 +41,22 @@ test("saved audits stay on this device and compare real measurements", async () 
     );
     await expect(report.getByRole("heading", { name: "SEO history" })).toBeVisible();
     await expect(report.getByText("Save the current audit to keep a measurement")).toBeVisible();
+    const emptyStateIcon = report.locator(".empty-history img");
+    await expect(emptyStateIcon).toHaveAttribute("src", "/brand/icon.png");
+    await expect(emptyStateIcon).toHaveAttribute("alt", "");
+    await expect(emptyStateIcon).toHaveCSS("width", "72px");
     await report.screenshot({ path: "test-results/history-empty-1280.png" });
+    await report.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    await report.screenshot({ path: "test-results/history-empty-dark-1280.png" });
+    await report.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
 
     await report.getByRole("button", { name: "Save current comparison" }).click();
     await expect(report.getByText("Comparison saved on this device.")).toBeVisible();
+    const historyRenderStarted = Date.now();
     await report.reload();
     await expect(report.getByRole("heading", { name: "Score history" })).toBeVisible();
     await expect(report.getByText("One saved measurement.")).toBeVisible();
+    console.log(`history render ms ${Date.now() - historyRenderStarted}`);
     await report.screenshot({ path: "test-results/history-one-1280.png" });
 
     const popup = await context.newPage();

@@ -1,4 +1,4 @@
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { createServer, type ServerResponse } from "node:http";
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -8,11 +8,14 @@ const productExtension = resolve(".output/chrome-mv3");
 
 test("site explorer crawls one host, skips robots, and stops", async () => {
   test.setTimeout(120_000);
+  const requests: string[] = [];
+  const closedSlowResponses: string[] = [];
   const server = createServer((request, response) => {
     const url = new URL(request.url || "/", "http://127.0.0.1");
     const origin = `http://127.0.0.1:${(request.socket.localPort ?? 0).toString()}`;
+    requests.push(url.pathname);
     if (url.pathname === "/hold") {
-      hold(request, response);
+      hold(response, () => closedSlowResponses.push(url.pathname));
       return;
     }
     const body = files(origin)[url.pathname];
@@ -67,8 +70,10 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     await secret.click();
     await expect(report.getByText("robots.txt disallows this crawler")).toBeVisible();
     await expect(report.getByText("Alpha page").first()).toBeVisible();
+    await expect.poll(() => requests.filter((path) => path === "/hold").length).toBeGreaterThan(0);
     await report.getByRole("button", { name: "Stop" }).click();
     await expect(report.getByText("Stopped", { exact: true })).toBeVisible();
+    await expect.poll(() => closedSlowResponses.length).toBeGreaterThan(0);
     await report.getByLabel("Search pages").fill("a.html");
     await report.getByRole("button", { name: `${origin}/a.html` }).click();
     await expect(report.getByText("Alpha page description")).toBeVisible();
@@ -83,6 +88,15 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
         () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
       ),
     ).toBe(true);
+
+    const priorSlowCount = requests.filter((path) => path === "/hold").length;
+    await report.getByRole("button", { name: "Start crawl" }).click();
+    await expect
+      .poll(() => requests.filter((path) => path === "/hold").length)
+      .toBeGreaterThan(priorSlowCount);
+    const priorClosedCount = closedSlowResponses.length;
+    await report.close();
+    await expect.poll(() => closedSlowResponses.length).toBeGreaterThan(priorClosedCount);
     await page.close();
   } finally {
     await context.close();
@@ -110,7 +124,7 @@ function files(origin: string): Record<string, string> {
   };
 }
 
-function hold(request: IncomingMessage, response: ServerResponse) {
+function hold(response: ServerResponse, onClientClose: () => void) {
   const timer = setTimeout(() => {
     try {
       response.writeHead(200, { "content-type": "text/html" });
@@ -119,7 +133,10 @@ function hold(request: IncomingMessage, response: ServerResponse) {
       // The crawl stopped and the socket closed.
     }
   }, 20_000);
-  request.on("close", () => clearTimeout(timer));
+  response.on("close", () => {
+    clearTimeout(timer);
+    if (!response.writableEnded) onClientClose();
+  });
 }
 
 async function tabId(worker: Worker, pageUrl: string) {

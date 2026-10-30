@@ -8,6 +8,7 @@ export interface FeatureDefinition {
 }
 
 export const supportsOptionalExternalChecks = !import.meta.env.FIREFOX;
+export const supportsSiteCrawling = true;
 
 export const featuresConfig: FeatureDefinition[] = [
   { id: "overview", status: "available", phase: 2, summaryKey: "features.overview" },

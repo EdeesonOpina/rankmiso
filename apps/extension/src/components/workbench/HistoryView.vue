@@ -24,6 +24,7 @@ import {
 } from "../../services/saved-reports";
 import HistoryChart from "../HistoryChart.vue";
 import { useWorkbench } from "./context";
+import { brandConfig } from "../../config/brand.config";
 import PageHeading from "./PageHeading.vue";
 import WbCard from "./WbCard.vue";
 
@@ -201,8 +202,9 @@ const reversed = computed(() => {
 function issueConnects(): boolean[] {
   return pageReports.value.slice(0, -1).map((report, index) => {
     const next = pageReports.value[index + 1];
-    if (!next?.comparison.history || !report.comparison.history) return false;
-    return report.comparison.history.rulesetVersion === next.comparison.history.rulesetVersion;
+    if (!next) return false;
+    const comparison = compareRecords(report, next);
+    return comparison.errors.kind === "delta" && comparison.warnings.kind === "delta";
   });
 }
 
@@ -329,7 +331,7 @@ function confirmExport() {
   <p v-if="reports.length >= MAX_SAVED_REPORTS" class="hint">{{ t("reports.cap") }}</p>
 
   <div v-if="pageReports.length === 0" class="callout empty-history">
-    <img src="/brand/rankmiso-fox.webp" width="72" height="72" alt="" />
+    <img :src="brandConfig.assets.icon" width="72" height="72" alt="" />
     <div>
       <strong>{{ t("reports.timeline") }}</strong>
       <p>{{ t("reports.historyEmpty") }}</p>
