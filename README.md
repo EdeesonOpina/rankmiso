@@ -14,7 +14,7 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-c42a20" />
-  <img alt="Version 0.3.0" src="https://img.shields.io/badge/version-0.3.0-14161c" />
+  <img alt="Version 0.4.0" src="https://img.shields.io/badge/version-0.4.0-14161c" />
   <img alt="Chrome, Edge and Firefox" src="https://img.shields.io/badge/browsers-Chrome%20·%20Edge%20·%20Firefox-f2a93b" />
   <img alt="Built with Rust and Vue" src="https://img.shields.io/badge/built%20with-Rust%20%2B%20Vue-5fd39a" />
 </p>
@@ -34,7 +34,7 @@ It belongs to the Miso ecosystem, where the recipe is simple: powerful tools, le
 RankMiso is available in the Chrome Web Store and Firefox Add-ons. Edge builds are available for sideloading. Release maintenance notes are in [docs/releases](docs/releases/).
 
 > [!NOTE]
-> Version 0.3.0 is in build preparation and has not yet been submitted to either store. MCP integration is a documented future plan; no MCP server or browser bridge is included in this release.
+> v0.3.0 remains the published store version. v0.4.0 is being prepared; candidate packages have not been submitted. MCP integration is a future plan; no MCP server or browser bridge is included.
 
 ## 🍜 What's in the bowl
 
@@ -72,11 +72,11 @@ A missing measurement is shown as unavailable. The result includes a disclaimer:
 
 <br />
 
-Chromium builds can check one site after you allow it: response headers, robots.txt for the Googlebot group or `*`, whether the open URL is in the first sitemap, redirect hops, hreflang return links, and public links 20 at a time.
+Chromium builds can run explicit optional site checks, sitemap discovery, and Site Explorer. Firefox builds support user-started, same-origin Site Explorer crawling; other optional remote technical checks and standalone sitemap discovery remain unavailable there.
 
-The report also has a Sitemaps section. In Chromium it can read the sitemap files named by robots.txt, two common paths, or a URL you enter, after you allow that site. It does not fetch a sitemap on another host, and it does not crawl the listed pages. Firefox imports an XML file from this device and does not request sitemaps.
+The report also has a Sitemaps section. In Chromium it can read the sitemap files named by robots.txt, two common paths, or a URL you enter, after you allow that site. It does not fetch a sitemap on another host, and it does not crawl the listed pages. Firefox imports XML locally; its Site Explorer can read sitemap URLs only as part of a crawl you explicitly start.
 
-Those requests stay off until you start them. Local and private addresses are skipped. Firefox keeps these optional external checks disabled and requests no optional host permissions.
+Those requests stay off until you start them. Site Explorer is limited to the selected origin, follows robots.txt, uses bounded page/depth/time/request limits, omits credentials, and stops when requested or when its report closes. Automatic Checks do not start crawls.
 
 The Performance section shows browser-observed LCP and CLS when available, plus an INP estimate from exposed event entries. These are not field data. Chromium builds offer an optional mobile PageSpeed Insights check that sends the page URL and a user-provided API key to Google only after explicit consent; its lab results do not affect RankMiso's score. Firefox omits this external check.
 

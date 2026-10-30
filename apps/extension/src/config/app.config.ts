@@ -6,6 +6,7 @@ export const appConfig = {
   themeKey: "seoToolkit.theme",
   pageSpeedKey: "rankmiso.pageSpeedApiKey",
   navHintKey: "rankmiso.navHintDismissed",
+  inspectionModeKey: "rankmiso.inspectionMode",
   siteCrawlKey: "rankmiso.siteCrawl",
   maxStoredReports: 20,
 } as const;

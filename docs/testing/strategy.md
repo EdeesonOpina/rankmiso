@@ -4,14 +4,19 @@ Rust unit tests cover missing titles, alt text, noindex wording, canonicals, hea
 
 Vitest covers CSV formula prefixing, HTML escaping, DOM extraction, highlight cleanup, status badge text, popup summaries, link groups, share cards, readable JSON-LD including graphs and the depth bound, thousands separators, PageSpeed response parsing, report comparison storage, legacy history records, score comparability, finding deltas, history export escaping, optional site-probe behavior, sitemap discovery, XML extraction, limits, cancellation, and CSV export, and the site crawl queue, scope, robots failure, cancellation, one retry, duplicate metadata, and CSV export.
 
-Playwright loads the built Chromium extension and verifies that its popup renders, that a scored fixture audit works, that the report and sidebar navigation reach the same sections, that the sitemap explorer reads local sitemap fixtures, that Site Explorer crawls one local host, skips a disallowed path, stops, opens a page, and exports CSV, that History saves real audits, keeps them after reload, separates two pages, and labels a legacy save as not comparable, and that Technical compares fetched HTML with a script-updated title and canonical and shows Microdata and RDFa counts. It also checks the Firefox package id and bundled WASM asset. Build both with `pnpm --filter @rankmiso/extension build` and `pnpm --filter @rankmiso/extension build:firefox`, then run `pnpm --filter @rankmiso/extension test:browser`; install the Playwright Chromium runtime with `pnpm --filter @rankmiso/extension exec playwright install chromium` first. The Chromium test uses the regular browser channel because Playwright's headless-shell binary does not load extensions reliably. Firefox's published behavior still needs manual verification.
+Playwright loads the built Chromium extension and verifies popup rendering and scored fixture audits, report/sidebar navigation, local sitemap discovery/import, bounded Site Explorer crawling and stop, saved History comparisons across reload, fetched-HTML comparison with Microdata/RDFa, actual-page highlighting, and clipboard read-back. The Firefox package test checks its ID and bundled WASM. On 2026-10-30 all eight Playwright source tests passed. The scored-fixture spec's UX-review screenshots were redirected to `/tmp`, avoiding writes to already dirty tracked review images. Its popup, report, sidebar, and large-fixture audit timings were sampled five times; History render was also sampled five times. See [`performance-baseline.md`](performance-baseline.md). Crawl and sitemap microbenchmarks are opt-in with `RANKMISO_RUN_PERF=1`.
 
-Not automated yet:
+Firefox 158.0.1 was separately loaded as an actual temporary add-on in an isolated profile; it produced a scored report, exercised all 18 popup/report destinations, local XML import, and theme persistence. Firefox sidebar, HTML comparison, exports, and history reload remain unverified; consult `functional-matrix.md` and `f1-d-manual-handoff.md`. This does not establish signed-install upgrade behavior. Chrome 156 was confirmed to load the built extension using `Extensions.loadUnpacked`; CDP action triggering did not work in this setup, so installed-Chrome UI flows remain unverified. Edge is unavailable on the test machine.
 
-- Extension load in Firefox and Edge
+Not verified in this F1 run:
+
+- Installed Chrome popup, audit and permission UI; Edge runtime (Edge unavailable)
+- Firefox signed installation and upgrade behavior
 - SPA history changes
 - Keyboard walkthrough of the dashboard
-- Performance benchmarks across supported browsers
+- Installed Chrome popup/audit/permission UI; Edge runtime (Edge unavailable)
+- Real optional-origin permission denial/revocation, request-log-confirmed report-close crawl cancellation, and native redirect-boundary checks
+- Firefox sidebar, HTML import, confirmed export downloads, and persisted-history reload
 - INP capture lifecycle and Event Timing interaction aggregation in a real browser; verify these manually with `docs/testing/manual-checklist.md`
 
 Prefer fixtures over live sites. The extractor test builds its own document.

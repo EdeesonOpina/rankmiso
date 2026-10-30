@@ -1,8 +1,16 @@
 # Implementation plan
 
-## v0.3.0 — release preparation
+## F1-E status note — 2026-10-30
 
-Version 0.3.0 collects M1–M5 and the UX-9R popup, sidebar, and full-report redesign. Packages are built from `release/v0.3.0`. Store submission and publication remain separate release actions. The ruleset version stays 1.0.0 so saved history keeps comparing.
+F1 continues from the preceding checkpoint; it is not restarted. The P1 stale-sidebar defect is fixed and automated tests pass. Evidence and current limitations are in `docs/testing/functional-matrix.md`. The repeatable local performance baseline remains in `docs/testing/performance-baseline.md`; outstanding native interactions are listed in `docs/testing/f1-d-manual-handoff.md` and `docs/testing/manual-checklist.md`. F1-H.1 adds opt-in Automatic website checks and fresh local Smart Refresh; implementation and automated verification pass, while native Chrome/Firefox permission prompts remain pending. F1 technical sign-off remains blocked on the native security and remaining browser acceptance cases. Do not begin M6 until F1 closes and the maintainer authorizes it. v0.3.0 is already published; no versioning or release state changed.
+
+## F1-F status note — 2026-10-30
+
+F1-E sidebar A/B switching is now manually reported by the product owner in Chrome and Firefox with the existing initial inspection authorization requirement. A P1 abort race was fixed and covered in Vitest; the current automated suite and both builds pass. Native optional-permission denial/revocation, request-log-backed crawl Stop/closure, and remaining Chrome/Firefox runtime checks are still open. F1 remains blocked; M6 is not authorized. No permission, dependency, version, or release metadata changed.
+
+## v0.3.0 — published baseline; post-release hardening
+
+Version 0.3.0 collects M1–M5 and the approved UX-9R popup, sidebar, and full-report interface. The maintainer confirms it is published. The current checkout is `chore/rustfmt` at `65753ffe`; release-preparation commit `0959792` is an ancestor, but no release tag or byte-for-byte published artifact is present here. Do not increment versions or prepare another store submission without maintainer approval. F1 is post-release reliability work; the ruleset version stays 1.0.0 unless a confirmed scoring defect and maintainer approval justify a change.
 
 ## v0.2.0 — release preparation
 
@@ -117,7 +125,7 @@ Compared with public SEOquake, MozBar, Ahrefs SEO Toolbar, and Detailed SEO Exte
 
 ### M3 — Site explorer
 
-Implemented. A crawl starts only from the report, stays on the exact origin, can be stopped, and marks a page cap as partial. Fetched HTML is source text scored by the existing page engine. It is not the rendered snapshot. The crawl does not run in the background. Firefox does not crawl. See `docs/features/site-explorer.md`.
+Implemented in the original M3 release for Chromium; Firefox parity was added in F1-I. In both browsers a crawl starts only from the report, stays on the exact origin, can be stopped, and marks a page cap as partial. Fetched HTML is source text scored by the existing page engine. It is not the rendered snapshot. The crawl does not run in the background. See `docs/features/site-explorer.md` and the F1-I checkpoint below.
 
 ### M4 — Historical analytics
 
@@ -147,6 +155,18 @@ Recorded. The popup rail and Overview stay. The other 17 destinations use the ap
 
 Recorded. The sidebar and report follow the approved HTML prototypes through one workbench shell. Visual sign-off is pending. Do not start M6 unless the maintainer asks.
 
+### F1-G — Firefox permissions, history branding, and sidebar navigation
+
+Implemented as a post-release maintenance correction without changing v0.3.0 metadata. Firefox uses toolbar-action `activeTab` authorization; a sidebar cannot request optional `tabs` permission. The History empty state uses the configured head-only brand icon. A report launched from the sidebar opens the Site destination and closes only that window's RankMiso side panel where supported; failure to close does not block the report. Native Chrome and Firefox interaction checks remain separate from unit/build evidence.
+
+### F1-H — Unified cross-browser website permissions
+
+Implementation and automated verification are complete as a post-release maintenance correction. Firefox and Chromium builds declare HTTP/HTTPS site access as optional host eligibility only; runtime permission requests are scoped to the selected scheme and hostname. Firefox's sidebar asks only after the user activates **Allow this website**, then revalidates permission and active-tab identity before local extraction. Denial and revocation clear current/cached authorization state. Firefox network-dependent features remain disabled independently of site grants. Native Firefox grant, denial, and revocation checks remain pending for runtime sign-off. Privacy-policy publication and store release are separate maintainer-authorized tasks; do not change v0.3.0 metadata or begin M6.
+
+### F1-H.1 — Unified website access and Smart Refresh
+
+Implementation and automated verification are complete; native browser permission-dialog verification remains pending. Automatic checks are opt-in and request optional broad HTTP/HTTPS access directly from the user's action. Individual website access remains supported and broad grants do not authorize Individual mode. The visible sidebar inspects only the active page in its owning window. Manual Refresh bypasses cache and reruns extraction and the existing Rust/WASM engine without reloading the website. Permission denial/revocation, request revisions, bounded cache invalidation, and Firefox's network-feature restrictions are preserved. No required host permission, API permission, dependency, version, or release artifact changed. Before release, obtain native Chrome and Firefox approval/denial/revocation evidence and coordinate privacy-policy/store disclosures. M6 remains unauthorized.
+
 ### M6 — MCP
 
 A local read-only companion over an audit the user chose to share. Write the threat model before any browser bridge. Do not expose arbitrary tabs, API keys, unrestricted URLs, or saved history. No hosted MCP service.
@@ -154,3 +174,16 @@ A local read-only companion over an audit the user chose to share. Write the thr
 ### M7 — Search Console
 
 Optional OAuth for a verified owner, using real API data. The extension must still work with no account.
+## F1-I — Firefox Site Explorer parity (2026-10-30)
+
+The Firefox Site Explorer guard was in the report view and the shared sitemap collector separately suppressed all Firefox network access. The report now enables only the existing shared crawler, and `networkPurpose: "site-crawl"` opts the crawl into the existing robots/sitemap parser without enabling standalone Sitemap Explorer or other Firefox remote checks. Site crawling requests the selected origin from the Start gesture, verifies the grant, and rechecks permission before each request. Existing limits, manual redirect handling, same-origin scope, cancellation, and Rust/WASM evaluation remain shared. Automated checks/builds pass; native Firefox crawl and Chrome runtime regression remain pending and F1-I is not release-ready until those are recorded.
+## R0.4.0 release candidate (2026-10-30)
+
+Consolidate completed F1 corrections, Automatic Checks/Individual Website Access, Smart Refresh, and Firefox Site Explorer in v0.4.0. Version updates are limited to the root and extension package metadata; Rust crate versions remain independent. Product owner has confirmed basic Firefox Site Explorer runtime. Store acceptance remains pending on native Chrome regression and Firefox denial/revocation, robots/request logs, redirects, limits, cancellation, privacy-policy alignment, and the documented hostname/DNS-rebinding limitation. Do not submit or publish from this checkpoint.
+# R0.4.0 release preparation status (2026-10-30)
+
+Implementation is frozen for candidate preparation. Chrome/Firefox production packages and a complete Firefox source archive have been built from an isolated snapshot, with source reproduction matching the Firefox extension files byte-for-byte. Automated regression is green (40 Rust tests, 118 Vitest passed / 2 opt-in skipped, 10 Playwright passed; lint, typecheck, and both builds pass). Do not start further feature work under this plan. Native installed Chrome, native permission and crawler security checks, DNS-rebinding boundary review, and public Privacy Policy v6 alignment are submission gates. The product-owner Firefox confirmation applies only to basic crawling.
+
+## R0.4.0-G1 (2026-10-30)
+
+Targeted fixes only: shared robots timeout/redirect limits, total crawl deadline, no retry after cancellation, and stronger literal IPv6/private-address classification. Rebuild artifacts from the corrected isolated source, rerun source reproduction and checksums. Native browser security scenarios and DNS connection enforcement remain unresolved; do not submit or begin MCP.

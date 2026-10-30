@@ -43,7 +43,7 @@ import { useI18n } from "../../composables/useI18n";
 import { useTheme } from "../../composables/useTheme";
 import { useAudit } from "../../composables/useAudit";
 import { clearHighlights, highlightElements } from "../../services/inspect";
-import { openSidebar, sidebarAvailable } from "../../services/sidebar";
+import { openReportFromSidebar, openSidebar, sidebarAvailable } from "../../services/sidebar";
 import type { MessageKey } from "../../locales/en";
 import { hostOf, workbenchKey, type IssueFocus, type Surface } from "./context";
 import OverviewView from "./OverviewView.vue";
@@ -79,10 +79,20 @@ const {
   stale,
   probing,
   probeMessage,
+  siteAccessState,
+  siteAccessHost,
+  siteAccessPending,
+  inspectionMode,
+  automaticAccessGranted,
   refresh,
+  requestSiteAccess,
+  enableAutomaticChecks,
+  setInspectionMode,
+  revokeAutomaticAccess,
+  dismissSiteAccess,
   runSiteProbe,
   checkFreshness,
-} = useAudit(props.tabId);
+} = useAudit(props.tabId, props.surface === "sidebar" && props.tabId == null);
 
 const icons: Record<string, Component> = {
   overview: LayoutGrid,
@@ -149,6 +159,8 @@ let toastTimer = 0;
 const canOpenSidebar = sidebarAvailable();
 const tabId = computed(() => tab.value?.id ?? props.tabId);
 const ready = computed(() => status.value === "ready");
+const showSiteAccess = computed(() => props.surface === "sidebar" && siteAccessState.value);
+const chooseAutomatic = computed(() => inspectionMode.value !== "individual");
 
 watch(section, async (value) => {
   workspace.value?.scrollTo({ top: 0 });
@@ -192,9 +204,18 @@ async function clearMarks() {
 
 async function openReport(target = section.value) {
   if (!tabId.value) return;
-  await browser.tabs.create({
-    url: browser.runtime.getURL(`/dashboard.html?tabId=${tabId.value}&section=${target}`),
-  });
+  try {
+    if (props.surface === "sidebar") {
+      const closed = await openReportFromSidebar(tabId.value, tab.value?.windowId, target);
+      if (!closed) toast(t("action.sidebarCloseFailed"));
+      return;
+    }
+    await browser.tabs.create({
+      url: browser.runtime.getURL(`/dashboard.html?tabId=${tabId.value}&section=${target}`),
+    });
+  } catch {
+    toast(t("action.openReportFailed"));
+  }
 }
 
 async function openSidePanel() {
@@ -224,7 +245,7 @@ async function onNavKeys(event: KeyboardEvent) {
 
 const onFocus = () => void checkFreshness();
 onMounted(() => {
-  void refresh();
+  void refresh(props.surface === "sidebar" ? { automatic: true } : undefined);
   window.addEventListener("focus", onFocus);
 });
 onUnmounted(() => window.removeEventListener("focus", onFocus));
@@ -236,6 +257,8 @@ provide(workbenchKey, {
   probing,
   probeMessage,
   preference,
+  inspectionMode,
+  automaticAccessGranted,
   issueFocus,
   go,
   toast,
@@ -245,6 +268,9 @@ provide(workbenchKey, {
   refresh,
   runSiteProbe,
   setPreference,
+  setInspectionMode,
+  enableAutomaticChecks,
+  revokeAutomaticAccess,
   openReport,
 });
 </script>
@@ -338,8 +364,8 @@ provide(workbenchKey, {
             :title="t('wb.refresh')"
             :aria-label="t('wb.refresh')"
             :aria-busy="status === 'loading'"
-            :disabled="status === 'loading'"
-            @click="refresh"
+            :disabled="status === 'loading' || Boolean(showSiteAccess)"
+            @click="refresh({ forceFresh: true })"
           >
             <RotateCw class="ic" :class="{ spin: status === 'loading' }" aria-hidden="true" />
           </button>
@@ -350,6 +376,106 @@ provide(workbenchKey, {
         <p v-if="status === 'loading' && !audit" class="callout" role="status">
           {{ t("state.loading") }}
         </p>
+        <section
+          v-else-if="showSiteAccess"
+          class="callout site-access"
+          :aria-busy="siteAccessPending"
+          aria-live="polite"
+          role="status"
+          aria-labelledby="site-access-title"
+        >
+          <div>
+            <h2 id="site-access-title">
+              {{
+                siteAccessState === "denied"
+                  ? t("permission.deniedTitle")
+                  : siteAccessState === "error"
+                    ? t("permission.errorTitle")
+                    : chooseAutomatic
+                      ? t("permission.autoTitle")
+                      : t("permission.checkTitle")
+              }}
+            </h2>
+            <p v-if="siteAccessHost" class="site-access-host" translate="no">
+              {{ siteAccessHost }}
+            </p>
+            <p>
+              {{
+                siteAccessState === "denied" && !chooseAutomatic
+                  ? t("permission.deniedDescription", { name: brandConfig.identity.name })
+                  : chooseAutomatic
+                    ? t("permission.autoDescription", { name: brandConfig.identity.name })
+                    : t("permission.description", { name: brandConfig.identity.name })
+              }}
+            </p>
+            <p v-if="chooseAutomatic" class="site-access-disclosure">
+              {{ t("permission.autoDisclosure", { name: brandConfig.identity.name }) }}
+            </p>
+            <p v-else class="site-access-disclosure">
+              {{ t("permission.individualIntro") }}
+            </p>
+            <p v-if="error" class="is-error" role="alert">{{ error }}</p>
+            <div class="actions-row" role="group" :aria-label="t('permission.checkTitle')">
+              <button
+                v-if="chooseAutomatic"
+                type="button"
+                class="primary"
+                :disabled="siteAccessPending"
+                :aria-busy="siteAccessPending"
+                @click="enableAutomaticChecks"
+              >
+                {{
+                  siteAccessState === "denied" || siteAccessState === "error"
+                    ? t("permission.tryAgain")
+                    : t("permission.autoAllow")
+                }}
+              </button>
+              <button
+                v-else-if="siteAccessHost"
+                type="button"
+                class="primary"
+                :disabled="siteAccessPending"
+                :aria-busy="siteAccessPending"
+                @click="requestSiteAccess"
+              >
+                {{
+                  siteAccessState === "denied" || siteAccessState === "error"
+                    ? t("permission.tryAgain")
+                    : t("permission.allow")
+                }}
+              </button>
+              <button
+                v-if="chooseAutomatic"
+                type="button"
+                class="secondary"
+                :disabled="siteAccessPending"
+                @click="setInspectionMode('individual')"
+              >
+                {{ t("permission.individualMode") }}
+              </button>
+              <button
+                v-else
+                type="button"
+                class="secondary"
+                :disabled="siteAccessPending"
+                @click="enableAutomaticChecks"
+              >
+                {{ t("permission.switchToAuto") }}
+              </button>
+              <button
+                type="button"
+                class="secondary"
+                :disabled="siteAccessPending"
+                @click="dismissSiteAccess"
+              >
+                {{ t("permission.notNow") }}
+              </button>
+            </div>
+            <p class="site-access-fallback">
+              {{ t("permission.toolbarFallback", { name: brandConfig.identity.name }) }}
+            </p>
+          </div>
+        </section>
         <p v-else-if="status === 'error'" class="callout is-error" role="status">{{ error }}</p>
         <p v-else-if="stale" class="callout" role="status" style="margin: 0 0 18px">
           {{ t("state.stale") }}
@@ -378,7 +504,7 @@ provide(workbenchKey, {
             class="primary"
             :disabled="status === 'loading'"
             :aria-busy="status === 'loading'"
-            @click="refresh"
+            @click="refresh()"
           >
             <RotateCw class="ic" aria-hidden="true" /> {{ t("action.refresh") }}
           </button>

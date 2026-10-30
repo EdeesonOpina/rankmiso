@@ -4,6 +4,7 @@ import type { AuditResult } from "../../types/audit";
 import {
   byTime,
   compareRecords,
+  scoreConnects,
   readSavedReports,
   recordsForPage,
   type SavedReport,
@@ -43,6 +44,14 @@ const points = computed(() => {
     y: 92 - ((item.comparison.score ?? 0) / 100) * 80,
   }));
 });
+const scorePath = computed(() =>
+  points.value
+    .map((point, index) => {
+      const previous = scored.value[index - 1];
+      return `${!previous || !scoreConnects(previous, scored.value[index]!) ? "M" : "L"}${point.x} ${point.y}`;
+    })
+    .join(""),
+);
 const movement = computed(() => {
   const value = comparison.value;
   if (!value || value.findings !== "ready") return [];
@@ -116,11 +125,7 @@ function scoreText(item: SavedReport | null): string {
         "
       >
         <path class="grid" d="M5 23H265M5 55H265M5 87H265" />
-        <path
-          v-if="points.length > 1"
-          class="line"
-          :d="points.map((point, index) => `${index ? 'L' : 'M'}${point.x} ${point.y}`).join('')"
-        />
+        <path v-if="points.length > 1" class="line" :d="scorePath" />
         <circle v-for="(point, index) in points" :key="index" :cx="point.x" :cy="point.y" r="4" />
       </svg>
       <div class="chart-foot">

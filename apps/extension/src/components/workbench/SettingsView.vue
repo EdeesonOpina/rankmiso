@@ -12,7 +12,15 @@ import PageHeading from "./PageHeading.vue";
 
 defineProps<{ audit: AuditResult | null }>();
 const { t } = useI18n();
-const { preference, setPreference } = useWorkbench();
+const {
+  preference,
+  setPreference,
+  inspectionMode,
+  automaticAccessGranted,
+  setInspectionMode,
+  enableAutomaticChecks,
+  revokeAutomaticAccess,
+} = useWorkbench();
 const version = browser.runtime.getManifest().version;
 const note = ref("");
 const order: ThemePreference[] = ["light", "dark", "system"];
@@ -25,7 +33,16 @@ const labels: Record<ThemePreference, MessageKey> = {
 async function reset() {
   await clearStoredSettings();
   await setPreference(themeConfig.defaultPreference);
+  await setInspectionMode("individual");
   note.value = t("settings.cleared");
+}
+
+function revokeAccess() {
+  if (window.confirm(t("permission.confirmRevoke"))) {
+    void revokeAutomaticAccess().then((removed) => {
+      note.value = t(removed ? "permission.accessRevoked" : "permission.revokeError");
+    });
+  }
 }
 </script>
 
@@ -46,6 +63,42 @@ async function reset() {
       @click="setPreference(option)"
     >
       {{ t(labels[option]) }}
+    </button>
+  </div>
+  <div class="section-heading">
+    <div>
+      <h2>{{ t("permission.modeTitle") }}</h2>
+      <p class="inspection-mode-help">{{ t("permission.modeHelp") }}</p>
+    </div>
+  </div>
+  <div class="settings-choices segmented" role="group" :aria-label="t('permission.modeTitle')">
+    <button
+      type="button"
+      :class="{ on: inspectionMode === 'automatic' }"
+      :aria-pressed="inspectionMode === 'automatic'"
+      @click="enableAutomaticChecks"
+    >
+      {{ t("permission.modeAutomatic") }}
+    </button>
+    <button
+      type="button"
+      :class="{ on: inspectionMode === 'individual' }"
+      :aria-pressed="inspectionMode === 'individual'"
+      @click="setInspectionMode('individual')"
+    >
+      {{ t("permission.modeIndividual") }}
+    </button>
+  </div>
+  <div class="setting-row">
+    <div>
+      <strong>{{ t("permission.modeTitle") }}</strong>
+      <small>{{
+        automaticAccessGranted ? t("permission.accessGranted") : t("permission.accessNotGranted")
+      }}</small>
+      <small>{{ t("permission.manageAccess") }}</small>
+    </div>
+    <button v-if="automaticAccessGranted" type="button" class="quiet" @click="revokeAccess">
+      {{ t("permission.revokeAccess") }}
     </button>
   </div>
   <div class="section-heading">

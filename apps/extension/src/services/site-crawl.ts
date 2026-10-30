@@ -94,23 +94,68 @@ export function crawlUrl(value: string, base: string): string | null {
 export function isPrivateHostname(hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
   if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local")) return true;
-  if (
-    host === "::1" ||
-    host.startsWith("fe80:") ||
-    host.startsWith("fc") ||
-    host.startsWith("fd")
-  ) {
-    return true;
+  if (host.includes(":")) {
+    const words = ipv6Words(host);
+    if (!words) return false;
+    const allZeroPrefix = (length: number) => words.slice(0, length).every((word) => word === 0);
+    if (allZeroPrefix(7) && (words[7] === 0 || words[7] === 1)) return true;
+    if ((words[0]! & 0xfe00) === 0xfc00) return true; // Unique local fc00::/7.
+    if ((words[0]! & 0xffc0) === 0xfe80) return true; // Link local fe80::/10.
+    if ((words[0]! & 0xffc0) === 0xfec0) return true; // Deprecated site local fec0::/10.
+    if ((words[0]! & 0xff00) === 0xff00) return true; // Multicast is not a crawl destination.
+    const mapped = allZeroPrefix(5) && words[5] === 0xffff;
+    const compatible = allZeroPrefix(6);
+    if (mapped || compatible) {
+      const v4 = `${words[6]! >>> 8}.${words[6]! & 0xff}.${words[7]! >>> 8}.${words[7]! & 0xff}`;
+      return isPrivateIpv4(v4);
+    }
+    return false;
   }
+  return isPrivateIpv4(host);
+}
+
+function isPrivateIpv4(host: string): boolean {
   const parts = host.split(".");
   if (parts.length !== 4 || parts.some((part) => !/^\d+$/.test(part))) return false;
   const numbers = parts.map((part) => Number(part));
+  if (numbers.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
   const first = numbers[0] ?? 0;
   const second = numbers[1] ?? 0;
   if (first === 10 || first === 127 || first === 0) return true;
   if (first === 169 && second === 254) return true;
   if (first === 172 && second >= 16 && second <= 31) return true;
   return first === 192 && second === 168;
+}
+
+function ipv6Words(host: string): number[] | null {
+  let value = host;
+  if (value.includes(".")) {
+    const separator = value.lastIndexOf(":");
+    if (separator < 0) return null;
+    const v4 = value.slice(separator + 1);
+    const parts = v4.split(".").map(Number);
+    if (
+      parts.length !== 4 ||
+      parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
+    )
+      return null;
+    const high = ((parts[0] ?? 0) << 8) | (parts[1] ?? 0);
+    const low = ((parts[2] ?? 0) << 8) | (parts[3] ?? 0);
+    value = `${value.slice(0, separator)}:${high.toString(16)}:${low.toString(16)}`;
+  }
+  const halves = value.split("::");
+  if (halves.length > 2) return null;
+  const left = halves[0] ? halves[0]!.split(":") : [];
+  const right = halves.length === 2 && halves[1] ? halves[1].split(":") : [];
+  const parse = (part: string) => (/^[\da-f]{1,4}$/i.test(part) ? Number.parseInt(part, 16) : null);
+  const leftWords = left.map(parse);
+  const rightWords = right.map(parse);
+  if ([...leftWords, ...rightWords].some((word) => word === null)) return null;
+  const zeroCount = halves.length === 2 ? 8 - leftWords.length - rightWords.length : 0;
+  if ((halves.length === 2 && zeroCount < 1) || (halves.length === 1 && zeroCount !== 0))
+    return null;
+  const words = [...leftWords, ...Array<number>(zeroCount).fill(0), ...rightWords] as number[];
+  return words.length === 8 ? words : null;
 }
 
 export function inCrawlScope(start: string, candidate: string): boolean {
@@ -172,8 +217,10 @@ export async function runSiteCrawl(options: {
   startUrl: string;
   signal: AbortSignal;
   limits?: Partial<Limits>;
-  readRobots: () => Promise<{ status: number | null; body: string; unavailable: boolean }>;
-  discoverSitemaps: () => Promise<{
+  readRobots: (
+    signal: AbortSignal,
+  ) => Promise<{ status: number | null; body: string; unavailable: boolean }>;
+  discoverSitemaps: (signal: AbortSignal) => Promise<{
     urls: string[];
     unavailable: boolean;
     empty: boolean;
@@ -195,8 +242,14 @@ export async function runSiteCrawl(options: {
   }
   session.startUrl = start;
   session.origin = new URL(start).origin;
-  const robots = await options.readRobots();
-  if (options.signal.aborted) return finish(session, "stopped", true);
+  const started = Date.now();
+  const deadline = AbortSignal.timeout(limits.maxDurationMs);
+  const signal = AbortSignal.any([options.signal, deadline]);
+  const robots = await options.readRobots(signal);
+  if (signal.aborted) {
+    if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+    return finish(session, deadline.aborted ? "complete" : "stopped", true);
+  }
   if (robots.unavailable) {
     session.robots = "unavailable";
     session.sitemap = "not-read";
@@ -223,14 +276,22 @@ export async function runSiteCrawl(options: {
   };
   push(start, 0, false);
   if (robots.status !== 404) {
-    const maps = await options.discoverSitemaps();
+    const maps = await options.discoverSitemaps(signal);
+    if (signal.aborted) {
+      if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+      return finish(session, deadline.aborted ? "complete" : "stopped", true);
+    }
     if (maps.unavailable) session.sitemap = "unavailable";
     else if (maps.empty || maps.urls.length === 0) session.sitemap = "empty";
     else session.sitemap = "urls";
     session.sitemapUrls = maps.urls.length;
     for (const url of maps.urls) push(url, 0, true);
   } else {
-    const maps = await options.discoverSitemaps();
+    const maps = await options.discoverSitemaps(signal);
+    if (signal.aborted) {
+      if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+      return finish(session, deadline.aborted ? "complete" : "stopped", true);
+    }
     session.sitemap = maps.unavailable ? "unavailable" : maps.urls.length ? "urls" : "empty";
     session.sitemapUrls = maps.urls.length;
     for (const url of maps.urls) push(url, 0, true);
@@ -239,11 +300,10 @@ export async function runSiteCrawl(options: {
   let cursor = 0;
   let pending = 0;
   let fetched = 0;
-  const started = Date.now();
   const seenFetch = new Set<string>();
 
   async function worker() {
-    while (!options.signal.aborted && Date.now() - started < limits.maxDurationMs) {
+    while (!signal.aborted && Date.now() - started < limits.maxDurationMs) {
       if (cursor >= queue.length) {
         if (pending === 0) return;
         await wait(20);
@@ -261,6 +321,7 @@ export async function runSiteCrawl(options: {
       try {
         const path = `${new URL(item.url).pathname}${new URL(item.url).search}`;
         const allowed = session.robots === "missing" ? true : await options.mayFetch(path);
+        if (signal.aborted) break;
         if (!allowed) {
           session.pages.push({
             ...blankPage(item.url, item.depth, item.fromSitemap),
@@ -270,10 +331,10 @@ export async function runSiteCrawl(options: {
           continue;
         }
         fetched += 1;
-        let result = await options.fetchPage(item.url, options.signal);
-        if (result.retryable && limits.retries > 0 && !options.signal.aborted) {
+        let result = await options.fetchPage(item.url, signal);
+        if (result.retryable && limits.retries > 0 && !signal.aborted) {
           await wait(500);
-          result = await options.fetchPage(item.url, options.signal);
+          if (!signal.aborted) result = await options.fetchPage(item.url, signal);
         }
         const page = blankPage(item.url, item.depth, item.fromSitemap);
         page.status = result.status;
@@ -313,10 +374,15 @@ export async function runSiteCrawl(options: {
   await Promise.all(Array.from({ length: limits.concurrency }, () => worker()));
   annotateLinks(session);
   session.duplicates = duplicateMetadata(session.pages);
-  session.orphans = session.partial || options.signal.aborted ? [] : orphanCandidates(session);
-  if (options.signal.aborted) return finish(session, "stopped", true);
+  session.orphans = session.partial || signal.aborted ? [] : orphanCandidates(session);
+  if (signal.aborted) {
+    if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+    return finish(session, deadline.aborted ? "complete" : "stopped", true);
+  }
   if (Date.now() - started >= limits.maxDurationMs || fetched >= limits.maxPages) {
     session.partial = true;
+    if (Date.now() - started >= limits.maxDurationMs)
+      session.note = "The crawl reached its time limit; results are partial.";
   }
   return finish(session, "complete", session.partial);
 }

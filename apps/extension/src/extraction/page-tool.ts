@@ -7,6 +7,7 @@
 export function runPageTool(command: string, arg?: string): unknown {
   const root = document.documentElement;
   const markAttribute = "data-seo-toolkit-mark";
+  const rankmisoHighlightAttribute = "data-rankmiso-highlight";
   const styleId = "seo-toolkit-highlight";
   const inpCaptureKey = "__rankmiso_inp_capture_v1";
 
@@ -501,12 +502,13 @@ export function runPageTool(command: string, arg?: string): unknown {
   }
 
   function installMarker() {
-    if (root.dataset.seoToolkitHook === "1") return { installed: true };
-    root.dataset.seoToolkitHook = "1";
+    if (root.dataset.seoToolkitHook === "2") return { installed: true };
+    root.dataset.seoToolkitHook = "2";
     let generation = Number(root.dataset.seoToolkitGeneration || "0");
     const bump = () => {
       generation += 1;
       root.dataset.seoToolkitGeneration = String(generation);
+      document.dispatchEvent(new Event("rankmiso:route-change"));
     };
     const originalPush = history.pushState.bind(history);
     const originalReplace = history.replaceState.bind(history);
@@ -521,6 +523,7 @@ export function runPageTool(command: string, arg?: string): unknown {
       return result;
     };
     window.addEventListener("popstate", bump);
+    window.addEventListener("hashchange", bump);
     return { installed: true };
   }
 
@@ -532,10 +535,30 @@ export function runPageTool(command: string, arg?: string): unknown {
   }
 
   function clearHighlight() {
-    document
-      .querySelectorAll(`[${markAttribute}]`)
-      .forEach((element) => element.removeAttribute(markAttribute));
-    document.getElementById(styleId)?.remove();
+    const style = document.getElementById(styleId);
+    const legacyMarks = new Set([
+      "headings",
+      "h1",
+      "internal",
+      "external",
+      "nofollow",
+      "sponsored",
+      "ugc",
+      "missing-alt",
+      "broken-images",
+    ]);
+    document.querySelectorAll(`[${markAttribute}]`).forEach((element) => {
+      const mark = element.getAttribute(markAttribute) || "";
+      if (style && (mark.startsWith("rankmiso:") || legacyMarks.has(mark))) {
+        element.removeAttribute(markAttribute);
+      }
+    });
+    document.querySelectorAll(`[${rankmisoHighlightAttribute}]`).forEach((element) => {
+      if ((element.getAttribute(rankmisoHighlightAttribute) || "").startsWith("rankmiso:")) {
+        element.removeAttribute(rankmisoHighlightAttribute);
+      }
+    });
+    style?.remove();
     return { cleared: true };
   }
 
@@ -559,12 +582,14 @@ export function runPageTool(command: string, arg?: string): unknown {
     document.querySelectorAll(selector).forEach((element) => {
       if (kind === "internal" || kind === "external") {
         const href = element.getAttribute("href") || "";
-        let host = "";
+        let url: URL;
         try {
-          host = new URL(href, document.baseURI).hostname.replace(/^www\./, "");
+          url = new URL(href, document.baseURI);
         } catch {
           return;
         }
+        if (url.protocol !== "http:" && url.protocol !== "https:") return;
+        const host = url.hostname.replace(/^www\./, "");
         const internal = host === pageHost;
         if (kind === "internal" && !internal) return;
         if (kind === "external" && internal) return;
@@ -573,16 +598,17 @@ export function runPageTool(command: string, arg?: string): unknown {
         const image = element as HTMLImageElement;
         if (!image.complete || image.naturalWidth !== 0 || !image.getAttribute("src")) return;
       }
-      element.setAttribute(markAttribute, kind);
+      if (element.hasAttribute(rankmisoHighlightAttribute)) return;
+      element.setAttribute(rankmisoHighlightAttribute, `rankmiso:${kind}`);
       count += 1;
     });
     const style = document.createElement("style");
     style.id = styleId;
     style.textContent = `
-      [${markAttribute}] { outline: 2px solid #0f6e56 !important; outline-offset: 2px !important; }
-      [${markAttribute}="external"] { outline-style: dashed !important; outline-color: #175cd3 !important; }
-      [${markAttribute}="nofollow"], [${markAttribute}="sponsored"], [${markAttribute}="ugc"] { outline-style: dotted !important; outline-color: #8a5a00 !important; }
-      [${markAttribute}="missing-alt"], [${markAttribute}="broken-images"] { outline-color: #b42318 !important; }
+      [${rankmisoHighlightAttribute}^="rankmiso:"] { outline: 2px solid #0f6e56 !important; outline-offset: 2px !important; }
+      [${rankmisoHighlightAttribute}="rankmiso:external"] { outline-style: dashed !important; outline-color: #175cd3 !important; }
+      [${rankmisoHighlightAttribute}="rankmiso:nofollow"], [${rankmisoHighlightAttribute}="rankmiso:sponsored"], [${rankmisoHighlightAttribute}="rankmiso:ugc"] { outline-style: dotted !important; outline-color: #8a5a00 !important; }
+      [${rankmisoHighlightAttribute}="rankmiso:missing-alt"], [${rankmisoHighlightAttribute}="rankmiso:broken-images"] { outline-color: #b42318 !important; }
     `;
     document.documentElement.append(style);
     return { highlighted: count };

@@ -1,3 +1,4 @@
+import process from "node:process";
 import { gzipSync } from "node:zlib";
 import { DecompressionStream } from "node:stream/web";
 import { describe, expect, it } from "vitest";
@@ -15,6 +16,28 @@ function xmlResponse(body: string, status = 200, headers: Record<string, string>
 }
 
 describe("sitemap extraction", () => {
+  it.skipIf(process.env.RANKMISO_RUN_PERF !== "1")(
+    "records repeatable parsing time for a 1,000 URL fixture",
+    () => {
+      const xml = `<urlset>${Array.from(
+        { length: 1_000 },
+        (_, index) =>
+          `<url><loc>https://example.com/page-${index.toString()}</loc><lastmod>2026-10-30</lastmod></url>`,
+      ).join("")}</urlset>`;
+      const samples: number[] = [];
+      for (let sample = 0; sample < 5; sample += 1) {
+        const started = performance.now();
+        const result = extractSitemap(xml, 1_000);
+        samples.push(performance.now() - started);
+        expect(result.entries).toHaveLength(1_000);
+      }
+      const sorted = [...samples].sort((left, right) => left - right);
+      console.log(
+        `1,000 URL sitemap parse timings (ms, n=5): median ${sorted[2]?.toFixed(2)}; min ${sorted[0]?.toFixed(2)}; max ${sorted[4]?.toFixed(2)}`,
+      );
+    },
+  );
+
   it("reads a urlset and an index", () => {
     const urls = extractSitemap(
       `<urlset><url><loc>https://example.com/guide</loc><lastmod>2026-10-27</lastmod></url></urlset>`,
@@ -147,6 +170,25 @@ describe("sitemap discovery", () => {
       network: true,
       fetcher,
     });
+    expect(result.cancelled).toBe(true);
+    expect(result.partial).toBe(true);
+  });
+
+  it("does not dispatch a sitemap request when already cancelled", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    let requests = 0;
+    const result = await collectSitemaps({
+      pageUrl: page,
+      signal: controller.signal,
+      network: true,
+      fetcher: (async () => {
+        requests += 1;
+        return xmlResponse("<urlset></urlset>");
+      }) as typeof fetch,
+    });
+
+    expect(requests).toBe(0);
     expect(result.cancelled).toBe(true);
     expect(result.partial).toBe(true);
   });

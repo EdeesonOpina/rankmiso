@@ -3,11 +3,16 @@ import { ref } from "vue";
 import { mount } from "@vue/test-utils";
 import IssuesView from "../src/components/workbench/IssuesView.vue";
 import OverviewView from "../src/components/workbench/OverviewView.vue";
+import SettingsScreen from "../src/components/popup/SettingsScreen.vue";
 import RelatedChecks from "../src/components/workbench/RelatedChecks.vue";
 import { workbenchKey, type Surface } from "../src/components/workbench/context";
 import { findingGuide, findingGuides } from "../src/locales/findings.en";
 import { selectChecks } from "../src/services/check-list";
 import type { AuditResult, CheckResult, ScoreSummary } from "../src/types/audit";
+
+vi.mock("wxt/browser", () => ({
+  browser: { runtime: { getManifest: () => ({ version: "0.4.0" }) } },
+}));
 
 function check(patch: Partial<CheckResult> & Pick<CheckResult, "id" | "status">): CheckResult {
   return {
@@ -210,5 +215,44 @@ describe("issue presentation", () => {
     expect(cards()).toEqual(["Missing title", "Passed title"]);
     await wrapper.find("input[type='search']").setValue("passed");
     expect(cards()).toEqual(["Passed title"]);
+  });
+});
+
+describe("inspection settings", () => {
+  it("explains broad opt-in access and exposes Automatic and Individual choices in popup Settings", async () => {
+    const wrapper = mount(SettingsScreen, {
+      props: {
+        audit: audit([]),
+        preference: "light",
+        inspectionMode: null,
+        automaticAccessGranted: false,
+      },
+    });
+
+    expect(wrapper.text()).toContain("broad access to HTTP and HTTPS websites");
+    expect(wrapper.text()).toContain("Automatic checks");
+    expect(wrapper.text()).toContain("Individual website access");
+    expect(wrapper.text()).toContain("Broad website access has not been granted.");
+    const automatic = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Automatic checks"));
+    await automatic?.trigger("click");
+
+    expect(wrapper.emitted("automatic")).toHaveLength(1);
+  });
+
+  it("uses the standard compact danger button for broad access revocation", () => {
+    const wrapper = mount(SettingsScreen, {
+      props: {
+        audit: audit([]),
+        preference: "light",
+        inspectionMode: "automatic",
+        automaticAccessGranted: true,
+      },
+    });
+
+    expect(wrapper.get(".permission-revoke").classes()).toEqual(
+      expect.arrayContaining(["button-sm", "danger"]),
+    );
   });
 });
