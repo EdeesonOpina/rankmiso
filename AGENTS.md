@@ -67,7 +67,7 @@ UI work keeps the Miso tokens in `packages/design-tokens/src/tokens.css`. When t
 
 Keep the core audit local. Optional network stays explicit. Do not add a chart library for a bar, a second SEO rules engine, telemetry, a default host permission, or a hosted backend.
 
-Run the commands in this file that the change can affect. Record the result you actually saw. Update `docs/development/progress.md` and `docs/development/handoff.md` when a milestone moves. Later milestones M2–M7 are constraints in `docs/development/implementation-plan.md`; do not start them while M1 is the assignment.
+Run the commands in this file that the change can affect. Record the result you actually saw. Update `docs/development/progress.md` and `docs/development/handoff.md` when a milestone moves. Both are local session logs and are git-ignored; create them if a fresh clone lacks them. Later milestones M2–M7 are constraints in `docs/development/implementation-plan.md`; do not start them while M1 is the assignment.
 
 Do not commit, push, or publish a store package unless the maintainer asks.
 

@@ -55,6 +55,7 @@ export async function collectSitemaps(options: {
   pageUrl: string;
   signal: AbortSignal;
   network: boolean;
+  networkPurpose?: "site-crawl";
   userUrl?: string;
   imported?: Array<{ name: string; bytes: Uint8Array }>;
   fetcher?: typeof fetch;
@@ -109,9 +110,10 @@ export async function collectSitemaps(options: {
     queue.push({ url, source });
   };
 
-  const robotsUrl = import.meta.env.FIREFOX
-    ? ""
-    : (await import("./sitemap-network")).robotsAddress(page.origin);
+  const robotsUrl =
+    import.meta.env.FIREFOX && options.networkPurpose !== "site-crawl"
+      ? ""
+      : (await import("./sitemap-network")).robotsAddress(page.origin);
   if (!robotsUrl)
     return {
       schemaVersion: 1,
@@ -302,6 +304,7 @@ async function readUrl(
   | "external"
   | null
 > {
+  if (signal.aborted) return "aborted";
   const request = fetcher ?? fetch;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), limits.timeoutMs);

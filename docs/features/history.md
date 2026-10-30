@@ -14,7 +14,7 @@ The device keeps 20 saves. The next save removes the oldest. Delete one save, or
 
 ## Charts
 
-The score chart plots saved scores for the open page, in save order. The line joins two scores only when they use the same rule set and the same number of measured checks. It does not invent a point for a day that was not saved. One save is one point and is not called a trend. Two saves on the same day stay as two points.
+The score chart plots saved scores for the open page, in save order. The line joins two scores only when they use the same rule set and the same eligible measured check identifiers. Equal counts with different check IDs do not establish comparable coverage. Incompatible saves remain visible as points but have a gap between them. It does not invent a point for a day that was not saved. One save is one point and is not called a trend. Two saves on the same day stay as two points.
 
 Errors use a solid line and a round mark. Warnings use a dashed line and a square mark. A lower warning count is not described as proof that the page improved.
 
@@ -26,9 +26,9 @@ A second address is not added to this page’s chart. **All saved pages** lists 
 
 The default pair is the two newest saves of the open page, older first. You can change either select. If the later select is actually older, the screen says so.
 
-A score change is shown only when the rule set and the measured-check count match. Otherwise both scores stay visible and the change says **Not comparable**. That is not a ranking, traffic, or indexation claim.
+A score change is shown only when the rule set and eligible measured check IDs match. Otherwise both scores stay visible and the change says **Not comparable**. Older records without enough check metadata say that comparability cannot be determined. That is not a ranking, traffic, or indexation claim.
 
-Individual checks are compared only when both saves include check results and the same rule set. A previous error or warning that is now a pass is **Resolved**. A previous pass that is now an error or warning is **New**. The same problem still present is **Unchanged**. A check that was not saved on one side, or that was unavailable, is **Cannot determine**. Counts alone are not turned into a list of resolved checks.
+Individual checks are compared only when both saves include check results and the same rule set. A previous error or warning that is now a pass is **Resolved**. A previous pass that is now an error or warning is **New**. The same problem still present is **Unchanged**. A check that was not saved on one side, or that was unavailable, is **Cannot determine**. Counts alone are not turned into a list of resolved checks. Category changes use the same measured-ID comparison within that category.
 
 ## Export
 
@@ -36,4 +36,4 @@ CSV, JSON, and HTML export the open page’s saves after you confirm the downloa
 
 ## What is still separate
 
-M3 permission denial, Firefox as a loaded add-on, and a phone were not rechecked for History. Firefox can save and read local history. It still does not crawl. Visual sign-off remains pending.
+M3 permission denial, Firefox as a loaded add-on, and a phone were not rechecked for History. Firefox can save and read local history. Site Explorer crawling is part of the v0.4.0 candidate; its session remains separate from saved History. Visual sign-off remains pending.

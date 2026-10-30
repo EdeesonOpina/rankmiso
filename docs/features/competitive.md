@@ -48,7 +48,7 @@ Classes: Implemented, Partially implemented, Missing, Intentionally out of scope
 | Raw versus rendered HTML | Partially implemented | Compares selected SEO fields with a separately fetched response or a chosen HTML file. It is not the original navigation response and not a full document diff. Firefox does not fetch. |
 | SERP analysis | Intentionally out of scope | The snippet preview is a local approximation. No rankings or search volume. |
 | Keyword density analysis | Missing | Repeated terms only. Not added in UX-2. |
-| Site crawling | Partially implemented | Chromium crawls the current origin after Start, up to 100 pages. Firefox does not crawl. Sitemap discovery alone is not a crawl. |
+| Site crawling | Partially implemented | Chrome and Firefox crawl the selected origin after Start, up to 100 pages. Firefox's basic flow has product-owner runtime confirmation; its denial/revocation, redirect and cancellation security scenarios remain unverified. Sitemap discovery alone is not a crawl. |
 | Historical analytics | Implemented | Charts use explicit page saves only. A site crawl is not a history series. |
 | MCP integration | Missing | Planned as M6. No server or browser bridge exists. |
 | Backlinks, DA, PA, DR, UR, traffic | Intentionally out of scope | RankMiso does not invent these metrics. |

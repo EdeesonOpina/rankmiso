@@ -4,6 +4,7 @@ import { browser } from "wxt/browser";
 import { safeFilename, toCsv } from "@rankmiso/report-formats";
 import { useI18n } from "../../composables/useI18n";
 import { supportsOptionalExternalChecks } from "../../config/features.config";
+import { sitePermission } from "../../services/page-access";
 import { categoryLabelKey } from "../../services/category-label";
 import type { AuditResult } from "../../types/audit";
 import { badgeTone, statusKey } from "./checks";
@@ -104,8 +105,9 @@ async function discover() {
   status.value = "requesting";
   message.value = "";
   try {
-    const origin = new URL(pageUrl.value).origin;
-    const granted = await browser.permissions.request({ origins: [`${origin}/*`] });
+    const permission = sitePermission(pageUrl.value);
+    if (!permission) throw new Error("Unsupported website URL");
+    const granted = await browser.permissions.request({ origins: [permission.pattern] });
     if (!granted) {
       status.value = "denied";
       return;

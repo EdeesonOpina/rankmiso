@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import { browser } from "wxt/browser";
 import { compareHtml, signalsFromAudit, type CompareRow } from "../../services/html-signals";
+import { sitePermission } from "../../services/page-access";
 import type { MessageKey } from "../../locales/en";
 import { useI18n } from "../../composables/useI18n";
 import type { AuditResult } from "../../types/audit";
@@ -66,26 +67,19 @@ async function compareFetched() {
   status.value = "";
   rows.value = null;
   hops.value = [];
-  let origin: string;
+  let originPattern: string;
   try {
-    const url = new URL(props.audit.page.url);
-    if (url.protocol !== "http:" && url.protocol !== "https:") {
-      status.value = t("compare.blocked");
-      return;
-    }
-    origin = url.origin;
+    const permission = sitePermission(props.audit.page.url);
+    if (!permission) throw new Error("Unsupported website URL");
+    originPattern = permission.pattern;
   } catch {
     status.value = t("compare.blocked");
     return;
   }
-  const originPattern = `${origin}/*`;
-  const already = await browser.permissions.contains({ origins: [originPattern] });
-  if (!already) {
-    const granted = await browser.permissions.request({ origins: [originPattern] });
-    if (!granted) {
-      status.value = t("compare.denied");
-      return;
-    }
+  const granted = await browser.permissions.request({ origins: [originPattern] });
+  if (!granted) {
+    status.value = t("compare.denied");
+    return;
   }
   controller?.abort();
   controller = new AbortController();

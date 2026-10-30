@@ -1,6 +1,18 @@
 # Changelog
 
-## 0.3.0 — prepared for release (2026-10-28)
+## 0.4.0 — submitted for store review (2026-10-30)
+
+- Add opt-in Automatic Website Checks with optional broad HTTP/HTTPS access, and retain Individual Website Access.
+- Add Smart Refresh for a fresh local snapshot and SEO audit without reloading the page.
+- Improve sidebar active-tab synchronization, navigation handling, permission feedback, and stale-result protection.
+- Enable Firefox Site Explorer through the shared bounded crawler with explicit Start/Stop, robots.txt, same-origin scope, redirect checks, and partial-result reporting.
+- Improve crawl cancellation, History comparability, link highlighting and cleanup, and sidebar-to-report navigation.
+- Use RankMiso’s head-only fox in the Score History empty state.
+- Keep Firefox standalone sitemap discovery and other Chromium-only remote checks unavailable.
+
+Submitted to the Chrome Web Store and Firefox Add-ons. v0.3.0 stays the published release until review completes.
+
+## 0.3.0 — published (2026-10-28)
 
 - Rebuild the popup as a 420px vertical-rail workspace with a dark page-health hero, compact finding rows, focus areas, and a pinned footer with Open full report and Sidebar. All 18 destinations have purpose-built layouts.
 - Rebuild the sidebar as a persistent narrow workbench with a 64px rail, and the full report as a desktop dashboard with a 232px rail and a two-column Overview. All three surfaces share one audit and one visual language, in light, dark, and system themes.

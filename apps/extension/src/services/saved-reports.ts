@@ -277,17 +277,30 @@ export function compareAudits(
 export function compareRecords(baseline: SavedReport, later: SavedReport): HistoryComparison {
   const before = baseline.comparison;
   const after = later.comparison;
-  const sameRules =
-    before.history != null &&
-    after.history != null &&
-    before.history.rulesetVersion === after.history.rulesetVersion;
+  const sameRules = sameRuleset(before.history, after.history);
+  const beforeMeasured = scoredCheckIds(before.history);
+  const afterMeasured = scoredCheckIds(after.history);
+  const sameMeasurements = sameIds(beforeMeasured, afterMeasured);
+  const beforeChecks = checkIds(before.history);
+  const afterChecks = checkIds(after.history);
+  const sameCheckSet = sameIds(beforeChecks, afterChecks);
   const coverageChanged = Boolean(
-    sameRules && before.history?.applicableChecks !== after.history?.applicableChecks,
+    sameRules &&
+    (before.history?.applicableChecks !== after.history?.applicableChecks ||
+      (beforeMeasured && afterMeasured && !sameMeasurements)),
   );
   return {
-    score: numberChange(before.score, after.score, sameRules && !coverageChanged),
-    errors: numberChange(before.history?.errors, after.history?.errors, sameRules),
-    warnings: numberChange(before.history?.warnings, after.history?.warnings, sameRules),
+    score: numberChange(
+      before.score,
+      after.score,
+      sameRules && sameMeasurements && !coverageChanged,
+    ),
+    errors: numberChange(before.history?.errors, after.history?.errors, sameRules && sameCheckSet),
+    warnings: numberChange(
+      before.history?.warnings,
+      after.history?.warnings,
+      sameRules && sameCheckSet,
+    ),
     coverageChanged,
     ...findingChanges(before, after, sameRules),
   };
@@ -318,11 +331,15 @@ export function categoryChange(
     (item) => item.category === category,
   );
   const afterRow = later.comparison.history?.categories?.find((item) => item.category === category);
-  const sameRules =
-    baseline.comparison.history?.rulesetVersion != null &&
-    baseline.comparison.history.rulesetVersion === later.comparison.history?.rulesetVersion &&
-    beforeRow?.applicableChecks === afterRow?.applicableChecks;
-  return numberChange(before.value, after.value, Boolean(sameRules));
+  const beforeHistory = baseline.comparison.history;
+  const afterHistory = later.comparison.history;
+  const beforeIds = scoredCheckIds(beforeHistory, category);
+  const afterIds = scoredCheckIds(afterHistory, category);
+  const comparable =
+    sameRuleset(beforeHistory, afterHistory) &&
+    beforeRow?.applicableChecks === afterRow?.applicableChecks &&
+    sameIds(beforeIds, afterIds);
+  return numberChange(before.value, after.value, comparable);
 }
 
 export function scoreConnects(previous: SavedReport, next: SavedReport): boolean {
@@ -465,6 +482,50 @@ export function normalizeSavedReport(value: unknown): SavedReport[] {
 
 function finiteCount(value: number | undefined): number | null {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+const SCORED_CATEGORIES = new Set<Category>([
+  "metadata",
+  "content",
+  "headings",
+  "links",
+  "images",
+  "technical",
+  "social",
+  "international",
+  "accessibility",
+]);
+
+function sameRuleset(before: HistoryDetail | undefined, after: HistoryDetail | undefined): boolean {
+  return before != null && after != null && before.rulesetVersion === after.rulesetVersion;
+}
+
+function checkIds(history: HistoryDetail | undefined): string[] | null {
+  if (!history?.findings) return null;
+  return history.findings.map(({ id }) => id).sort();
+}
+
+function scoredCheckIds(history: HistoryDetail | undefined, category?: string): string[] | null {
+  if (!history?.findings) return null;
+  return history.findings
+    .filter(
+      (finding) =>
+        (category === undefined
+          ? SCORED_CATEGORIES.has(finding.category)
+          : finding.category === category) &&
+        (finding.status === "PASS" || finding.status === "WARNING" || finding.status === "ERROR"),
+    )
+    .map(({ id }) => id)
+    .sort();
+}
+
+function sameIds(before: string[] | null, after: string[] | null): boolean {
+  return (
+    before != null &&
+    after != null &&
+    before.length === after.length &&
+    before.every((id, index) => id === after[index])
+  );
 }
 
 function numberChange(

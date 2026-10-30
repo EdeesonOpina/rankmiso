@@ -74,4 +74,49 @@ describe("page extraction", () => {
     expect(document.querySelector("[data-seo-toolkit-mark]")).toBeNull();
     expect(document.getElementById("seo-toolkit-highlight")).toBeNull();
   });
+
+  it("highlights only web URLs as external links", () => {
+    document.body.innerHTML = `
+      <a href="/inside">Inside</a>
+      <a href="https://other.example/outside">Outside</a>
+      <a href="mailto:hello@example.com">Email</a>
+      <a href="tel:+15551234567">Phone</a>
+      <a href="#section">Section</a>
+      <a href="javascript:void(0)">Script</a>
+    `;
+
+    const result = runPageTool("highlight", "external") as { highlighted: number };
+
+    expect(result.highlighted).toBe(1);
+    expect(
+      document
+        .querySelector('[href="https://other.example/outside"]')
+        ?.getAttribute("data-rankmiso-highlight"),
+    ).toBe("rankmiso:external");
+    expect(
+      document
+        .querySelector('[href="mailto:hello@example.com"]')
+        ?.hasAttribute("data-rankmiso-highlight"),
+    ).toBe(false);
+    runPageTool("clear");
+  });
+
+  it("preserves page-owned highlight marker attributes", () => {
+    document.body.innerHTML = `
+      <h1 data-seo-toolkit-mark="page-owned">Page marker</h1>
+      <h2>RankMiso marker</h2>
+    `;
+
+    const result = runPageTool("highlight", "headings") as { highlighted: number };
+
+    expect(result.highlighted).toBe(2);
+    expect(document.querySelector("h1")?.getAttribute("data-seo-toolkit-mark")).toBe("page-owned");
+    expect(document.querySelector("h1")?.getAttribute("data-rankmiso-highlight")).toBe(
+      "rankmiso:headings",
+    );
+    runPageTool("clear");
+    expect(document.querySelector("h1")?.getAttribute("data-seo-toolkit-mark")).toBe("page-owned");
+    expect(document.querySelector("h1")?.hasAttribute("data-rankmiso-highlight")).toBe(false);
+    expect(document.querySelector("h2")?.hasAttribute("data-rankmiso-highlight")).toBe(false);
+  });
 });

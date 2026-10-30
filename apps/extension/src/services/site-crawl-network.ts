@@ -27,7 +27,13 @@ export async function discoverSitemapUrls(
   signal: AbortSignal,
   fetcher: typeof fetch = fetch,
 ) {
-  const collection = await collectSitemaps({ pageUrl, signal, network: true, fetcher });
+  const collection = await collectSitemaps({
+    pageUrl,
+    signal,
+    network: true,
+    networkPurpose: "site-crawl",
+    fetcher,
+  });
   const fetched = collection.files.filter((file) => file.fetch === "fetched");
   const failed = collection.files.filter((file) => file.fetch === "failed");
   const urls = fetched.flatMap((file) => file.entries.map((entry) => entry.loc));
@@ -48,6 +54,18 @@ export async function fetchCrawlPage(
   signal: AbortSignal,
   fetcher: typeof fetch = fetch,
 ): Promise<FetchResult> {
+  if (signal.aborted) {
+    return {
+      status: null,
+      finalUrl: url,
+      contentType: "",
+      html: "",
+      hops: [],
+      error: "Stopped",
+      truncated: false,
+      retryable: false,
+    };
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CRAWL_LIMITS.timeoutMs);
   const onAbort = () => controller.abort();
@@ -73,6 +91,7 @@ export async function fetchCrawlPage(
         redirect: "manual",
         credentials: "omit",
         cache: "no-store",
+        referrerPolicy: "no-referrer",
         signal: controller.signal,
       });
       if (response.type === "opaqueredirect" || response.status === 0) {
@@ -156,24 +175,45 @@ async function readLimitedUrl(
   signal: AbortSignal,
   fetcher: typeof fetch,
 ) {
+  if (signal.aborted) return "aborted" as const;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), CRAWL_LIMITS.timeoutMs);
+  const onAbort = () => controller.abort();
+  signal.addEventListener("abort", onAbort);
   try {
-    const response = await fetcher(url, {
-      method: "GET",
-      redirect: "manual",
-      credentials: "omit",
-      cache: "no-store",
-      signal,
-    });
-    if (response.status >= 300 && response.status < 400) {
-      const next = crawlUrl(response.headers.get("location") ?? "", url);
-      await response.body?.cancel();
-      if (!next || !inCrawlScope(origin, next)) return "external" as const;
-      return readLimitedUrl(next, origin, signal, fetcher);
+    if (signal.aborted) onAbort();
+    let current = url;
+    for (let hop = 0; hop <= CRAWL_LIMITS.maxRedirects; hop += 1) {
+      if (controller.signal.aborted) return "aborted" as const;
+      const response = await fetcher(current, {
+        method: "GET",
+        redirect: "manual",
+        credentials: "omit",
+        cache: "no-store",
+        referrerPolicy: "no-referrer",
+        signal: controller.signal,
+      });
+      if (response.status >= 300 && response.status < 400) {
+        const next = crawlUrl(response.headers.get("location") ?? "", current);
+        await response.body?.cancel();
+        if (!next || !inCrawlScope(origin, next)) return "external" as const;
+        if (hop === CRAWL_LIMITS.maxRedirects) return null;
+        current = next;
+        continue;
+      }
+      const read = await readBody(response, 80_000);
+      return {
+        status: response.status,
+        type: response.headers.get("content-type"),
+        text: read.text,
+      };
     }
-    const read = await readBody(response, 80_000);
-    return { status: response.status, type: response.headers.get("content-type"), text: read.text };
+    return null;
   } catch {
-    return signal.aborted ? ("aborted" as const) : null;
+    return signal.aborted || controller.signal.aborted ? ("aborted" as const) : null;
+  } finally {
+    clearTimeout(timer);
+    signal.removeEventListener("abort", onAbort);
   }
 }
 

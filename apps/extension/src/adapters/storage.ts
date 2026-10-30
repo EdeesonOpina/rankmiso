@@ -2,6 +2,8 @@ import { browser } from "wxt/browser";
 import { appConfig } from "../config/app.config";
 import { themeConfig, type ThemePreference } from "../config/theme.config";
 
+export type InspectionMode = "automatic" | "individual";
+
 const allowed: ThemePreference[] = ["system", "light", "dark"];
 
 export async function readThemePreference(): Promise<ThemePreference> {
@@ -31,15 +33,32 @@ export async function clearStoredSettings(): Promise<void> {
   localStorage.removeItem(appConfig.themeKey);
   localStorage.removeItem(appConfig.navHintKey);
   localStorage.removeItem(appConfig.siteCrawlKey);
+  localStorage.removeItem(appConfig.inspectionModeKey);
   try {
     await browser.storage.local.remove([
       appConfig.themeKey,
       appConfig.pageSpeedKey,
       appConfig.navHintKey,
+      appConfig.inspectionModeKey,
     ]);
   } catch {
     // Extension storage is unavailable in unit tests and some restricted pages.
   }
+}
+
+export async function readInspectionMode(): Promise<InspectionMode | null> {
+  try {
+    const stored = await browser.storage.local.get(appConfig.inspectionModeKey);
+    const value = stored[appConfig.inspectionModeKey];
+    if (value === "automatic" || value === "individual") return value;
+  } catch {
+    // Extension storage is unavailable in isolated component tests.
+  }
+  return null;
+}
+
+export async function writeInspectionMode(mode: InspectionMode): Promise<void> {
+  await browser.storage.local.set({ [appConfig.inspectionModeKey]: mode });
 }
 
 export async function readNavHintDismissed(): Promise<boolean> {
