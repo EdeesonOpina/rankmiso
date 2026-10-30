@@ -149,18 +149,7 @@ pnpm dev
 
 **Rust owns the rules. Vue owns the screen.** The Rust crates stay named `seo-core`, `seo-rules`, `seo-scoring`, and `seo-wasm`.
 
-| Want to change…               | Look here                                                                |
-| ----------------------------- | ------------------------------------------------------------------------ |
-| Product name, tagline, assets | `apps/extension/src/config/brand.config.ts`                              |
-| Colors and type               | `packages/design-tokens/src/tokens.css`                                  |
-| Interface copy                | `apps/extension/src/locales/en.ts`                                       |
-| Replace the icon              | [docs/branding/asset-replacement.md](docs/branding/asset-replacement.md) |
-
-```bash
-pnpm brand:icons
-```
-
-That reads `apps/extension/public/brand/icon.png` and writes the 16, 32, 48, and 128 toolbar icons. Reload the extension after rebuilding. The current artwork is the fox sticker.
+Want to help? Start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Store screenshots, promo tiles, and the images in this README come from the [marketing pipeline](marketing/README.md).
 
