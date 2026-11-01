@@ -14,7 +14,9 @@ import {
   ArrowUpRight,
   Braces,
   Check,
+  CircleCheck,
   Clock,
+  Cpu,
   Download,
   FileText,
   Gauge,
@@ -64,6 +66,7 @@ import SitemapsView from "./SitemapsView.vue";
 import HistoryView from "./HistoryView.vue";
 import ExportView from "./ExportView.vue";
 import SettingsView from "./SettingsView.vue";
+import AIIntegrationsView from "./AIIntegrationsView.vue";
 
 const props = withDefaults(
   defineProps<{ surface: Surface; tabId?: number; initialSection?: string }>(),
@@ -112,6 +115,7 @@ const icons: Record<string, Component> = {
   sitemaps: Network,
   reports: Clock,
   export: Download,
+  "ai-integrations": Cpu,
   settings: Settings,
 };
 
@@ -133,6 +137,7 @@ const views: Record<string, Component> = {
   sitemaps: SitemapsView,
   reports: HistoryView,
   export: ExportView,
+  "ai-integrations": AIIntegrationsView,
   settings: SettingsView,
 };
 
@@ -144,6 +149,7 @@ const destinations = computed(() =>
       id: item.id,
       label: t(item.labelKey as MessageKey),
       short: t((item.shortLabelKey ?? item.labelKey) as MessageKey),
+      accessibleLabel: t((item.ariaLabelKey ?? item.labelKey) as MessageKey),
     })),
 );
 const section = ref(views[props.initialSection] ? props.initialSection : "overview");
@@ -154,6 +160,8 @@ const issueFocus = ref<IssueFocus | null>(null);
 const nav = ref<HTMLElement | null>(null);
 const workspace = ref<HTMLElement | null>(null);
 const toastText = ref("");
+const toastDescription = ref("");
+const toastTone = ref<"default" | "success">("default");
 const toastShown = ref(false);
 let toastTimer = 0;
 const canOpenSidebar = sidebarAvailable();
@@ -178,11 +186,20 @@ function go(id: string, focus?: IssueFocus) {
   if (views[id]) section.value = id;
 }
 
-function toast(message: string) {
+function toast(message: string, description = "", tone: "default" | "success" = "default") {
   toastText.value = message;
+  toastDescription.value = description;
+  toastTone.value = tone;
   toastShown.value = true;
   window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => (toastShown.value = false), 2400);
+  toastTimer = window.setTimeout(hideToast, 4000);
+}
+
+function hideToast() {
+  toastShown.value = false;
+  if (document.activeElement instanceof HTMLElement && document.activeElement.closest(".toast")) {
+    document.activeElement.blur();
+  }
 }
 
 async function copy(value: string) {
@@ -296,8 +313,8 @@ provide(workbenchKey, {
           type="button"
           class="nav-button"
           :data-nav="item.id"
-          :title="item.label"
-          :aria-label="item.label"
+          :title="item.accessibleLabel"
+          :aria-label="item.accessibleLabel"
           :aria-current="section === item.id ? 'page' : undefined"
           :tabindex="section === item.id ? 0 : -1"
           @click="go(item.id)"
@@ -482,7 +499,7 @@ provide(workbenchKey, {
         </p>
         <component
           :is="views[section]"
-          v-if="audit || section === 'settings'"
+          v-if="audit || section === 'settings' || section === 'ai-integrations'"
           :key="section"
           :audit="audit"
         />
@@ -512,7 +529,31 @@ provide(workbenchKey, {
       </footer>
     </div>
   </div>
-  <div class="toast" :class="{ active: toastShown }" role="status" aria-live="polite">
-    {{ toastText }}
+  <div
+    class="toast"
+    :class="{
+      active: toastShown,
+      'has-description': toastDescription,
+      'is-success': toastTone === 'success',
+    }"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+  >
+    <CircleCheck v-if="toastTone === 'success'" class="toast-icon" aria-hidden="true" />
+    <span class="toast-copy"
+      ><strong>{{ toastText }}</strong
+      ><small v-if="toastDescription">{{ toastDescription }}</small></span
+    >
+    <button
+      class="toast-dismiss"
+      type="button"
+      :tabindex="toastShown ? 0 : -1"
+      :aria-hidden="!toastShown"
+      :aria-label="t('action.dismiss')"
+      @click="hideToast"
+    >
+      ×
+    </button>
   </div>
 </template>

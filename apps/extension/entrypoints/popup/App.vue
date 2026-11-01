@@ -7,6 +7,7 @@ import { useI18n } from "../../src/composables/useI18n";
 import { useTheme } from "../../src/composables/useTheme";
 import { useAudit } from "../../src/composables/useAudit";
 import { flatNav } from "../../src/config/navigation.config";
+import { navigatePopupDestination } from "../../src/config/popup-navigation";
 import type { ThemePreference } from "../../src/config/theme.config";
 import type { MessageKey } from "../../src/locales/en";
 import PopupRail from "../../src/components/PopupRail.vue";
@@ -104,6 +105,7 @@ const destinations = computed(() =>
     id: item.id,
     label: t(item.labelKey as MessageKey),
     short: t((item.shortLabelKey ?? item.labelKey) as MessageKey),
+    accessibleLabel: t((item.ariaLabelKey ?? item.labelKey) as MessageKey),
   })),
 );
 const current = computed(
@@ -165,7 +167,11 @@ async function revokeAccess() {
 
 function go(id: string, check = "") {
   focusCheck.value = check;
-  pane.value = id;
+  navigatePopupDestination(
+    id,
+    (destination) => (pane.value = destination),
+    (section) => void openReport(section),
+  );
 }
 
 async function copy(value: string) {
@@ -198,10 +204,10 @@ async function openSidebarView() {
 }
 
 async function openReport(section = current.value as string) {
-  if (!tab.value?.id) return;
-  await browser.tabs.create({
-    url: browser.runtime.getURL(`/dashboard.html?tabId=${tab.value.id}&section=${section}`),
-  });
+  if (!tab.value?.id && section !== "ai-integrations") return;
+  const params = new URLSearchParams({ section });
+  if (tab.value?.id) params.set("tabId", String(tab.value.id));
+  await browser.tabs.create({ url: browser.runtime.getURL(`/dashboard.html?${params}`) });
   window.close();
 }
 

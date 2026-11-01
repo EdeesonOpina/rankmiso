@@ -23,7 +23,7 @@ export interface WorkbenchContext {
   automaticAccessGranted: Ref<boolean>;
   issueFocus: Ref<IssueFocus | null>;
   go: (section: string, focus?: IssueFocus) => void;
-  toast: (message: string) => void;
+  toast: (message: string, description?: string, tone?: "default" | "success") => void;
   copy: (value: string) => Promise<void>;
   highlight: (kind: string) => Promise<void>;
   clearMarks: () => Promise<void>;

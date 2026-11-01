@@ -94,8 +94,109 @@ export const messages = {
   "export.confirm": "Download this file?",
   "export.confirmAction": "Confirm",
   "export.cancel": "Cancel",
+  "mcp.shareAction": "Share with MCP",
+  "mcp.confirmTitle": "Share this audit with MCP?",
+  "mcp.confirmText":
+    "RankMiso will save a copy of this SEO audit to your local MCP companion so connected AI assistants can read it.",
+  "mcp.website": "Website",
+  "mcp.auditTime": "Audit time",
+  "mcp.auditType": "Audit type",
+  "mcp.fullAudit": "Full SEO audit",
+  "mcp.approxSize": "Approximate size",
+  "mcp.destination": "Destination",
+  "mcp.localCompanion": "Local RankMiso companion",
+  "mcp.clientPrivacy":
+    "RankMiso does not upload this audit to Miso servers. Your AI assistant may send shared findings to its model provider depending on its configuration.",
+  "mcp.confirmShare": "Share audit",
+  "mcp.sharing": "Sharing…",
+  "mcp.tooLarge":
+    "This audit is too large for the local browser message limit. Use the JSON export instead.",
+  "mcp.shared": "Audit saved locally and available to connected MCP clients.",
+  "mcp.shareFailedTitle": "Sharing Failed",
+  "mcp.shareFailed": "The audit could not be shared with the local companion.",
+  "mcp.permissionDenied": "Native Messaging permission was not granted. No audit was shared.",
+  "mcp.permissionWaiting":
+    "The browser permission decision is still pending. Approve or dismiss its prompt, then check again. No audit was shared.",
+  "mcp.pageUnavailable":
+    "The inspected page is no longer available. Refresh the audit before sharing.",
+  "mcp.pageChanged":
+    "The inspected tab has changed since this audit. Refresh the audit before sharing.",
+  "mcp.settingsTitle": "Local MCP integration",
+  "mcp.settingsText":
+    "Share only the audits you approve with a separately installed local companion.",
+  "mcp.statusTitle": "Companion status",
+  "mcp.stateReady": "Ready to check",
+  "mcp.statePermissionRequired": "Permission Required",
+  "mcp.stateAwaitingPermission": "Awaiting Permission",
+  "mcp.stateChecking": "Checking Companion…",
+  "mcp.stateConnected": "Connected",
+  "mcp.stateDisconnected": "Disconnected",
+  "mcp.stateNotInstalled": "Companion Not Found",
+  "mcp.stateConnectionFailed": "Connection Failed",
+  "mcp.stateReadyMessage":
+    "Local sharing is off. Enable it when you want RankMiso to check your companion.",
+  "mcp.stateReadyRecheckMessage":
+    "The last companion check expired. Check availability again when you need it.",
+  "mcp.statePermissionRequiredMessage":
+    "Grant Native Messaging permission so RankMiso can contact its local companion.",
+  "mcp.stateAwaitingPermissionMessage":
+    "Approve or dismiss the browser prompt. RankMiso will check the companion after approval. If the prompt is not visible, check extension permissions, then recheck the status.",
+  "mcp.stateCheckingMessage": "Checking the local MCP companion…",
+  "mcp.stateConnectedMessage": "Your local RankMiso companion is ready.",
+  "mcp.stateDisconnectedMessage":
+    "Local MCP sharing is disabled. Shared snapshots remain available locally.",
+  "mcp.stateNotInstalledMessage":
+    "Install the companion for your computer using README-INSTALL.md included with its download, then reopen AI Integrations to check the browser connection.",
+  "mcp.stateConnectionFailedMessage":
+    "The registered host could not start or respond. Re-run setup or check the local companion, then try again.",
+  "mcp.awaitingPermissionAction": "Waiting for permission…",
+  "mcp.permissionGranted": "Permission granted. Checking the local companion…",
+  "mcp.statusConnected":
+    "The local companion responded. Native requests close after each operation.",
+  "mcp.statusPermissionGranted": "Browser permission is available for local sharing.",
+  "mcp.statusNotConfigured":
+    "Grant permission when asked so RankMiso can contact the local companion.",
+  "mcp.checking": "Checking…",
+  "mcp.checkConnection": "Check companion",
+  "mcp.checkPermission": "Check permission status",
+  "mcp.enable": "Enable local sharing",
+  "mcp.disconnect": "Disconnect",
+  "mcp.disable": "Disable local sharing",
+  "mcp.connected": "The local RankMiso companion is available.",
+  "mcp.connectedToast": "Companion Connected",
+  "mcp.connectedToastText": "RankMiso can now share approved audits with your local companion.",
+  "mcp.sharedToast": "Audit Shared Successfully",
+  "mcp.sharedToastText": "Your SEO audit was saved locally.",
+  "ai.viewSharedAudits": "View Shared Audits",
+  "mcp.removedToast": "Audit Removed",
+  "mcp.removedToastText": "The snapshot was removed from local MCP storage.",
+  "mcp.notFound":
+    "The local companion could not be found. Check its installation and browser registration.",
+  "mcp.connectionError":
+    "RankMiso could not communicate with the local companion. Check its installation and try again.",
+  "mcp.disconnected":
+    "Local sharing disabled. Browser permission and shared audit files were left unchanged.",
+  "mcp.permissionRevoked":
+    "Native Messaging permission was revoked. Shared audit files remain in the local folder.",
+  "mcp.sharedAudits": "Shared audits",
+  "mcp.refreshList": "Refresh list",
+  "mcp.noSharedAudits": "No shared audits in the local companion yet.",
+  "mcp.previousPage": "Previous",
+  "mcp.nextPage": "Next",
+  "mcp.pageCount": "{first}–{last} of {total}",
+  "mcp.sharedWhen": "Shared {date}",
+  "mcp.analyzedWhen": "Analyzed {date}",
+  "mcp.snapshotLabel": "Snapshot · {id}",
+  "mcp.remove": "Remove",
+  "mcp.confirmRemove": "Confirm removal",
+  "mcp.removed":
+    "Shared audit removed. Previously retrieved information may still be retained by an AI client.",
+  "mcp.removeFailed": "The shared audit could not be removed.",
+  "mcp.deletionNote":
+    "Removing a file prevents future MCP retrieval. It cannot erase information already retrieved or retained by an AI client.",
   "action.copy": "Copy",
   "action.copied": "Copied",
+  "action.dismiss": "Dismiss notification",
   "action.clearHighlights": "Clear highlights",
   "state.loading": "Reading this page…",
   "state.empty": "Open a web page, then run the analysis.",
@@ -173,6 +274,8 @@ export const messages = {
   "nav.issues": "Issues",
   "nav.history": "History",
   "nav.export": "Export",
+  "nav.ai": "AI",
+  "nav.aiIntegrations": "AI Integrations",
   "nav.metadata": "Metadata",
   "nav.content": "Content",
   "nav.headings": "Headings",
@@ -193,6 +296,23 @@ export const messages = {
   "nav.site": "Site",
   "nav.sitemaps": "Sitemaps",
   "nav.settings": "Settings",
+  "ai.title": "AI Integrations",
+  "ai.description":
+    "Connect RankMiso to your local MCP companion and manage audits you choose to share.",
+  "ai.settingsLinkDescription": "Manage the local companion and shared SEO snapshots.",
+  "ai.open": "Open AI Integrations",
+  "ai.guideTitle": "How to Use MCP",
+  "ai.guideDescription":
+    "Learn how to install the companion, share SEO audits, and use them with your AI assistant.",
+  "ai.viewGuide": "View Guide",
+  "ai.companion": "Local MCP Companion",
+  "ai.companionDescription": "Manage the connection between RankMiso and your local companion.",
+  "ai.sharedCount": "{count} snapshots stored locally",
+  "ai.sharedCountUnavailable": "Connect the companion to see the snapshot count.",
+  "ai.sharedNeedsConnection": "Connect the local companion to view and manage shared snapshots.",
+  "ai.privacy": "Privacy & access",
+  "ai.privacyDescription":
+    "Sharing requires your approval, and snapshots stay on this device. RankMiso does not upload audits. AI clients may send retrieved content to their providers; deleting a snapshot stops future retrieval but cannot erase information already received.",
   "filter.all": "All",
   "filter.category": "Category",
   "filter.errors": "Errors",

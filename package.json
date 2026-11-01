@@ -16,6 +16,8 @@
     "bench:rules": "cargo bench -p seo-rules --bench analyze",
     "lint": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm --filter @rankmiso/extension lint && pnpm --filter @rankmiso/extension format",
     "build": "pnpm build:wasm && pnpm --filter @rankmiso/extension build",
+    "mcp:dev": "bash scripts/native-host/dev-session.sh",
+    "mcp:codex": "node scripts/native-host/codex-session.mjs",
     "dev": "pnpm --filter @rankmiso/extension dev",
     "marketing:capture": "pnpm --filter @rankmiso/marketing capture",
     "marketing:build": "pnpm --filter @rankmiso/marketing build",
