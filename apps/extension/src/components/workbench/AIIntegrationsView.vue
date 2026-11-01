@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, inject, onMounted, onUnmounted, ref } from "vue";
 import { BookOpen, CircleAlert, CircleCheck, CircleX, LoaderCircle } from "lucide-vue-next";
 import { browser } from "wxt/browser";
 import type { AuditResult } from "../../types/audit";
@@ -17,12 +17,19 @@ import {
   requestNativeMessagingPermission,
   type SharedAudit,
 } from "../../services/mcp-native-bridge";
-import { useWorkbench } from "./context";
+import { workbenchKey } from "./context";
 import PageHeading from "./PageHeading.vue";
 
 const { t } = useI18n();
-const { toast } = useWorkbench();
-defineProps<{ audit?: AuditResult | null }>();
+const workbench = inject(workbenchKey, null);
+const emit = defineEmits<{
+  toast: [message: string, description?: string, tone?: "default" | "success"];
+}>();
+const props = defineProps<{ audit?: AuditResult | null; hideHeading?: boolean }>();
+function toast(message: string, description?: string, tone?: "default" | "success") {
+  if (workbench) workbench.toast(message, description, tone);
+  else emit("toast", message, description, tone);
+}
 const guideUrl = browser.runtime.getURL("/mcp-guide.html");
 const mcpPermission = ref(false);
 const mcpPermissionPending = ref(false);
@@ -323,7 +330,12 @@ async function confirmRemove(snapshotId: string) {
 </script>
 
 <template>
-  <PageHeading :overline="t('wb.st.overline')" :title="t('ai.title')" :text="t('ai.description')" />
+  <PageHeading
+    v-if="!props.hideHeading"
+    :overline="t('wb.st.overline')"
+    :title="t('ai.title')"
+    :text="t('ai.description')"
+  />
   <section class="ai-guide-entry" aria-labelledby="ai-guide-title">
     <div>
       <h2 id="ai-guide-title">{{ t("ai.guideTitle") }}</h2>

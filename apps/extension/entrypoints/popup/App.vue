@@ -29,6 +29,7 @@ import SitemapsScreen from "../../src/components/popup/SitemapsScreen.vue";
 import HistoryScreen from "../../src/components/popup/HistoryScreen.vue";
 import ExportScreen from "../../src/components/popup/ExportScreen.vue";
 import SettingsScreen from "../../src/components/popup/SettingsScreen.vue";
+import AIIntegrationsView from "../../src/components/workbench/AIIntegrationsView.vue";
 
 const { t } = useI18n();
 const { preference, setPreference } = useTheme();
@@ -75,6 +76,7 @@ const screens = {
   sitemaps: SitemapsScreen,
   reports: HistoryScreen,
   export: ExportScreen,
+  "ai-integrations": AIIntegrationsView,
   settings: SettingsScreen,
 } as const;
 
@@ -97,6 +99,7 @@ const footLabel: Record<keyof typeof screens, MessageKey> = {
   sitemaps: "pm.foot.sitemaps",
   reports: "pm.foot.history",
   export: "pm.foot.export",
+  "ai-integrations": "ai.open",
   settings: "pm.foot.settings",
 };
 
@@ -124,6 +127,7 @@ const host = computed(() => {
   }
 });
 const pageTitle = computed(() => {
+  if (current.value === "ai-integrations") return t("ai.title");
   if (!audit.value) return t("state.empty");
   return audit.value.page.title || t("metadata.untitled");
 });
@@ -169,6 +173,7 @@ function go(id: string, check = "") {
   focusCheck.value = check;
   navigatePopupDestination(
     id,
+    id in screens,
     (destination) => (pane.value = destination),
     (section) => void openReport(section),
   );
@@ -261,17 +266,33 @@ const themeKey: Record<ThemePreference, MessageKey> = {
         </button>
       </header>
       <main id="main" ref="view" class="view" tabindex="-1">
-        <p v-if="status === 'loading' && !audit" class="note" role="status">
+        <p
+          v-if="current !== 'ai-integrations' && status === 'loading' && !audit"
+          class="note"
+          role="status"
+        >
           {{ t("state.loading") }}
         </p>
-        <p v-else-if="status === 'error'" class="note status-red" role="status">{{ error }}</p>
-        <p v-else-if="stale" class="note" role="status" style="margin-bottom: 14px">
+        <p
+          v-else-if="current !== 'ai-integrations' && status === 'error'"
+          class="note status-red"
+          role="status"
+        >
+          {{ error }}
+        </p>
+        <p
+          v-else-if="current !== 'ai-integrations' && stale"
+          class="note"
+          role="status"
+          style="margin-bottom: 14px"
+        >
           {{ t("state.stale") }}
         </p>
         <component
           :is="screens[current]"
-          v-if="audit"
+          v-if="audit || current === 'ai-integrations'"
           :audit="audit"
+          :hide-heading="current === 'ai-integrations'"
           :focus-id="focusCheck"
           :preference="preference"
           :inspection-mode="inspectionMode"
@@ -288,7 +309,12 @@ const themeKey: Record<ThemePreference, MessageKey> = {
         />
       </main>
       <footer class="foot">
-        <button type="button" class="main-btn" :disabled="!tab?.id" @click="openReport()">
+        <button
+          type="button"
+          class="main-btn"
+          :disabled="!tab?.id && current !== 'ai-integrations'"
+          @click="openReport()"
+        >
           {{ t(footLabel[current]) }} <span aria-hidden="true">↗</span>
         </button>
         <button
