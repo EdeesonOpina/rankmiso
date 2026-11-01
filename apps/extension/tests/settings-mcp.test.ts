@@ -66,7 +66,7 @@ const harness = vi.hoisted(() => {
 
 vi.mock("wxt/browser", () => ({ browser: harness.browser }));
 
-function workbench() {
+function workbench(go = vi.fn()) {
   return {
     [workbenchKey as symbol]: {
       preference: ref("system"),
@@ -77,6 +77,7 @@ function workbench() {
       setInspectionMode: vi.fn(),
       enableAutomaticChecks: vi.fn(),
       revokeAutomaticAccess: vi.fn(),
+      go,
     },
   };
 }
@@ -169,4 +170,18 @@ describe("MCP permission waiting state", () => {
     wrapper.unmount();
   });
 
+  it("navigates to AI Integrations from Settings", async () => {
+    const go = vi.fn();
+    const wrapper = mount(SettingsView, {
+      props: { audit: null },
+      global: { provide: workbench(go) },
+    });
+    await flushPromises();
+    const open = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Open AI Integrations");
+    await open?.trigger("click");
+    expect(go).toHaveBeenCalledWith("ai-integrations");
+    wrapper.unmount();
+  });
 });

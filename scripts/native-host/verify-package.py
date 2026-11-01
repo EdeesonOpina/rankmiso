@@ -3,6 +3,7 @@
 
 import hashlib
 import json
+import ntpath
 import os
 import shutil
 import stat
@@ -35,6 +36,22 @@ def safe_name(name):
     path = PurePosixPath(normalized)
     require(not path.is_absolute() and ".." not in path.parts, f"unsafe archive path: {name}")
     return normalized
+
+
+def same_path(left, right, windows=None):
+    left = os.fspath(left)
+    right = os.fspath(right)
+    if windows is None:
+        windows = os.name == "nt"
+    if windows:
+        def key(value):
+            value = ntpath.normcase(ntpath.normpath(value))
+            if value.startswith("\\\\?\\unc\\"):
+                return "\\\\" + value[8:]
+            return value[4:] if value.startswith("\\\\?\\") else value
+
+        return key(left) == key(right)
+    return os.path.realpath(left) == os.path.realpath(right)
 
 
 def extract_archive(archive, destination):
@@ -131,7 +148,10 @@ def validate_manifests(env, data_dir, installed_host):
     for browser, path in expected_manifests(env, data_dir).items():
         manifest = json.loads(path.read_text(encoding="utf-8"))
         require(manifest["name"] == HOST and manifest["type"] == "stdio", f"bad {browser} manifest")
-        require(Path(manifest["path"]).resolve() == installed_host.resolve(), f"bad {browser} executable path")
+        require(
+            same_path(manifest["path"], installed_host),
+            f"bad {browser} executable path: {manifest['path']!r} != {installed_host}",
+        )
         if browser == "chrome":
             require(manifest.get("allowed_origins") == [f"chrome-extension://{CHROME_ID}/"], "Chrome identity is not exact")
             require("allowed_extensions" not in manifest, "unexpected Chrome authorization field")
@@ -155,7 +175,7 @@ def validate_windows_registry(expected):
                 value, _ = winreg.QueryValueEx(key, None)
         except FileNotFoundError:
             raise RuntimeError(f"{browser} registry registration is missing")
-        require(Path(value).resolve() == expected[browser].resolve(), f"{browser} registry path is wrong")
+        require(same_path(value, expected[browser]), f"{browser} registry path is wrong")
 
 
 def require_windows_registry_keys_absent():
