@@ -16,9 +16,11 @@ import { useI18n } from "../../composables/useI18n";
 import { writeMcpIntegrationEnabled } from "../../adapters/storage";
 import { serializeAuditJson } from "../../services/export";
 import {
+  checkNativeCompanion,
   isNativeMessagingPermissionRequestPending,
   requestNativeMessagingPermission,
   hasNativeMessagingPermission,
+  NativeCompanionError,
   MAX_NATIVE_MESSAGE_BYTES,
   shareAudit,
 } from "../../services/mcp-native-bridge";
@@ -36,10 +38,27 @@ const shareFailed = ref(false);
 const shareSucceeded = ref(false);
 const mcpPermission = ref(false);
 const mcpPermissionPending = ref(false);
+const connectOpen = ref(false);
+const connectStatus = ref<
+  "checking" | "permission-required" | "awaiting-permission" | "not-installed" | "connection-failed"
+>("checking");
+const connectBusy = ref(false);
 const shareSnapshot = ref<AuditResult | null>(null);
 const shareButton = ref<HTMLButtonElement | null>(null);
 const shareDialog = ref<HTMLDialogElement | null>(null);
+const connectDialog = ref<HTMLDialogElement | null>(null);
 const shareConfirm = ref<HTMLButtonElement | null>(null);
+const connectAction = ref<HTMLButtonElement | null>(null);
+const connectStatusMessage = computed(() => {
+  const messages: Record<typeof connectStatus.value, MessageKey> = {
+    checking: "mcp.connectChecking",
+    "permission-required": "mcp.statePermissionRequiredMessage",
+    "awaiting-permission": "mcp.stateAwaitingPermissionMessage",
+    "not-installed": "mcp.connectNotInstalled",
+    "connection-failed": "mcp.stateConnectionFailedMessage",
+  };
+  return t(messages[connectStatus.value]);
+});
 const serializedSize = computed(() =>
   shareSnapshot.value
     ? new TextEncoder().encode(serializeAuditJson(shareSnapshot.value)).byteLength
@@ -122,7 +141,6 @@ async function openShareConfirmation() {
   shareSucceeded.value = false;
   try {
     shareSnapshot.value = JSON.parse(serializeAuditJson(props.audit)) as AuditResult;
-    mcpPermission.value = await hasNativeMessagingPermission();
     if (!tabId.value) throw new Error(t("mcp.pageUnavailable"));
     const current = await browser.tabs.get(tabId.value);
     if (!sameInspectedPage(current.url)) throw new Error(t("mcp.pageChanged"));
@@ -134,10 +152,118 @@ async function openShareConfirmation() {
       : t("mcp.pageUnavailable");
     return;
   }
-  shareOpen.value = true;
+  connectStatus.value = "checking";
+  connectOpen.value = true;
   await nextTick();
-  shareDialog.value?.showModal();
-  shareConfirm.value?.focus();
+  connectDialog.value?.showModal();
+  await checkShareConnection();
+}
+
+async function checkShareConnection() {
+  if (connectBusy.value) return;
+  connectBusy.value = true;
+  connectStatus.value = "checking";
+  try {
+    if (mcpPermissionPending.value || isNativeMessagingPermissionRequestPending()) {
+      mcpPermission.value = await hasNativeMessagingPermission();
+      if (!connectOpen.value) return;
+      if (!mcpPermission.value) {
+        connectStatus.value = "awaiting-permission";
+        return;
+      }
+      mcpPermissionPending.value = false;
+    } else {
+      mcpPermission.value = await hasNativeMessagingPermission();
+      if (!connectOpen.value) return;
+    }
+    if (!mcpPermission.value) {
+      connectStatus.value = "permission-required";
+      return;
+    }
+    await checkNativeCompanion(true);
+    if (!connectOpen.value) return;
+    connectDialog.value?.close();
+    connectOpen.value = false;
+    shareOpen.value = true;
+    await nextTick();
+    shareDialog.value?.showModal();
+    shareConfirm.value?.focus();
+  } catch (error) {
+    if (!connectOpen.value) return;
+    connectStatus.value =
+      error instanceof NativeCompanionError && error.code === "not-installed"
+        ? "not-installed"
+        : error instanceof NativeCompanionError && error.code === "permission-required"
+          ? "permission-required"
+          : "connection-failed";
+  } finally {
+    connectBusy.value = false;
+    if (connectOpen.value && connectStatus.value !== "checking") {
+      await nextTick();
+      connectAction.value?.focus();
+    }
+  }
+}
+
+async function connectBeforeShare() {
+  if (connectBusy.value) return;
+  if (
+    connectStatus.value === "permission-required" ||
+    connectStatus.value === "awaiting-permission"
+  ) {
+    connectBusy.value = true;
+    connectStatus.value = "checking";
+    try {
+      if (mcpPermissionPending.value || isNativeMessagingPermissionRequestPending()) {
+        mcpPermission.value = await hasNativeMessagingPermission();
+        if (!connectOpen.value) return;
+        if (!mcpPermission.value) {
+          connectStatus.value = "awaiting-permission";
+          return;
+        }
+        mcpPermissionPending.value = false;
+      } else {
+        const granted = await requestNativeMessagingPermission();
+        if (!connectOpen.value) return;
+        if (granted === null) {
+          mcpPermissionPending.value = true;
+          connectStatus.value = "awaiting-permission";
+          return;
+        }
+        if (!granted) {
+          connectStatus.value = "permission-required";
+          return;
+        }
+        mcpPermission.value = true;
+        try {
+          await writeMcpIntegrationEnabled(true);
+        } catch {
+          // Connection can still be checked if the preference cannot be persisted.
+        }
+      }
+    } catch {
+      connectStatus.value = "permission-required";
+      return;
+    } finally {
+      connectBusy.value = false;
+    }
+  }
+  await checkShareConnection();
+}
+
+function openAiIntegrations() {
+  connectDialog.value?.close();
+  connectOpen.value = false;
+  shareSnapshot.value = null;
+  go("ai-integrations");
+}
+
+async function cancelConnection() {
+  connectDialog.value?.close();
+  connectOpen.value = false;
+  shareSnapshot.value = null;
+  await nextTick();
+  shareButton.value?.focus();
 }
 
 async function cancelShare() {
@@ -263,12 +389,54 @@ async function shareConfirmed() {
       ref="shareButton"
       type="button"
       class="secondary"
-      :aria-expanded="shareOpen"
+      :aria-expanded="connectOpen || shareOpen"
       @click="openShareConfirmation"
     >
       <Share2 class="ic" aria-hidden="true" /> {{ t("mcp.shareAction") }}
     </button>
   </div>
+  <dialog
+    v-if="connectOpen"
+    ref="connectDialog"
+    class="confirm-box mcp-confirm"
+    aria-labelledby="mcp-connect-title"
+    aria-describedby="mcp-connect-description"
+    @cancel.prevent="cancelConnection"
+  >
+    <h2 id="mcp-connect-title">{{ t("mcp.connectBeforeShare") }}</h2>
+    <p id="mcp-connect-description" role="status" aria-live="polite">{{ connectStatusMessage }}</p>
+    <div class="actions-row">
+      <button
+        v-if="connectStatus !== 'checking'"
+        ref="connectAction"
+        type="button"
+        class="primary"
+        :disabled="connectBusy"
+        @click="connectBeforeShare"
+      >
+        {{
+          connectBusy
+            ? t("mcp.checking")
+            : connectStatus === "permission-required"
+              ? t("mcp.enable")
+              : connectStatus === "awaiting-permission"
+                ? t("mcp.checkPermission")
+                : t("mcp.checkConnection")
+        }}
+      </button>
+      <button
+        v-if="connectStatus !== 'checking'"
+        type="button"
+        class="secondary"
+        @click="openAiIntegrations"
+      >
+        {{ t("mcp.openAi") }}
+      </button>
+      <button type="button" class="secondary" @click="cancelConnection">
+        {{ t("export.cancel") }}
+      </button>
+    </div>
+  </dialog>
   <dialog
     v-if="shareOpen"
     ref="shareDialog"

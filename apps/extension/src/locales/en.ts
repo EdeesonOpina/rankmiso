@@ -95,6 +95,11 @@ export const messages = {
   "export.confirmAction": "Confirm",
   "export.cancel": "Cancel",
   "mcp.shareAction": "Share with MCP",
+  "mcp.connectBeforeShare": "Connect before sharing",
+  "mcp.connectChecking": "Checking your local RankMiso companion…",
+  "mcp.connectNotInstalled":
+    "RankMiso could not find the local companion. Install and register it, then check again.",
+  "mcp.openAi": "Open AI",
   "mcp.confirmTitle": "Share this audit with MCP?",
   "mcp.confirmText":
     "RankMiso will save a copy of this SEO audit to your local MCP companion so connected AI assistants can read it.",
