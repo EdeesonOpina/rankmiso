@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from "vue";
 import { browser } from "wxt/browser";
-import { ArrowDownToLine, ShieldCheck, Share2 } from "lucide-vue-next";
+import { ArrowDownToLine, CircleCheck, ShieldCheck, Share2 } from "lucide-vue-next";
 import type { AuditResult } from "../../types/audit";
 import {
   exportAuditJson,
@@ -58,6 +58,16 @@ const connectStatusMessage = computed(() => {
     "connection-failed": "mcp.stateConnectionFailedMessage",
   };
   return t(messages[connectStatus.value]);
+});
+const connectStatusTitle = computed(() => {
+  const titles: Record<typeof connectStatus.value, MessageKey> = {
+    checking: "mcp.stateChecking",
+    "permission-required": "mcp.statePermissionRequired",
+    "awaiting-permission": "mcp.stateAwaitingPermission",
+    "not-installed": "mcp.stateNotInstalled",
+    "connection-failed": "mcp.stateConnectionFailed",
+  };
+  return t(titles[connectStatus.value]);
 });
 const serializedSize = computed(() =>
   shareSnapshot.value
@@ -403,7 +413,7 @@ async function shareConfirmed() {
     aria-describedby="mcp-connect-description"
     @cancel.prevent="cancelConnection"
   >
-    <h2 id="mcp-connect-title">{{ t("mcp.connectBeforeShare") }}</h2>
+    <h2 id="mcp-connect-title">{{ connectStatusTitle }}</h2>
     <p id="mcp-connect-description" role="status" aria-live="polite">{{ connectStatusMessage }}</p>
     <div class="actions-row">
       <button
@@ -446,6 +456,9 @@ async function shareConfirmed() {
     @cancel.prevent="cancelShare"
   >
     <h2 id="mcp-share-title">{{ t("mcp.confirmTitle") }}</h2>
+    <p class="mcp-connection-ready" role="status">
+      <CircleCheck aria-hidden="true" /> {{ t("mcp.connectionReady") }}
+    </p>
     <p id="mcp-share-description">{{ t("mcp.confirmText") }}</p>
     <dl class="mcp-share-details">
       <div>

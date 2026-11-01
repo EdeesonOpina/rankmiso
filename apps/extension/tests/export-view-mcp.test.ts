@@ -160,6 +160,9 @@ describe("full report MCP sharing action", () => {
     await wrapper.get("dialog .primary").trigger("click");
     await vi.waitFor(() => expect(wrapper.text()).toContain("Share this audit with MCP?"));
     expect(wrapper.get("dialog").text()).toContain("https://example.test/path");
+    expect(wrapper.text()).toContain(
+      "Local companion connected. Review the audit details and confirm before sharing.",
+    );
     expect(wrapper.text()).toContain("Your AI assistant may send shared findings");
     expect(harness.browser.permissions.request).toHaveBeenCalledWith({
       permissions: ["nativeMessaging"],
@@ -202,13 +205,13 @@ describe("full report MCP sharing action", () => {
       expect(wrapper.text()).toContain("The registered host could not start or respond."),
     );
     expect(wrapper.text()).not.toContain("Share this audit with MCP?");
-    expect(wrapper.text()).toContain("Open AI");
+    expect(wrapper.text()).toContain("Open AI Integrations");
     expect(harness.requests).toEqual(["ping"]);
 
     const openAi = wrapper
       .get("dialog")
       .findAll("button")
-      .find((button) => button.text() === "Open AI");
+      .find((button) => button.text() === "Open AI Integrations");
     expect(openAi).toBeDefined();
     await openAi!.trigger("click");
     expect(navigation).toHaveBeenCalledWith("ai-integrations");
