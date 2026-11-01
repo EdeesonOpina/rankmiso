@@ -132,6 +132,16 @@ describe("MCP connection status", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  it("uses a compact enable label when AI Integrations is embedded in the popup", async () => {
+    harness.browser.permissions.contains.mockResolvedValue(false);
+    harness.bridge.hasNativeMessagingPermission.mockResolvedValue(false);
+    const wrapper = mount(AIIntegrationsView, { props: { hideHeading: true } });
+    await flushPromises();
+
+    expect(wrapper.get(".ai-companion-card .actions-row button.secondary").text()).toBe("Enable");
+    wrapper.unmount();
+  });
+
   it("keeps the local MCP guide available before the companion is connected", async () => {
     harness.bridge.hasNativeMessagingPermission.mockResolvedValue(false);
     harness.bridge.hasMcpAccessPermission.mockResolvedValue(false);

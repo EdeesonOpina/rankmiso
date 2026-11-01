@@ -378,10 +378,10 @@ async function confirmRemove(snapshotId: string) {
             mcpPermissionPending
               ? t("mcp.checkPermission")
               : !mcpPermission || mcpStatus === "permission-required"
-                ? t("mcp.enable")
+                ? t(props.hideHeading ? "mcp.enableCompact" : "mcp.enable")
                 : mcpEnabled
                   ? t("mcp.checkConnection")
-                  : t("mcp.enable")
+                  : t(props.hideHeading ? "mcp.enableCompact" : "mcp.enable")
           }}
         </button>
         <button
