@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import { CircleAlert, CircleCheck, CircleX, LoaderCircle } from "lucide-vue-next";
+import { BookOpen, CircleAlert, CircleCheck, CircleX, LoaderCircle } from "lucide-vue-next";
 import { browser } from "wxt/browser";
 import type { AuditResult } from "../../types/audit";
 import { readMcpIntegrationEnabled, writeMcpIntegrationEnabled } from "../../adapters/storage";
@@ -23,6 +23,7 @@ import PageHeading from "./PageHeading.vue";
 const { t } = useI18n();
 const { toast } = useWorkbench();
 defineProps<{ audit?: AuditResult | null }>();
+const guideUrl = browser.runtime.getURL("/mcp-guide.html");
 const mcpPermission = ref(false);
 const mcpPermissionPending = ref(false);
 const mcpEnabled = ref(false);
@@ -323,6 +324,16 @@ async function confirmRemove(snapshotId: string) {
 
 <template>
   <PageHeading :overline="t('wb.st.overline')" :title="t('ai.title')" :text="t('ai.description')" />
+  <section class="ai-guide-entry" aria-labelledby="ai-guide-title">
+    <div>
+      <h2 id="ai-guide-title">{{ t("ai.guideTitle") }}</h2>
+      <p>{{ t("ai.guideDescription") }}</p>
+    </div>
+    <a class="secondary ai-guide-link" :href="guideUrl" target="_blank" rel="noopener">
+      <BookOpen aria-hidden="true" />
+      {{ t("ai.viewGuide") }}
+    </a>
+  </section>
   <section class="ai-companion-card" aria-labelledby="ai-companion-title">
     <div class="section-heading">
       <div>

@@ -71,7 +71,10 @@ const harness = vi.hoisted(() => {
         remove: vi.fn(async () => undefined),
       },
     },
-    runtime: { getManifest: () => ({ version: "0.4.0" }) },
+    runtime: {
+      getManifest: () => ({ version: "0.4.0" }),
+      getURL: (path: string) => `chrome-extension://rankmiso/${path.replace(/^\//, "")}`,
+    },
   };
   const permissionAddedListeners = new Set<(permissions: { permissions?: string[] }) => void>();
   return {
@@ -124,6 +127,20 @@ describe("MCP connection status", () => {
   });
 
   afterEach(() => vi.restoreAllMocks());
+
+  it("keeps the local MCP guide available before the companion is connected", async () => {
+    harness.bridge.hasNativeMessagingPermission.mockResolvedValue(false);
+    const wrapper = mount(AIIntegrationsView, {
+      global: { provide: workbench() },
+    });
+    await flushPromises();
+
+    const guide = wrapper.get('a[href="chrome-extension://rankmiso/mcp-guide.html"]');
+    expect(guide.text()).toContain("View Guide");
+    expect(guide.attributes("target")).toBe("_blank");
+    expect(wrapper.find(".mcp-status").text()).toContain("Permission Required");
+    wrapper.unmount();
+  });
 
   it("shows permission required when the optional permission is absent", async () => {
     harness.bridge.hasNativeMessagingPermission.mockResolvedValue(false);

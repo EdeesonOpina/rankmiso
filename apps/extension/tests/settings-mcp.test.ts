@@ -33,6 +33,7 @@ const harness = vi.hoisted(() => {
     },
     runtime: {
       getManifest: () => ({ version: "0.4.0" }),
+      getURL: (path: string) => `chrome-extension://rankmiso/${path.replace(/^\//, "")}`,
       connectNative: vi.fn(() => ({
         onMessage: {
           addListener: (listener: (message: unknown) => void) => messageListeners.push(listener),

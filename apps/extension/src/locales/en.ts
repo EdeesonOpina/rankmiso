@@ -301,6 +301,10 @@ export const messages = {
     "Connect RankMiso to your local MCP companion and manage audits you choose to share.",
   "ai.settingsLinkDescription": "Manage the local companion and shared SEO snapshots.",
   "ai.open": "Open AI Integrations",
+  "ai.guideTitle": "How to Use MCP",
+  "ai.guideDescription":
+    "Learn how to install the companion, share SEO audits, and use them with your AI assistant.",
+  "ai.viewGuide": "View Guide",
   "ai.companion": "Local MCP Companion",
   "ai.companionDescription": "Manage the connection between RankMiso and your local companion.",
   "ai.sharedCount": "{count} snapshots stored locally",

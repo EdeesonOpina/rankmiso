@@ -4,7 +4,9 @@ The companion shares approved schema-v1 audits with the existing read-only MCP s
 
 ## Install
 
-No public companion download is available yet. Pull requests targeting `develop` run the **MCP companion artifacts** native build and installer checks on Linux, Windows, and both macOS architectures. Their archives are temporary GitHub Actions artifacts for review; they are not releases. A maintainer can also run the workflow manually to build preview artifacts. Manual dispatch appears only after the workflow is present on the repository's default branch (`master`); select the desired source branch for the run. Neither trigger publishes a release. Once an archive is provided, verify its SHA-256 sidecar, extract it, open a terminal in the extracted folder, and run:
+No public companion download is available yet. The full **MCP companion artifacts** matrix runs for pull requests targeting `master`; ordinary development pull requests targeting `develop` use the separate repository CI and do not run native packaging. A maintainer can also run the native workflow manually from an authorized branch. Manual dispatch appears only after the workflow exists on the repository's default branch (`master`); select the source branch in the Actions form, preferably `master` for release preparation. Manual artifact upload defaults off. If explicitly enabled, platform archives and SHA-256 sidecars are kept for one day. Neither automatic nor manual builds publish a release.
+
+When an official archive becomes available, verify its SHA-256 sidecar, extract it, open a terminal in the extracted folder, and run:
 
 | System | Command |
 | --- | --- |
@@ -64,5 +66,18 @@ Release archives are targeted for Windows x86_64, macOS Apple Silicon, macOS Int
 These signing steps are release requirements, separate from installer and runtime verification. No certificate, account, paid service, or release has been configured.
 
 If RankMiso reports **Companion Not Found**, rerun installation for the current user and browser, then restart the browser. If it reports **Connection Failed**, check that the installed host file exists and that the OS did not block it. If Chrome or Firefox permission is absent, enable local sharing from RankMiso and approve the browser prompt. MCP client setup and browser companion permission are separate steps.
+
+### PR #28 native CI artifact record
+
+The successful PR #28 matrix uploaded four temporary artifacts. Each downloaded bundle's GitHub Actions SHA-256 digest was checked, its included platform archive matched its SHA-256 sidecar, and its contents were verified. These are workflow artifacts, not GitHub Release assets:
+
+| Artifact | GitHub Actions artifact SHA-256 |
+| --- | --- |
+| `rankmiso-mcp-companion-v0.5.0-pr28-linux-x86_64` | `7b747d88d99584054375487aca3dee4e2a0a3197497fb91c23fd12974f80213a` |
+| `rankmiso-mcp-companion-v0.5.0-pr28-macos-aarch64` | `c580cc7e989441a052de9dd35219bb082ab98272f2a9918b46d6b58d10609385` |
+| `rankmiso-mcp-companion-v0.5.0-pr28-macos-x86_64` | `0ddcdf925d1e1da61995ee2c8303988fe2f374e60ad3e5df18d12a5034acee31` |
+| `rankmiso-mcp-companion-v0.5.0-pr28-windows-x86_64` | `fdffb1ca32fa9a534173ed96b7d19630303eeafc5c217a7f2a4618fd74a3aea0` |
+
+After review is complete, an authorized repository maintainer can remove only these four artifacts from the [PR #28 workflow run](https://github.com/EdeesonOpina/rankmiso/actions/runs/41270512259) using the run's artifact menu. Do not delete the workflow run or unrelated artifacts. This does not affect published GitHub Release assets; the PR #28 artifacts were never published as releases.
 
 Use the Codex and Claude Code MCP guides for current client commands: [Codex MCP](https://developers.openai.com/codex/mcp) and [Claude Code MCP](https://docs.anthropic.com/en/docs/claude-code/mcp).

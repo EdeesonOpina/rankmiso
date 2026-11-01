@@ -2588,6 +2588,38 @@ textarea.field {
   border-radius: 12px;
   background: var(--surface);
 }
+.ai-guide-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: -8px 0 18px;
+  padding: 8px 2px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.ai-guide-entry h2 {
+  margin: 0;
+  font-size: 12px;
+}
+.ai-guide-entry p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.ai-guide-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  min-height: 36px;
+  text-decoration: none;
+}
+.ai-guide-link svg {
+  width: 15px;
+  height: 15px;
+}
 .ai-companion-card {
   border-inline-start: 3px solid var(--accent);
 }
@@ -2691,6 +2723,9 @@ textarea.field {
   font-size: 11px;
 }
 @media (max-width: 600px) {
+  .ai-guide-entry {
+    align-items: flex-start;
+  }
   .ai-companion-card,
   .ai-section,
   .ai-privacy {
