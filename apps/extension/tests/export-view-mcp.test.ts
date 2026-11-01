@@ -179,7 +179,7 @@ describe("full report MCP sharing action", () => {
     await vi.waitFor(() => expect(wrapper.find("dialog").exists()).toBe(true));
     await wrapper.get("dialog .primary").trigger("click");
     await vi.waitFor(() =>
-      expect(wrapper.text()).toContain("Native Messaging permission was not granted"),
+      expect(wrapper.text()).toContain("required local connection or audit-data permission"),
     );
     expect(harness.browser.runtime.connectNative).not.toHaveBeenCalled();
     wrapper.unmount();

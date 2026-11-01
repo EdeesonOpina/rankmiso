@@ -97,6 +97,14 @@ const audit = {
 
 describe("RankMiso Native Messaging bridge", () => {
   beforeEach(() => {
+    delete (
+      harness.browser.runtime as typeof harness.browser.runtime & { getBrowserInfo?: unknown }
+    ).getBrowserInfo;
+    delete (
+      harness.browser.permissions as typeof harness.browser.permissions & {
+        getAll?: unknown;
+      }
+    ).getAll;
     harness.listeners.permissionRemoved.forEach((listener) =>
       listener({ permissions: ["nativeMessaging"] }),
     );
@@ -128,6 +136,46 @@ describe("RankMiso Native Messaging bridge", () => {
       }),
     );
     expect(response.snapshot.pageUrl).toBe("https://example.test/");
+  });
+
+  it("requires Firefox audit-data consent and requests it only from the user action", async () => {
+    const runtime = harness.browser.runtime as typeof harness.browser.runtime & {
+      getBrowserInfo?: () => Promise<unknown>;
+    };
+    const permissions = harness.browser.permissions as typeof harness.browser.permissions & {
+      getAll?: () => Promise<{ data_collection?: string[] }>;
+      request: (details: unknown) => Promise<boolean>;
+    };
+    runtime.getBrowserInfo = async () => ({ name: "Firefox" });
+    permissions.getAll = vi.fn(async () => ({
+      data_collection: ["browsingActivity", "websiteContent"],
+    }));
+
+    await expect(requestNativeMessagingPermission(true)).resolves.toBe(true);
+    expect(permissions.request).toHaveBeenNthCalledWith(1, {
+      permissions: ["nativeMessaging"],
+    });
+    expect(permissions.request).toHaveBeenNthCalledWith(2, {
+      data_collection: ["browsingActivity", "websiteContent"],
+    });
+    expect(
+      await (await import("../src/services/mcp-native-bridge")).hasSharedAuditDataPermission(),
+    ).toBe(true);
+  });
+
+  it("does not share or read audits when Firefox audit-data consent is missing", async () => {
+    const runtime = harness.browser.runtime as typeof harness.browser.runtime & {
+      getBrowserInfo?: () => Promise<unknown>;
+    };
+    const permissions = harness.browser.permissions as typeof harness.browser.permissions & {
+      getAll?: () => Promise<{ data_collection?: string[] }>;
+    };
+    runtime.getBrowserInfo = async () => ({ name: "Firefox" });
+    permissions.getAll = vi.fn(async () => ({ data_collection: [] }));
+
+    await expect(shareAudit(audit)).rejects.toMatchObject({ code: "permission-required" });
+    await expect(listSharedAudits()).rejects.toMatchObject({ code: "permission-required" });
+    expect(harness.browser.runtime.connectNative).not.toHaveBeenCalled();
   });
 
   it("uses Chrome's native runtime when the browser alias omits connectNative", async () => {

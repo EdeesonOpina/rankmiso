@@ -18,7 +18,7 @@ import { serializeAuditJson } from "../../services/export";
 import {
   isNativeMessagingPermissionRequestPending,
   requestNativeMessagingPermission,
-  hasNativeMessagingPermission,
+  hasMcpAccessPermission,
   MAX_NATIVE_MESSAGE_BYTES,
   shareAudit,
 } from "../../services/mcp-native-bridge";
@@ -122,7 +122,7 @@ async function openShareConfirmation() {
   shareSucceeded.value = false;
   try {
     shareSnapshot.value = JSON.parse(serializeAuditJson(props.audit)) as AuditResult;
-    mcpPermission.value = await hasNativeMessagingPermission();
+    mcpPermission.value = await hasMcpAccessPermission();
     if (!tabId.value) throw new Error(t("mcp.pageUnavailable"));
     const current = await browser.tabs.get(tabId.value);
     if (!sameInspectedPage(current.url)) throw new Error(t("mcp.pageChanged"));
@@ -178,7 +178,7 @@ async function shareConfirmed() {
     // Invoke the permission request before awaiting anything so browsers retain
     // the confirming button's user gesture.
     if (mcpPermissionPending.value || isNativeMessagingPermissionRequestPending()) {
-      mcpPermission.value = await hasNativeMessagingPermission();
+      mcpPermission.value = await hasMcpAccessPermission();
       if (!mcpPermission.value) {
         if (isNativeMessagingPermissionRequestPending()) {
           mcpPermissionPending.value = true;
@@ -191,7 +191,7 @@ async function shareConfirmed() {
       }
       mcpPermissionPending.value = false;
     }
-    const granted = mcpPermission.value || (await requestNativeMessagingPermission());
+    const granted = mcpPermission.value || (await requestNativeMessagingPermission(true));
     if (granted === null) {
       mcpPermissionPending.value = true;
       shareMessage.value = t("mcp.permissionWaiting");

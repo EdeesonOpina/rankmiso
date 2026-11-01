@@ -14,7 +14,7 @@ When an official archive becomes available, verify its SHA-256 sidecar, extract 
 | macOS Apple Silicon or Intel | `./rankmiso-setup install` |
 | Linux x86_64 | `./rankmiso-setup install` |
 
-The installer is per-user and requires no administrator privileges. It installs the MCP server, Native Messaging host and setup utility, registers the exact RankMiso identities with Chrome and Firefox, and creates private local audit storage. It does not grant the extension's optional Native Messaging permission. Open RankMiso → **AI** and enable local sharing to grant that permission.
+The installer is per-user and requires no administrator privileges. It installs the MCP server, Native Messaging host and setup utility, registers the exact RankMiso identities with Chrome and Firefox, and creates private local audit storage. It does not grant browser permissions. Open RankMiso → **AI** and enable local sharing to approve Native Messaging; Firefox also requests optional consent for the page address and website content included in shared audits.
 
 The public Chrome extension ID is `gdklhfalmmahhgimegjlfnhmacimeonl`; Firefox uses `rankmiso@rankmiso.extension`. No wildcard authorization is used.
 

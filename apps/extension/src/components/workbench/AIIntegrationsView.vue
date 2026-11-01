@@ -8,7 +8,7 @@ import { useI18n } from "../../composables/useI18n";
 import type { MessageKey } from "../../locales/en";
 import {
   checkNativeCompanion,
-  hasNativeMessagingPermission,
+  hasMcpAccessPermission,
   isNativeMessagingPermissionRequestPending,
   listSharedAudits,
   MCP_STATUS_FRESH_MS,
@@ -77,8 +77,11 @@ const sharedOffset = ref(0);
 const sharedTotal = ref(0);
 const sharedNextOffset = ref<number | null>(null);
 
-const permissionRemoved = (permissions: { permissions?: string[] }) => {
-  if (!permissions.permissions?.includes("nativeMessaging")) return;
+const permissionRemoved = (permissions: { permissions?: string[]; data_collection?: string[] }) => {
+  const auditDataPermissionRemoved = permissions.data_collection?.some((permission) =>
+    ["browsingActivity", "websiteContent"].includes(permission),
+  );
+  if (!permissions.permissions?.includes("nativeMessaging") && !auditDataPermissionRemoved) return;
   permissionRevision++;
   window.clearTimeout(connectionFreshnessTimer);
   mcpPermission.value = false;
@@ -89,20 +92,26 @@ const permissionRemoved = (permissions: { permissions?: string[] }) => {
   sharedNextOffset.value = null;
   mcpMessage.value = t("mcp.permissionRevoked");
 };
-const permissionAdded = (permissions: { permissions?: string[] }) => {
-  if (!permissions.permissions?.includes("nativeMessaging")) return;
-  const resumeAfterGrant = mcpPermissionPending.value && !mcpBusy.value;
-  mcpPermission.value = true;
-  mcpPermissionPending.value = false;
-  if (resumeAfterGrant) {
-    mcpEnabled.value = true;
-    void writeMcpIntegrationEnabled(true);
-  }
-  if (!mcpBusy.value) {
-    if (resumeAfterGrant) void checkMcpConnection(false, true);
-    else if (mcpEnabled.value) void checkMcpConnection();
-    else mcpStatus.value = "ready";
-  }
+const permissionAdded = (permissions: { permissions?: string[]; data_collection?: string[] }) => {
+  const auditDataPermissionAdded = permissions.data_collection?.some((permission) =>
+    ["browsingActivity", "websiteContent"].includes(permission),
+  );
+  if (!permissions.permissions?.includes("nativeMessaging") && !auditDataPermissionAdded) return;
+  void hasMcpAccessPermission().then((granted) => {
+    if (!granted) return;
+    const resumeAfterGrant = mcpPermissionPending.value && !mcpBusy.value;
+    mcpPermission.value = true;
+    mcpPermissionPending.value = false;
+    if (resumeAfterGrant) {
+      mcpEnabled.value = true;
+      void writeMcpIntegrationEnabled(true);
+    }
+    if (!mcpBusy.value) {
+      if (resumeAfterGrant) void checkMcpConnection(false, true);
+      else if (mcpEnabled.value) void checkMcpConnection();
+      else mcpStatus.value = "ready";
+    }
+  });
 };
 const onTabActivated = () => {
   if (mcpEnabled.value && mcpStatus.value === "ready" && !mcpBusy.value) {
@@ -131,7 +140,7 @@ function formatAuditTimestamp(value: string): string {
 async function initializeMcp() {
   const currentPermissionRevision = permissionRevision;
   mcpEnabled.value = await readMcpIntegrationEnabled();
-  mcpPermission.value = await hasNativeMessagingPermission();
+  mcpPermission.value = await hasMcpAccessPermission();
   if (currentPermissionRevision !== permissionRevision) return;
   if (!mcpPermission.value) {
     mcpStatus.value = "permission-required";
@@ -155,7 +164,7 @@ async function checkMcpConnection(requestPermission = false, notifyOnSuccess = f
   sharedNextOffset.value = null;
   try {
     if (mcpPermissionPending.value) {
-      mcpPermission.value = await hasNativeMessagingPermission();
+      mcpPermission.value = await hasMcpAccessPermission();
       if (!mcpPermission.value) {
         if (isNativeMessagingPermissionRequestPending()) {
           mcpStatus.value = "awaiting-permission";
@@ -170,9 +179,9 @@ async function checkMcpConnection(requestPermission = false, notifyOnSuccess = f
       mcpPermissionPending.value = false;
     } else if (!mcpPermission.value && requestPermission) {
       mcpStatus.value = "awaiting-permission";
-      const granted = await requestNativeMessagingPermission();
+      const granted = await requestNativeMessagingPermission(true);
       if (granted === null) {
-        mcpPermission.value = await hasNativeMessagingPermission();
+        mcpPermission.value = await hasMcpAccessPermission();
         if (!mcpPermission.value) {
           mcpPermissionPending.value = true;
           mcpStatus.value = "awaiting-permission";
@@ -193,7 +202,7 @@ async function checkMcpConnection(requestPermission = false, notifyOnSuccess = f
       mcpStatus.value = "permission-required";
       return;
     }
-    if (!mcpPermission.value || !(await hasNativeMessagingPermission())) {
+    if (!mcpPermission.value || !(await hasMcpAccessPermission())) {
       mcpPermission.value = false;
       mcpStatus.value = "permission-required";
       mcpMessage.value = t("mcp.permissionDenied");
