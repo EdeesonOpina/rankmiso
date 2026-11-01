@@ -20,6 +20,7 @@ const {
   setInspectionMode,
   enableAutomaticChecks,
   revokeAutomaticAccess,
+  go,
 } = useWorkbench();
 const version = browser.runtime.getManifest().version;
 const note = ref("");
@@ -48,6 +49,15 @@ function revokeAccess() {
 
 <template>
   <PageHeading :overline="t('wb.st.overline')" :title="t('nav.settings')" :text="t('wb.st.text')" />
+  <div class="settings-link-card">
+    <div>
+      <strong>{{ t("ai.title") }}</strong>
+      <small>{{ t("ai.settingsLinkDescription") }}</small>
+    </div>
+    <button type="button" class="secondary" @click="go('ai-integrations')">
+      {{ t("ai.open") }}
+    </button>
+  </div>
   <div class="section-heading">
     <div>
       <h2>{{ t("settings.theme") }}</h2>

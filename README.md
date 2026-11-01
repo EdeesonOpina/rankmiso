@@ -74,6 +74,10 @@ Point the fox at a website and press **Start crawl**. It stays on that one origi
 
 Save a report when you want a before and after. Saved comparisons stay on your device, and RankMiso only saves when you ask it to.
 
+### 🤖 A Little AI Seasoning — RankMiso MCP
+
+**Development preview for v0.5.0:** Want to bring your SEO findings into Claude Code or Codex? The RankMiso development build can share an approved audit directly with the local Rust MCP companion, which keeps the existing export workflow too. No Miso account, no cloud backend, and no automatic browser access. See the [MCP setup guide](docs/mcp/README.md). This integration is not included in the published v0.4.0 extension.
+
 > [!NOTE]
 > Firefox doesn't have everything yet. Standalone sitemap discovery, PageSpeed Insights, and some optional remote technical checks are Chromium only. See [browser compatibility](docs/browser-support/compatibility.md).
 
@@ -163,7 +167,7 @@ Store screenshots, promo tiles, and the images in this README come from the [mar
 - [Privacy](PRIVACY.md)
 - [Contributing](CONTRIBUTING.md)
 - [Using the name and fox](TRADEMARKS.md)
-- [Roadmap](docs/development/implementation-plan.md). MCP integration is a future plan; none ships today.
+- [Roadmap](docs/development/implementation-plan.md) and [MCP setup](docs/mcp/README.md).
 
 ## License
 

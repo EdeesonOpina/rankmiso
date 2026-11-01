@@ -7,6 +7,7 @@ export const appConfig = {
   pageSpeedKey: "rankmiso.pageSpeedApiKey",
   navHintKey: "rankmiso.navHintDismissed",
   inspectionModeKey: "rankmiso.inspectionMode",
+  mcpIntegrationKey: "rankmiso.mcpIntegrationEnabled",
   siteCrawlKey: "rankmiso.siteCrawl",
   maxStoredReports: 20,
 } as const;

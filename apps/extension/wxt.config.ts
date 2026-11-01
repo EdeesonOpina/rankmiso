@@ -27,7 +27,7 @@ export default defineConfig({
       ...permissionsConfig.required.map((permission) => permission.name),
       ...(browser === "firefox" ? [] : ["sidePanel"]),
     ],
-    optional_permissions: ["tabs"],
+    optional_permissions: ["tabs", "nativeMessaging"],
     // Runtime requests still name a single selected scheme and hostname.
     optional_host_permissions: [...permissionsConfig.optionalHosts],
     content_security_policy: {

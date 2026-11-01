@@ -4,6 +4,19 @@ import { themeConfig, type ThemePreference } from "../config/theme.config";
 
 export type InspectionMode = "automatic" | "individual";
 
+export async function readMcpIntegrationEnabled(): Promise<boolean> {
+  try {
+    const stored = await browser.storage.local.get(appConfig.mcpIntegrationKey);
+    return stored[appConfig.mcpIntegrationKey] === true;
+  } catch {
+    return false;
+  }
+}
+
+export async function writeMcpIntegrationEnabled(enabled: boolean): Promise<void> {
+  await browser.storage.local.set({ [appConfig.mcpIntegrationKey]: enabled });
+}
+
 const allowed: ThemePreference[] = ["system", "light", "dark"];
 
 export async function readThemePreference(): Promise<ThemePreference> {
@@ -40,6 +53,7 @@ export async function clearStoredSettings(): Promise<void> {
       appConfig.pageSpeedKey,
       appConfig.navHintKey,
       appConfig.inspectionModeKey,
+      appConfig.mcpIntegrationKey,
     ]);
   } catch {
     // Extension storage is unavailable in unit tests and some restricted pages.
