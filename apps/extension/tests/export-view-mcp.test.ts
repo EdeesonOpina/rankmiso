@@ -14,6 +14,8 @@ const harness = vi.hoisted(() => {
     added: Array<(permissions: { permissions?: string[] }) => void>;
     removed: Array<(permissions: { permissions?: string[] }) => void>;
   } = { added: [], removed: [] };
+  const requests: string[] = [];
+  let companionStatus = "ready";
   const browser = {
     permissions: {
       contains: vi.fn(async () => true),
@@ -52,23 +54,27 @@ const harness = vi.hoisted(() => {
             listeners.disconnect = listeners.disconnect.filter((item) => item !== callback);
           },
         },
-        postMessage: vi.fn((request: { requestId: string }) => {
+        postMessage: vi.fn((request: { requestId: string; type: string }) => {
+          requests.push(request.type);
           queueMicrotask(() =>
             listeners.message.forEach((callback) =>
               callback({
                 protocolVersion: 1,
                 requestId: request.requestId,
                 ok: true,
-                result: {
-                  snapshot: {
-                    snapshotId: "rankmiso-shared-123-0",
-                    pageUrl: "https://example.test/path",
-                    pageTitle: "Test title",
-                    analyzedAt: "2026-10-31T12:00:00Z",
-                    sharedAtUnixMs: 1,
-                    auditType: "audit",
-                  },
-                },
+                result:
+                  request.type === "ping"
+                    ? { status: companionStatus }
+                    : {
+                        snapshot: {
+                          snapshotId: "rankmiso-shared-123-0",
+                          pageUrl: "https://example.test/path",
+                          pageTitle: "Test title",
+                          analyzedAt: "2026-10-31T12:00:00Z",
+                          sharedAtUnixMs: 1,
+                          auditType: "audit",
+                        },
+                      },
               }),
             ),
           );
@@ -77,7 +83,15 @@ const harness = vi.hoisted(() => {
       })),
     },
   };
-  return { browser, listeners, permissionListeners };
+  return {
+    browser,
+    listeners,
+    permissionListeners,
+    requests,
+    setCompanionStatus: (status: string) => {
+      companionStatus = status;
+    },
+  };
 });
 
 vi.mock("wxt/browser", () => ({ browser: harness.browser }));
@@ -88,12 +102,13 @@ const testAudit = {
   page: { url: "https://example.test/path", title: "Test title", language: "en" },
 } as AuditResult;
 const toastMessage = vi.fn();
+const navigation = vi.fn();
 
 function mountView() {
   const context = {
     tabId: ref(9),
     toast: toastMessage,
-    go: vi.fn(),
+    go: navigation,
   } as unknown as WorkbenchContext;
   return mount(ExportView, {
     props: { audit: testAudit },
@@ -109,7 +124,10 @@ describe("full report MCP sharing action", () => {
       .mockReset()
       .mockResolvedValue({ id: 9, url: "https://example.test/path" });
     harness.browser.runtime.connectNative.mockClear();
+    harness.requests.length = 0;
+    harness.setCompanionStatus("ready");
     toastMessage.mockClear();
+    navigation.mockClear();
     harness.listeners.message = [];
     harness.listeners.disconnect = [];
     harness.permissionListeners.added = [];
@@ -127,7 +145,7 @@ describe("full report MCP sharing action", () => {
     }
   });
 
-  it("requires explicit confirmation and completes a local share", async () => {
+  it("connects first, then requires explicit confirmation and completes a local share", async () => {
     harness.browser.permissions.contains.mockResolvedValue(false);
     harness.browser.permissions.request.mockImplementation(async () => {
       harness.browser.permissions.contains.mockResolvedValue(true);
@@ -135,11 +153,21 @@ describe("full report MCP sharing action", () => {
     });
     const wrapper = mountView();
     await wrapper.get(".mcp-share-action button").trigger("click");
-    await vi.waitFor(() => expect(wrapper.find("dialog").exists()).toBe(true));
-    expect(wrapper.get("dialog").text()).toContain("https://example.test/path");
-    expect(wrapper.text()).toContain("Your AI assistant may send shared findings");
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Grant Native Messaging permission"));
+    expect(wrapper.text()).not.toContain("Share this audit with MCP?");
+    expect(wrapper.text()).toContain("Grant Native Messaging permission");
     expect(harness.browser.permissions.request).not.toHaveBeenCalled();
-    expect(harness.browser.runtime.connectNative).not.toHaveBeenCalled();
+    await wrapper.get("dialog .primary").trigger("click");
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Share this audit with MCP?"));
+    expect(wrapper.get("dialog").text()).toContain("https://example.test/path");
+    expect(wrapper.text()).toContain(
+      "Local companion connected. Review the audit details and confirm before sharing.",
+    );
+    expect(wrapper.text()).toContain("Your AI assistant may send shared findings");
+    expect(harness.browser.permissions.request).toHaveBeenCalledWith({
+      permissions: ["nativeMessaging"],
+    });
+    expect(harness.requests).toEqual(["ping"]);
     await wrapper.get("dialog .primary").trigger("click");
     await vi.waitFor(() =>
       expect(toastMessage).toHaveBeenCalledWith(
@@ -148,10 +176,8 @@ describe("full report MCP sharing action", () => {
         "success",
       ),
     );
-    expect(harness.browser.permissions.request).toHaveBeenCalledWith({
-      permissions: ["nativeMessaging"],
-    });
-    expect(harness.browser.runtime.connectNative).toHaveBeenCalledOnce();
+    expect(harness.browser.permissions.request).toHaveBeenCalledTimes(1);
+    expect(harness.requests).toEqual(["ping", "share_audit"]);
     expect(harness.browser.storage.local.set).toHaveBeenCalledWith({
       "rankmiso.mcpIntegrationEnabled": true,
     });
@@ -159,15 +185,46 @@ describe("full report MCP sharing action", () => {
     wrapper.unmount();
   });
 
-  it("cancels without permission or native process access", async () => {
+  it("cancels after checking the companion without sharing", async () => {
     const wrapper = mountView();
     await wrapper.get(".mcp-share-action button").trigger("click");
-    await vi.waitFor(() => expect(wrapper.find("dialog").exists()).toBe(true));
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Share this audit with MCP?"));
     await wrapper.get("dialog .secondary").trigger("click");
     await nextTick();
     expect(wrapper.find("dialog").exists()).toBe(false);
     expect(harness.browser.permissions.request).not.toHaveBeenCalled();
-    expect(harness.browser.runtime.connectNative).not.toHaveBeenCalled();
+    expect(harness.requests).toEqual(["ping"]);
+    wrapper.unmount();
+  });
+
+  it("shows a connection modal instead of the share confirmation when the companion is unavailable", async () => {
+    harness.setCompanionStatus("unavailable");
+    const wrapper = mountView();
+    await wrapper.get(".mcp-share-action button").trigger("click");
+    await vi.waitFor(() =>
+      expect(wrapper.text()).toContain("The registered host could not start or respond."),
+    );
+    expect(wrapper.text()).not.toContain("Share this audit with MCP?");
+    expect(wrapper.text()).toContain("Open AI Integrations");
+    expect(harness.requests).toEqual(["ping"]);
+
+    const openAi = wrapper
+      .get("dialog")
+      .findAll("button")
+      .find((button) => button.text() === "Open AI Integrations");
+    expect(openAi).toBeDefined();
+    await openAi!.trigger("click");
+    expect(navigation).toHaveBeenCalledWith("ai-integrations");
+    expect(wrapper.find("dialog").exists()).toBe(false);
+
+    await wrapper.get(".mcp-share-action button").trigger("click");
+    await vi.waitFor(() =>
+      expect(wrapper.text()).toContain("The registered host could not start or respond."),
+    );
+    harness.setCompanionStatus("ready");
+    await wrapper.get("dialog .primary").trigger("click");
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Share this audit with MCP?"));
+    expect(harness.requests).toEqual(["ping", "ping", "ping"]);
     wrapper.unmount();
   });
 
@@ -176,12 +233,11 @@ describe("full report MCP sharing action", () => {
     harness.browser.permissions.request.mockResolvedValue(false);
     const wrapper = mountView();
     await wrapper.get(".mcp-share-action button").trigger("click");
-    await vi.waitFor(() => expect(wrapper.find("dialog").exists()).toBe(true));
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Grant Native Messaging permission"));
     await wrapper.get("dialog .primary").trigger("click");
-    await vi.waitFor(() =>
-      expect(wrapper.text()).toContain("Native Messaging permission was not granted"),
-    );
-    expect(harness.browser.runtime.connectNative).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Grant Native Messaging permission"));
+    expect(wrapper.text()).not.toContain("Share this audit with MCP?");
+    expect(harness.requests).toEqual([]);
     wrapper.unmount();
   });
 
@@ -195,11 +251,11 @@ describe("full report MCP sharing action", () => {
 
     try {
       await wrapper.get(".mcp-share-action button").trigger("click");
-      await vi.waitFor(() => expect(wrapper.find("dialog").exists()).toBe(true));
+      await vi.waitFor(() => expect(wrapper.text()).toContain("Grant Native Messaging permission"));
       await wrapper.get("dialog .primary").trigger("click");
       await vi.advanceTimersByTimeAsync(10_000);
       await nextTick();
-      expect(wrapper.text()).toContain("The browser permission decision is still pending.");
+      expect(wrapper.text()).toContain("Approve or dismiss the browser prompt.");
 
       await wrapper.get("dialog .primary").trigger("click");
       await nextTick();

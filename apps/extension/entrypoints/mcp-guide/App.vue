@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { browser } from "wxt/browser";
-import { ArrowLeft, BookOpen } from "lucide-vue-next";
+import { ArrowLeft, ArrowUpRight, BookOpen } from "lucide-vue-next";
 
 const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
 </script>
@@ -20,9 +20,18 @@ const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
     </header>
 
     <p class="mcp-guide-notice" role="note">
-      Public companion downloads are not available yet. The published v0.4.0 extension does not
-      include MCP. Do not install temporary CI artifacts as public software.
+      MCP is part of RankMiso v0.5.0. The optional companion will be available from the official
+      RankMiso product page when its release packages are published and verified. Do not install
+      temporary CI artifacts as public software.
     </p>
+    <a
+      class="mcp-guide-site-link"
+      href="https://misoecosystem.com/products/rankmiso/#mcp"
+      target="_blank"
+      rel="noreferrer noopener"
+    >
+      View official companion downloads and setup <ArrowUpRight aria-hidden="true" />
+    </a>
 
     <section>
       <h2>What MCP does</h2>
@@ -41,8 +50,9 @@ const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
     <section>
       <h2>1. Install the companion</h2>
       <p>
-        When the official companion download is released, download the package for your system,
-        verify its SHA-256 checksum, and extract it. Open a terminal in the extracted folder:
+        Use RankMiso v0.5.0 or later. When the official companion package is available, download the
+        package for your system, verify its SHA-256 checksum, and extract it. Open a terminal in the
+        extracted folder:
       </p>
       <ul>
         <li>Windows x86_64: run <code>.\rankmiso-setup.exe install</code> in PowerShell.</li>
@@ -158,6 +168,28 @@ const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
   margin: 0 auto;
   padding: 24px clamp(16px, 4vw, 36px) 48px;
   color: var(--ink);
+}
+.mcp-guide-site-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 8px 0 16px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--accentsoft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.mcp-guide-site-link:hover {
+  background: var(--accent);
+  color: var(--canvas);
+}
+.mcp-guide-site-link svg {
+  width: 15px;
+  height: 15px;
 }
 .mcp-guide-back {
   display: inline-flex;

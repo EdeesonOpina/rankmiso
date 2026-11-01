@@ -10,7 +10,11 @@ describe("bundled MCP guide", () => {
   it("opens without a companion and covers install, sharing, clients, privacy, and limitations", () => {
     const wrapper = mount(App);
 
-    expect(wrapper.text()).toContain("Public companion downloads are not available yet");
+    expect(wrapper.text()).toContain("MCP is part of RankMiso v0.5.0");
+    expect(wrapper.get(".mcp-guide-site-link").attributes("href")).toBe(
+      "https://misoecosystem.com/products/rankmiso/#mcp",
+    );
+    expect(wrapper.text()).toContain("View official companion downloads and setup");
     expect(wrapper.text()).toContain("Enable local sharing");
     expect(wrapper.text()).toContain("rankmiso-setup configure codex");
     expect(wrapper.text()).toContain("claude mcp get rankmiso");

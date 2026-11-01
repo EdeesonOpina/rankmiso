@@ -36,23 +36,23 @@ describe("AI navigation", () => {
     expect(select).toHaveBeenCalledWith("ai-integrations");
   });
 
-  it("opens AI Integrations in the full report from the popup", () => {
+  it("opens AI Integrations in the popup when its screen is available", () => {
     const navigateInPopup = vi.fn();
     const openInReport = vi.fn();
 
-    navigatePopupDestination("ai-integrations", navigateInPopup, openInReport);
+    navigatePopupDestination("ai-integrations", true, navigateInPopup, openInReport);
+
+    expect(navigateInPopup).toHaveBeenCalledWith("ai-integrations");
+    expect(openInReport).not.toHaveBeenCalled();
+  });
+
+  it("opens a destination in the report only when no popup screen exists", () => {
+    const navigateInPopup = vi.fn();
+    const openInReport = vi.fn();
+
+    navigatePopupDestination("ai-integrations", false, navigateInPopup, openInReport);
 
     expect(openInReport).toHaveBeenCalledWith("ai-integrations");
     expect(navigateInPopup).not.toHaveBeenCalled();
-  });
-
-  it("keeps regular destinations inside the popup", () => {
-    const navigateInPopup = vi.fn();
-    const openInReport = vi.fn();
-
-    navigatePopupDestination("overview", navigateInPopup, openInReport);
-
-    expect(navigateInPopup).toHaveBeenCalledWith("overview");
-    expect(openInReport).not.toHaveBeenCalled();
   });
 });
