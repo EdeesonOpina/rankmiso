@@ -2280,6 +2280,9 @@ html body {
 .callout {
   margin: 16px 0 0;
 }
+.main-scroll > .callout {
+  margin-bottom: 16px;
+}
 .callout.is-error,
 .is-error {
   color: var(--danger);

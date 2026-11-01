@@ -23,6 +23,7 @@ export default defineConfig({
     action: {
       default_title: brandConfig.identity.shortName,
       default_icon: icons,
+      ...(browser === "firefox" ? { default_area: "navbar" } : {}),
     },
     permissions: [
       ...permissionsConfig.required.map((permission) => permission.name),

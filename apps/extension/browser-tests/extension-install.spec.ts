@@ -88,6 +88,7 @@ test("Firefox package includes its add-on id and local WASM asset", async () => 
         data_collection_permissions?: { required?: string[]; optional?: string[] };
       };
     };
+    action?: { default_area?: string; default_popup?: string };
     name?: string;
     short_name?: string;
     version?: string;
@@ -109,6 +110,8 @@ test("Firefox package includes its add-on id and local WASM asset", async () => 
   expect(manifest.name).toBe("RankMiso — Free, Open-Source SEO Analyzer");
   expect(manifest.short_name).toBe("RankMiso");
   expect(manifest.version).toBe("0.5.0");
+  expect(manifest.action?.default_area).toBe("navbar");
+  expect(manifest.action?.default_popup).toBe("popup.html");
   expect(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.required).toEqual([
     "none",
   ]);
