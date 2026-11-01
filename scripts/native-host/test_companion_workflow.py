@@ -7,6 +7,7 @@ import unittest
 
 
 WORKFLOW = Path(__file__).resolve().parents[2] / ".github/workflows/mcp-companion.yml"
+REPOSITORY_CI = WORKFLOW.with_name("ci.yml")
 
 
 class CompanionWorkflowPolicyTests(unittest.TestCase):
@@ -39,6 +40,18 @@ class CompanionWorkflowPolicyTests(unittest.TestCase):
 
     def test_workflow_permissions_remain_read_only(self):
         self.assertRegex(self.text, r"(?m)^permissions:\n  contents: read$")
+
+    def test_standard_ci_covers_develop_staging_and_production_prs(self):
+        text = REPOSITORY_CI.read_text(encoding="utf-8")
+        pull_request = re.search(
+            r"(?ms)^  pull_request:\n(?P<body>.*?)(?=^  [a-z_]+:|^jobs:)", text
+        )
+        self.assertIsNotNone(pull_request)
+        push = re.search(r"(?ms)^  push:\n(?P<body>.*?)(?=^jobs:)", text)
+        self.assertIsNotNone(push)
+        for branch in ("develop", "staging", "master"):
+            self.assertIn(branch, pull_request.group("body"))
+            self.assertIn(branch, push.group("body"))
 
 
 if __name__ == "__main__":
