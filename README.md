@@ -114,6 +114,10 @@ Reports can save comparison fields locally after you choose to save them. RankMi
 
 The audit runs in your browser. No account, no telemetry, no RankMiso servers. Website access is optional and you have to grant it. Anything that touches the network waits until you start it. The details are in [PRIVACY.md](PRIVACY.md).
 
+## 🍵 Keep Miso Brewing
+
+RankMiso is free, open-source, and built with care. If you find it useful, visit the official [Sponsor Miso Ecosystem](https://github.com/sponsors/EdeesonOpina) profile to check current availability and support continued development. All RankMiso features remain free.
+
 ## 🚀 Take it for a spin
 
 **Firefox**, from this repository:
