@@ -169,6 +169,28 @@ const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
   padding: 24px clamp(16px, 4vw, 36px) 48px;
   color: var(--ink);
 }
+.mcp-guide-site-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 8px 0 16px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--accentsoft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.mcp-guide-site-link:hover {
+  background: var(--accent);
+  color: var(--canvas);
+}
+.mcp-guide-site-link svg {
+  width: 15px;
+  height: 15px;
+}
 .mcp-guide-back {
   display: inline-flex;
   align-items: center;

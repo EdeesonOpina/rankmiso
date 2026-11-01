@@ -270,6 +270,183 @@ summary:focus-visible {
   min-height: 0;
   flex: 1;
 }
+.view .page-heading {
+  margin: 0 0 12px;
+}
+.view .page-heading h1 {
+  font-size: 19px;
+  letter-spacing: -0.4px;
+}
+.view .page-heading p {
+  font-size: 11px;
+}
+.view .ai-guide-entry {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+.view .ai-guide-entry h2,
+.view .ai-companion-card h2,
+.view .ai-section h2,
+.view .ai-privacy h2 {
+  margin: 0;
+  font-size: 13px;
+}
+.view .ai-guide-entry p,
+.view .ai-companion-card .section-heading p,
+.view .ai-section .section-heading p,
+.view .ai-privacy p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+.view .ai-guide-link,
+.view .ai-companion-card button,
+.view .ai-section button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 0 10px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.view .ai-guide-link {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 7px;
+  text-decoration: none;
+}
+.view .ai-guide-link svg {
+  width: 15px;
+  height: 15px;
+}
+.view .ai-companion-card,
+.view .ai-section,
+.view .ai-privacy {
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.view .ai-companion-card {
+  border-inline-start: 3px solid var(--red);
+}
+.view .ai-companion-card .section-heading,
+.view .ai-section .section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.view .ai-companion-card .section-heading > div:first-child,
+.view .ai-section .section-heading > div:first-child {
+  min-width: 0;
+}
+.view .ai-companion-card .actions-row,
+.view .ai-section .actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.view .mcp-status {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+}
+.view .mcp-status-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.view .mcp-state-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+.view .mcp-status[data-status="connected"] .mcp-state-icon {
+  color: var(--green);
+}
+.view .mcp-status[data-status="permission-required"] .mcp-state-icon,
+.view .mcp-status[data-status="awaiting-permission"] .mcp-state-icon,
+.view .mcp-status[data-status="not-installed"] .mcp-state-icon {
+  color: var(--amber);
+}
+.view .mcp-status[data-status="connection-failed"] .mcp-state-icon {
+  color: var(--red);
+}
+.view .mcp-status small,
+.view .ai-audit-main span,
+.view .ai-audit-main small,
+.view .mcp-privacy-note {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.view .ai-empty-state {
+  padding: 12px;
+  border: 1px dashed #dce2eb;
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.5;
+  text-align: center;
+}
+.view .ai-audit-list {
+  display: grid;
+}
+.view .ai-audit-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+}
+.view .ai-audit-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.view .ai-audit-main strong {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.view .ai-privacy p {
+  margin-bottom: 0;
+}
+html[data-theme="dark"] .view :is(.ai-companion-card, .ai-section, .ai-privacy) {
+  border-color: #303b53;
+  background: #171e30;
+}
+html[data-theme="dark"] .view .ai-companion-card {
+  border-inline-start-color: #ef6a5b;
+}
+html[data-theme="dark"] .view :is(.ai-guide-link, .ai-companion-card button, .ai-section button) {
+  border-color: #3a455e;
+  background: #202940;
+  color: #edf1f8;
+}
+html[data-theme="dark"] .view .mcp-status {
+  border-color: #3a455e;
+  background: #111827;
+}
+html[data-theme="dark"] .view .ai-empty-state {
+  border-color: #3a455e;
+}
 .foot {
   height: 64px;
   border-top: 1px solid var(--line);
