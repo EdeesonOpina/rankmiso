@@ -32,7 +32,7 @@ Microdata and RDFa observations are informational. RDFa support is the subset in
 
 ## MCP remains optional and local
 
-MCP integration is planned, not implemented. Any future MCP surface must consume the same versioned audit produced by the extension and Rust engine; it must not introduce a second rules engine, hosted backend, telemetry, or silent page access. A local stdio companion and an explicit extension-to-host bridge are candidates, not settled architecture. See Phase 7 in `implementation-plan.md` for the investigation, proposed read-only tools, and acceptance requirements.
+M6.1 is implemented as an optional local stdio reader over explicitly selected JSON exports. M6.2 adds a separate Native Messaging bridge only for user-confirmed audit snapshots, writing into the same configured directory; it does not add browser profile access, a hosted backend, telemetry, or a second rules engine. See [the MCP guide](../mcp/README.md).
 
 ## WebAssembly packaging
 
@@ -173,6 +173,7 @@ Firefox Site Explorer is enabled independently from the general external-check c
 # R0.4.0 version decision
 
 The product owner selected v0.4.0 to consolidate the F1 changes; no v0.3.1 is to be created. Extension/root package versions move to 0.4.0 for the candidate. Rust crate versions are independent and remain unchanged. v0.3.0 is already published and must remain unchanged. Candidate generation is not store submission.
+
 # R0.4.0 candidate decision (2026-10-30)
 
 The consolidated release candidate remains v0.4.0; v0.3.0 remains the published baseline. Package/root metadata and generated extension manifests use 0.4.0, while Rust crate versions are independently versioned and unchanged. The candidate is isolated from unrelated dirty marketing and design-review files; no Git commit or release tag is created during preparation. Store submission remains gated on native browser security evidence and privacy-policy alignment. Firefox basic Site Explorer runtime confirmation from the product owner is recorded narrowly and does not substitute for request-log/security tests.
@@ -181,3 +182,29 @@ The consolidated release candidate remains v0.4.0; v0.3.0 remains the published 
 
 Do not treat DNS preflight as DNS-rebinding protection: neither supported extension fetch path exposes a portable way to pin the resolved address used by the connection. Do not add a DNS permission for a check that remains racy. Literal local-address and redirect checks are defense in depth, but the remaining public-host-to-private-address exposure is not accepted for store sign-off without demonstrated browser enforcement or a safe feature restriction. The candidate remains blocked for submission pending that resolution.
 
+# M6.1 — local export reader
+
+- M6.1 uses the official `rmcp` Rust SDK with stdio transport. There is no HTTP listener, browser bridge, native messaging, network client, or telemetry.
+- Supported source files are complete schema-version-1 individual audit exports and the separate schema-version-1 Site Explorer export. History JSON schema version 2 contains compact saved comparisons rather than full measured audits and is not treated as an audit source.
+- The MCP crate uses SDK 3.8.0 (MSRV 1.88) in isolation. The existing workspace MSRV remains 1.85; builds require Rust 1.88+ for the MCP member.
+- The server uses the SDK stdio entry point that accepts both legacy `initialize` and modern `server/discover` lifecycle requests. Client disconnect before initialization is treated as a normal close; protocol startup errors remain reported on stderr.
+- All five tools advertise read-only, idempotent, non-destructive, local-only annotations. Codex's `writes` approval mode can therefore call them without weakening approval for write-capable tools. This is a client hint, not a filesystem security boundary.
+- Export identifiers are derived from filenames and are only resolvable inside the configured directory. The store is nonrecursive, limits itself to 500 JSON files and 5 MiB per file, and caps structured output at 512 KiB.
+- Score comparison requires both the same ruleset version and the same set of applicable measured rule IDs. Issue-level observations remain available when score comparison is disabled.
+- AI-client privacy remains the user's responsibility: a local server does not prevent a configured model provider from receiving retrieved content.
+
+## M6.2 — explicit local browser sharing
+
+- Keep `rankmiso-mcp` MCP stdio unchanged. Build `rankmiso-mcp-native-host` from the same crate with a separate Native Messaging framing handler; the binary receives exactly one request and replies once so the browser closes the process after each explicit operation.
+- Declare `nativeMessaging` as an optional permission for Chrome and Firefox. Request it only from the explicit share confirmation or the Settings enable button. Do not add content-script or webpage message routes to the host.
+- Reuse the existing JSON audit serializer and schema-version-1 reader. Native host writes only audited JSON snapshots into the same configured `--audit-dir`/`RANKMISO_MCP_AUDIT_DIR` location used by the MCP process.
+- Use the browser's exact extension allowlist (`allowed_origins` for Chrome, `allowed_extensions` for Firefox). Firefox's existing add-on ID is source controlled; the Chrome ID is absent from this checkout and is a required explicit developer-install input, never a wildcard or guessed production ID.
+- Keep Native Messaging messages below 900 KiB, capped at 500 managed snapshots, with 1 KiB page URL/title metadata. Reject larger audits with the existing JSON download as fallback; no chunk protocol is needed. Complete files publish by same-directory hard link after the temp file is fully written.
+- A local host and MCP server run as the user's OS account. These application checks are not an OS sandbox, and a connected AI client can send retrieved evidence to its configured provider. No cloud, telemetry, network access, or API keys are added.
+- Linux user-level registration is provided for development. Windows/macOS host registration and all native browser runtime checks are follow-up evidence, not claimed by source portability.
+
+## M6.2 AI Integrations destination
+
+Place local companion status and shared snapshot management in one direct utility destination, separate from page-analysis destinations and general Settings. The view owns only ephemeral status/list state; the opt-in preference remains in extension-local storage and browser permission remains authoritative. On view open, recheck permission and validate companion availability. A Connected label expires after 15 seconds; an enabled stale connection may be revalidated on the next active-tab event, once, with the bridge's request deduplication/freshness cache. Never request permission from a lifecycle event or share automatically.
+
+Keep Claude Code and Codex MCP setup documented outside the UI. The AI Integrations view focuses on the local companion, shared snapshots and privacy; it does not claim client discovery or a client connection. Use neutral RankMiso navigation/iconography and do not suggest sponsorship or partnership.

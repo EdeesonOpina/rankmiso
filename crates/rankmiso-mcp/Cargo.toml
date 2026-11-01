@@ -1,0 +1,27 @@
+[package]
+name = "rankmiso-mcp"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version = "1.88"
+
+[[bin]]
+name = "rankmiso-mcp-native-host"
+path = "src/native_main.rs"
+
+[[bin]]
+name = "rankmiso-setup"
+path = "src/setup_main.rs"
+
+[dependencies]
+rmcp.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+seo-core = { path = "../seo-core" }
+tokio.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+seo-rules = { path = "../seo-rules" }

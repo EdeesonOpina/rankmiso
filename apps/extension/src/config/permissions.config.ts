@@ -28,6 +28,12 @@ export const permissionsConfig = {
   ] satisfies PermissionDefinition[],
   optional: [
     {
+      name: "nativeMessaging",
+      required: false,
+      purposeKey: "permissions.nativeMessaging",
+      browsers: ["chromium", "firefox"],
+    },
+    {
       name: "sidePanel",
       required: false,
       purposeKey: "permissions.sidePanel",

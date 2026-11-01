@@ -29,6 +29,7 @@ export const featuresConfig: FeatureDefinition[] = [
   { id: "site", status: "available", phase: 3, summaryKey: "features.site" },
   { id: "sitemaps", status: "available", phase: 3, summaryKey: "features.sitemaps" },
   { id: "settings", status: "available", phase: 1, summaryKey: "features.settings" },
+  { id: "ai-integrations", status: "available", phase: 6, summaryKey: "features.aiIntegrations" },
   { id: "serp", status: "partial", phase: 4, summaryKey: "features.serp" },
   { id: "comparison", status: "partial", phase: 4, summaryKey: "features.comparison" },
   { id: "developer", status: "planned", phase: 4, summaryKey: "features.developer" },

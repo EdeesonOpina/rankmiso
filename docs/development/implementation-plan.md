@@ -67,29 +67,23 @@ Still unbuilt: broader cross-browser interaction measurement validation, automat
 
 Chrome Web Store and Firefox Add-ons releases are available. See `docs/releases` for listing and package maintenance notes.
 
-## Phase 7 — MCP integration (planned; not implemented)
+## Phase 7 — MCP integration
 
 Goal: let a user-approved MCP client read RankMiso's real audit results without adding a hosted service, account, telemetry, or a second implementation of SEO rules.
 
-The transport and browser bridge are undecided. Investigate a local stdio MCP companion and the least-privilege way to receive an explicitly requested audit from the extension. Do not assume an MCP process can inspect a browser tab or page DOM by itself. Keep page extraction and browser permissions in TypeScript; keep SEO rules and scoring in Rust. Do not add default host permissions or let an MCP request silently start a site probe, navigate a tab, or transmit page data remotely.
+M6.1 introduces a local stdio reader over user-exported JSON; M6.2 adds optional user-approved browser sharing through a separate native messaging handler into the same audit directory. Implementation and runtime status are recorded in [the MCP guide](../mcp/README.md), manual checklist, and development handoff.
 
-Proposed first read-only surface, subject to the architecture spike:
+M6.1.1 compatibility is verified on Linux: Claude Code 2.1.314 and Codex CLI 0.166.0 connected to the same Rust executable and invoked all five tools against synthetic audit/crawl exports. The server supports both legacy `initialize` and modern `server/discover`; Codex's test configuration used read-only tool annotations with `default_tools_approval_mode = "writes"`. Windows/macOS remain untested, but do not block this Linux compatibility milestone. See [the MCP guide](../mcp/README.md) for command details and results.
 
-- `rankmiso.get_current_audit`: return the latest audit the user explicitly generated in the browser, with measured, unavailable, and not-applicable states preserved.
-- `rankmiso.get_page_summary`: return a bounded summary of URL, score disclaimer, key metadata, findings, and measurement limitations.
-- An optional resource for the stable audit schema and check definitions, versioned with the engine.
+M6.2 browser/native messaging is implemented as development source, with optional permission and explicit share confirmation. Native browser grant/deny/revoke and host lifecycle remain separate runtime acceptance items where not yet verified.
 
-Do not expose arbitrary page text, saved report history, API keys, or unrestricted URLs in the first version. If fetching a fresh audit needs browser access, require an explicit browser action and origin permission before making the result available to MCP. MCP must not invent rankings, traffic, backlinks, search volume, index status, field data, or rich-result eligibility.
+### M6.3 — Companion distribution and installation
 
-Acceptance before implementation:
+Implementation is in place; native cross-platform verification is pending. A per-user `rankmiso-setup` binary installs the existing MCP and Native Messaging binaries, registers the verified Chrome/Firefox identities, and stores audits under stable OS application-data paths. Codex and Claude Code configuration is initiated explicitly through their documented CLIs and refuses to overwrite an existing `rankmiso` entry. Pull requests targeting `develop` run native Linux x86_64, Windows x86_64, macOS ARM64, and macOS Intel build, archive, checksum, installer lifecycle, and Native Messaging protocol checks. Manual dispatch creates review artifacts only; it does not publish. The Linux archive and installer lifecycle have been verified locally. Windows/macOS native CI, browser-level Firefox, browser permission flows, and package signing remain separate checks; see the M6.3.2 handoff.
 
-- Choose and document the local transport, browser-to-MCP handoff, supported MCP clients, and disconnect/revocation behavior.
-- Define typed tool inputs/outputs from schema-version-1 audit contracts and return actionable errors for no active audit, stale page, unsupported browser, and denied permission.
-- Add tests for redaction, size limits, unavailable-check preservation, malformed messages, and origin/permission boundaries.
-- Verify no page content leaves the machine unless the user separately configures the MCP client or another external service to receive it.
-- Keep the core extension fully usable with MCP absent or disabled.
+#### M6.3.2 CI preparation
 
-Initial spike deliverable: a threat model and a small transport prototype over fixture audits. Do not ship a browser bridge until its permission and trust boundaries are reviewed.
+The native matrix uses `ubuntu-22.04`, `windows-2025`, `macos-15` (ARM64), and `macos-15-intel` GitHub-hosted runners. Each job runs the MCP crate tests, builds native binaries, validates archive names/contents/SHA-256, then installs, repeats installation, replaces the installation from a second native build, verifies exact browser registrations and a Native Messaging ping, uninstalls while preserving local data, and reinstalls. This does not test an actual browser or claim browser sharing. `pull_request` targets `develop`; `workflow_dispatch` is available after the workflow exists on default `master`. Native results must be read from the GitHub run; local YAML checks are not a substitute.
 
 ## Acceptance for the current slice
 
@@ -101,7 +95,7 @@ Initial spike deliverable: a threat model and a small transport prototype over f
 - Chrome MV3 and Firefox MV3 package versions are 0.3.0
 - Firefox MV3 declares no optional host permissions and cannot invoke PageSpeed Insights or optional site probes; Chromium retains those explicit opt-in features
 - INP capture is explicit, remains page-scoped, and has start, running, unsupported, stop, and no-interactions states
-- MCP remains documented as planned and is not represented as an available feature
+- MCP remains a separate local companion and is not bundled into extension/store builds
 
 ## Later milestones (not started)
 
@@ -118,7 +112,7 @@ Compared with public SEOquake, MozBar, Ahrefs SEO Toolbar, and Detailed SEO Exte
 - Site crawling is M3 and is implemented as a bounded same-origin crawl. Sitemap discovery by itself is still not a crawl of every listed URL.
 - Trend charts are M4 and use explicit page saves. A site crawl is not turned into that history.
 - Fetched HTML comparison, Microdata, and bounded RDFa are implemented in M5. They are not a complete document diff or a complete RDFa processor.
-- MCP stays M6 and is not built.
+- M6.1 provides the local export reader; M6.2 adds a separately framed native host and explicit audit share flow. M6.3 adds a per-user installer, persistent local storage, client setup commands and native CI artifacts. Windows/macOS runtime and browser permission verification are still unverified; archives are not published.
 - SERP overlays, keyword metrics, backlinks, Domain Authority, Page Authority, Domain Rating, and URL Rating are out of scope. RankMiso does not invent them.
 - People Also Ask and a user-agent switch are out of scope.
 - Keyword n-gram density is not implemented. Repeated-term counts remain the content view.
@@ -169,7 +163,7 @@ Implementation and automated verification are complete; native browser permissio
 
 ### M6 — MCP
 
-A local read-only companion over an audit the user chose to share. Write the threat model before any browser bridge. Do not expose arbitrary tabs, API keys, unrestricted URLs, or saved history. No hosted MCP service.
+M6.1/M6.1.1 provide the standalone read-only stdio server and verified Claude Code/Codex calls. M6.2 adds optional, user-confirmed browser-to-local-host sharing of schema-version-1 audit JSON into the same configured directory. Its native protocol is separate from MCP framing; the five MCP tools and audit schemas remain unchanged. M6.3 adds per-user installation source and manual artifact builds for Windows/macOS/Linux. Runtime browser evidence remains in `docs/testing/manual-checklist.md`; package signing and publication remain separate. No hosted MCP service or v0.4.0 artifact changes.
 
 ### M7 — Search Console
 

@@ -3,6 +3,7 @@ export const flatNav: readonly {
   id: string;
   labelKey: string;
   shortLabelKey?: string;
+  ariaLabelKey?: string;
   utility?: boolean;
 }[] = [
   { id: "overview", labelKey: "nav.overview" },
@@ -22,5 +23,11 @@ export const flatNav: readonly {
   { id: "sitemaps", labelKey: "nav.sitemaps" },
   { id: "reports", labelKey: "nav.history", utility: true },
   { id: "export", labelKey: "nav.export", utility: true },
+  {
+    id: "ai-integrations",
+    labelKey: "nav.ai",
+    ariaLabelKey: "nav.aiIntegrations",
+    utility: true,
+  },
   { id: "settings", labelKey: "nav.settings", utility: true },
 ];

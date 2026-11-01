@@ -4,6 +4,7 @@ import type { Component } from "vue";
 import {
   Braces,
   Clock,
+  Cpu,
   Download,
   Eye,
   FileText,
@@ -24,7 +25,7 @@ import {
 import { brandConfig } from "../config/brand.config";
 
 const props = defineProps<{
-  items: { id: string; label: string; short: string }[];
+  items: { id: string; label: string; short: string; accessibleLabel?: string }[];
   current: string;
   label: string;
   menuLabel: string;
@@ -51,6 +52,7 @@ const icons: Record<string, Component> = {
   sitemaps: Network,
   reports: Clock,
   export: Download,
+  "ai-integrations": Cpu,
   settings: Settings,
 };
 
@@ -110,8 +112,8 @@ async function onKeys(event: KeyboardEvent) {
         type="button"
         class="rail-link"
         :data-nav="item.id"
-        :title="item.label"
-        :aria-label="item.label"
+        :title="item.accessibleLabel ?? item.label"
+        :aria-label="item.accessibleLabel ?? item.label"
         :aria-current="current === item.id ? 'page' : undefined"
         :tabindex="current === item.id ? 0 : -1"
         @click="emit('select', item.id)"
