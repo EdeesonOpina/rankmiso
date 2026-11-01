@@ -1,5 +1,8 @@
+import ctypes
 import importlib.util
+import os
 from pathlib import Path
+import tempfile
 import unittest
 
 SCRIPT = Path(__file__).with_name("verify-package.py")
@@ -36,6 +39,23 @@ class WindowsPathComparisonTests(unittest.TestCase):
                 windows=True,
             )
         )
+
+    @unittest.skipUnless(os.name == "nt", "Windows short-path aliases require Windows")
+    def test_long_and_short_aliases_of_the_same_temp_directory_compare(self):
+        long_path = Path(tempfile.gettempdir())
+        get_short_path_name = ctypes.windll.kernel32.GetShortPathNameW
+        get_short_path_name.argtypes = (
+            ctypes.c_wchar_p,
+            ctypes.POINTER(ctypes.c_wchar),
+            ctypes.c_uint32,
+        )
+        get_short_path_name.restype = ctypes.c_uint32
+        required = get_short_path_name(str(long_path), None, 0)
+        self.assertGreater(required, 0)
+        buffer = ctypes.create_unicode_buffer(required + 1)
+        written = get_short_path_name(str(long_path), buffer, len(buffer))
+        self.assertGreater(written, 0)
+        self.assertTrue(VERIFY_PACKAGE.same_path(long_path, buffer.value, windows=True))
 
 
 if __name__ == "__main__":

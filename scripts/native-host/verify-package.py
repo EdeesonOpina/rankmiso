@@ -45,6 +45,22 @@ def same_path(left, right, windows=None):
         windows = os.name == "nt"
     if windows:
         def key(value):
+            if os.name == "nt":
+                import ctypes
+
+                value = os.path.realpath(value)
+                get_long_path_name = ctypes.windll.kernel32.GetLongPathNameW
+                get_long_path_name.argtypes = (
+                    ctypes.c_wchar_p,
+                    ctypes.POINTER(ctypes.c_wchar),
+                    ctypes.c_uint32,
+                )
+                get_long_path_name.restype = ctypes.c_uint32
+                required = get_long_path_name(value, None, 0)
+                if required:
+                    buffer = ctypes.create_unicode_buffer(required + 1)
+                    if get_long_path_name(value, buffer, len(buffer)):
+                        value = buffer.value
             value = ntpath.normcase(ntpath.normpath(value))
             if value.startswith("\\\\?\\unc\\"):
                 return "\\\\" + value[8:]
