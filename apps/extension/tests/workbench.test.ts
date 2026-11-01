@@ -7,6 +7,7 @@ import SettingsScreen from "../src/components/popup/SettingsScreen.vue";
 import RelatedChecks from "../src/components/workbench/RelatedChecks.vue";
 import { workbenchKey, type Surface } from "../src/components/workbench/context";
 import { findingGuide, findingGuides } from "../src/locales/findings.en";
+import { flatNav } from "../src/config/navigation.config";
 import { selectChecks } from "../src/services/check-list";
 import type { AuditResult, CheckResult, ScoreSummary } from "../src/types/audit";
 
@@ -49,6 +50,24 @@ describe("check list", () => {
       "Alpha",
       "Middle",
       "Zebra",
+    ]);
+  });
+});
+
+describe("utility navigation", () => {
+  it("places AI Integrations with utility destinations, separate from page analysis", () => {
+    const integrations = flatNav.find((item) => item.id === "ai-integrations");
+    expect(integrations?.labelKey).toBe("nav.ai");
+    expect(integrations?.ariaLabelKey).toBe("nav.aiIntegrations");
+    expect(integrations?.utility).toBe(true);
+    expect(flatNav.indexOf(integrations!)).toBeGreaterThan(
+      flatNav.findIndex((item) => item.id === "export"),
+    );
+    expect(flatNav.filter((item) => item.utility).map((item) => item.id)).toEqual([
+      "reports",
+      "export",
+      "ai-integrations",
+      "settings",
     ]);
   });
 });

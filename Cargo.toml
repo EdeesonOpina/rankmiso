@@ -5,6 +5,7 @@ members = [
   "crates/seo-rules",
   "crates/seo-scoring",
   "crates/seo-wasm",
+  "crates/rankmiso-mcp",
 ]
 
 [workspace.package]
@@ -17,6 +18,9 @@ rust-version = "1.85"
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+rmcp = { version = "=3.8.0", default-features = false, features = ["server", "transport-io", "macros"] }
+schemars = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 unicode-segmentation = "1"
 url = "2"
 wasm-bindgen = "=0.2.100"

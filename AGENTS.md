@@ -71,6 +71,10 @@ Run the commands in this file that the change can affect. Record the result you 
 
 Do not commit, push, or publish a store package unless the maintainer asks.
 
+## Git integration workflow
+
+Use the RankMiso promotion path: `feature branch → develop → staging → master`. New feature pull requests target `develop` unless the maintainer explicitly says otherwise. The maintainer handles merges into `develop`, promotion from `develop` to `staging`, and promotion from `staging` to `master`; agents must not merge branches, change branch protections, or publish releases without explicit authorization. Standard CI runs for pull requests and pushes targeting `develop`, `staging`, and `master` (and retains `main` compatibility). Keep the MCP companion matrix limited to pull requests targeting `master` and explicitly requested manual runs; optional temporary artifacts default off and expire after one day. Preserve unrelated uncommitted changes and use the existing feature branch/PR when one already covers the work; do not create duplicate PRs.
+
 ## Resume order
 
 1. Read this file.

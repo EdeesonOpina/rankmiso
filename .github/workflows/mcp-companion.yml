@@ -1,0 +1,103 @@
+name: MCP companion artifacts
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Artifact label only; this workflow does not publish or change package versions
+        required: true
+        default: v0.5.0
+        type: string
+      upload_artifacts:
+        description: Keep platform archives in Actions for one day
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            label: linux-x86_64
+            archive: tar.gz
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
+            label: windows-x86_64
+            archive: zip
+          - os: macos-15
+            target: aarch64-apple-darwin
+            label: macos-aarch64
+            archive: tar.gz
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            label: macos-x86_64
+            archive: tar.gz
+    runs-on: ${{ matrix.os }}
+    env:
+      RELEASE_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.release_version || format('v0.5.0-pr{0}', github.event.pull_request.number) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.99.1
+          targets: ${{ matrix.target }}
+      - name: Validate artifact label
+        shell: bash
+        run: |
+          [[ "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]]
+      - name: Test companion workflow policy
+        run: python scripts/native-host/test_companion_workflow.py
+      - name: Test package path normalization
+        run: python scripts/native-host/test_verify_package.py
+      - name: Test and build MCP binaries
+        run: |
+          cargo test --locked -p rankmiso-mcp
+          cargo build --locked --release --target ${{ matrix.target }} -p rankmiso-mcp --bins
+      - name: Verify macOS executable architecture
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          architecture=$(lipo -archs target/${{ matrix.target }}/release/rankmiso-setup)
+          [[ "$architecture" == "${{ matrix.target == 'aarch64-apple-darwin' && 'arm64' || 'x86_64' }}" ]]
+      - name: Package Windows archive
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $stage = Join-Path $env:RUNNER_TEMP 'rankmiso-package'
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/rankmiso-mcp.exe" $stage
+          Copy-Item "target/${{ matrix.target }}/release/rankmiso-mcp-native-host.exe" $stage
+          Copy-Item "target/${{ matrix.target }}/release/rankmiso-setup.exe" $stage
+          Copy-Item docs/mcp/INSTALL.md (Join-Path $stage 'README-INSTALL.md')
+          Copy-Item LICENSE $stage
+          $archive = "rankmiso-mcp-companion-$env:RELEASE_VERSION-${{ matrix.label }}.zip"
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $archivePath = Join-Path dist $archive
+          Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $archivePath
+          $hash = (Get-FileHash $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $archive" | Set-Content "$archivePath.sha256" -NoNewline
+      - name: Package Unix archive
+        if: runner.os != 'Windows'
+        run: scripts/native-host/package.sh "${{ matrix.target }}" "${{ matrix.label }}" "$RELEASE_VERSION"
+      - name: Verify package and isolated installer lifecycle
+        shell: bash
+        run: python scripts/native-host/verify-package.py "dist/rankmiso-mcp-companion-$RELEASE_VERSION-${{ matrix.label }}.${{ matrix.archive }}" target/debug
+      - name: Upload requested build artifact
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_artifacts }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: rankmiso-mcp-companion-${{ env.RELEASE_VERSION }}-${{ matrix.label }}
+          path: |
+            dist/rankmiso-mcp-companion-${{ env.RELEASE_VERSION }}-${{ matrix.label }}.${{ matrix.archive }}
+            dist/rankmiso-mcp-companion-${{ env.RELEASE_VERSION }}-${{ matrix.label }}.${{ matrix.archive }}.sha256
+          if-no-files-found: error
+          retention-days: 1

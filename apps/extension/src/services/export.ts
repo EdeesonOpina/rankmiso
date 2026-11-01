@@ -21,9 +21,17 @@ function hostOf(url: string): string {
 }
 
 export function exportAuditJson(audit: AuditResult) {
+  downloadAuditJson(audit);
+}
+
+export function serializeAuditJson(audit: AuditResult): string {
+  return JSON.stringify(audit, null, 2);
+}
+
+function downloadAuditJson(audit: AuditResult) {
   download(
     safeFilename(`${hostOf(audit.page.url)}-audit`, "json"),
-    JSON.stringify(audit, null, 2),
+    serializeAuditJson(audit),
     "application/json",
   );
 }
