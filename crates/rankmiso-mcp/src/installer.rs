@@ -388,6 +388,11 @@ fn registry_key(browser: &str) -> String {
 }
 
 #[cfg(windows)]
+fn registry_api_subkey(key: &str) -> &str {
+    key.strip_prefix("HKCU\\").unwrap_or(key)
+}
+
+#[cfg(windows)]
 fn registry_default(key: &str) -> Result<Option<String>, String> {
     use std::{
         ffi::{c_void, OsStr},
@@ -423,7 +428,10 @@ fn registry_default(key: &str) -> Result<Option<String>, String> {
         fn RegCloseKey(key: HKey) -> i32;
     }
 
-    let sub_key: Vec<u16> = OsStr::new(key).encode_wide().chain(Some(0)).collect();
+    let sub_key: Vec<u16> = OsStr::new(registry_api_subkey(key))
+        .encode_wide()
+        .chain(Some(0))
+        .collect();
     let mut opened = ptr::null_mut();
     // A missing RankMiso key is the only lookup failure interpreted as an
     // empty registration. Access and other errors must fail closed before a
@@ -965,6 +973,10 @@ mod tests {
         assert_eq!(
             registry_key("chrome"),
             r"HKCU\Software\Google\Chrome\NativeMessagingHosts\com.misoecosystem.rankmiso"
+        );
+        assert_eq!(
+            registry_api_subkey(&registry_key("chrome")),
+            r"Software\Google\Chrome\NativeMessagingHosts\com.misoecosystem.rankmiso"
         );
         assert_eq!(
             registry_key("firefox"),
