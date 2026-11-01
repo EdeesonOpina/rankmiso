@@ -109,6 +109,16 @@ describe("MCP permission waiting state", () => {
     wrapper.unmount();
   });
 
+  it("renders as a standalone popup screen without a workbench provider", async () => {
+    const wrapper = mount(AIIntegrationsView, { props: { hideHeading: true } });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Local MCP Companion");
+    expect(wrapper.text()).toContain("Shared audits");
+    expect(wrapper.find("h1").exists()).toBe(false);
+    wrapper.unmount();
+  });
+
   it("leaves Settings usable and rechecks permission without starting another prompt", async () => {
     let resolveRequest!: (granted: boolean) => void;
     const request = new Promise<boolean>((resolve) => (resolveRequest = resolve));

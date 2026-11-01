@@ -2280,6 +2280,9 @@ html body {
 .callout {
   margin: 16px 0 0;
 }
+.main-scroll > .callout {
+  margin-bottom: 16px;
+}
 .callout.is-error,
 .is-error {
   color: var(--danger);
@@ -2519,6 +2522,24 @@ textarea.field {
 }
 .mcp-confirm::backdrop {
   background: rgb(20 22 28 / 46%);
+}
+.mcp-connection-ready {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--success);
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--success);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.mcp-connection-ready svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
 }
 .mcp-share-details {
   display: grid;

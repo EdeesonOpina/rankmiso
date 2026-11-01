@@ -1,9 +1,10 @@
-/** Utility views that are not implemented in the compact popup open in the full report. */
+/** Keep destinations in the popup when a compact screen exists; otherwise open the report. */
 export function navigatePopupDestination(
   id: string,
+  hasPopupScreen: boolean,
   navigateInPopup: (id: string) => void,
   openInReport: (section: string) => void,
 ) {
-  if (id === "ai-integrations") openInReport(id);
-  else navigateInPopup(id);
+  if (hasPopupScreen) navigateInPopup(id);
+  else openInReport(id);
 }
