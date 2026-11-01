@@ -167,6 +167,7 @@ export const messages = {
   "mcp.checkConnection": "Check companion",
   "mcp.checkPermission": "Check permission status",
   "mcp.enable": "Enable local sharing",
+  "mcp.enableCompact": "Enable",
   "mcp.disconnect": "Disconnect",
   "mcp.disable": "Disable local sharing",
   "mcp.connected": "The local RankMiso companion is available.",
