@@ -104,7 +104,7 @@ export const messages = {
     "Local companion connected. Review the audit details and confirm before sharing.",
   "mcp.confirmTitle": "Share this audit with MCP?",
   "mcp.confirmText":
-    "RankMiso will save a copy of this SEO audit to your local MCP companion so connected AI assistants can read it.",
+    "RankMiso will send this page’s address, title, and SEO audit to your local MCP companion so connected AI assistants can read it. This happens only after you confirm.",
   "mcp.website": "Website",
   "mcp.auditTime": "Audit time",
   "mcp.auditType": "Audit type",
@@ -121,7 +121,8 @@ export const messages = {
   "mcp.shared": "Audit saved locally and available to connected MCP clients.",
   "mcp.shareFailedTitle": "Sharing Failed",
   "mcp.shareFailed": "The audit could not be shared with the local companion.",
-  "mcp.permissionDenied": "Native Messaging permission was not granted. No audit was shared.",
+  "mcp.permissionDenied":
+    "The required local connection or audit-data permission was not granted. No audit was shared.",
   "mcp.permissionWaiting":
     "The browser permission decision is still pending. Approve or dismiss its prompt, then check again. No audit was shared.",
   "mcp.pageUnavailable":
@@ -145,7 +146,7 @@ export const messages = {
   "mcp.stateReadyRecheckMessage":
     "The last companion check expired. Check availability again when you need it.",
   "mcp.statePermissionRequiredMessage":
-    "Grant Native Messaging permission so RankMiso can contact its local companion.",
+    "Grant Native Messaging so RankMiso can contact its local companion. Firefox also asks before allowing access to shared audit data.",
   "mcp.stateAwaitingPermissionMessage":
     "Approve or dismiss the browser prompt. RankMiso will check the companion after approval. If the prompt is not visible, check extension permissions, then recheck the status.",
   "mcp.stateCheckingMessage": "Checking the local MCP companion…",

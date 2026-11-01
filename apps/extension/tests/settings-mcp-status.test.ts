@@ -13,6 +13,7 @@ const harness = vi.hoisted(() => {
   const bridge = {
     MCP_STATUS_FRESH_MS: 15_000,
     checkNativeCompanion: vi.fn(async () => true),
+    hasMcpAccessPermission: vi.fn(async () => true),
     hasNativeMessagingPermission: vi.fn(async () => true),
     isNativeMessagingPermissionRequestPending: vi.fn(() => false),
     listSharedAudits: vi.fn(async () => ({
@@ -110,6 +111,9 @@ describe("MCP connection status", () => {
   beforeEach(() => {
     harness.browser.permissions.contains.mockReset().mockResolvedValue(true);
     harness.bridge.hasNativeMessagingPermission.mockReset().mockResolvedValue(true);
+    harness.bridge.hasMcpAccessPermission
+      .mockReset()
+      .mockImplementation(async () => harness.bridge.hasNativeMessagingPermission());
     harness.bridge.checkNativeCompanion.mockReset().mockResolvedValue(true);
     harness.bridge.requestNativeMessagingPermission.mockReset().mockResolvedValue(true);
     harness.bridge.removeSharedAudit.mockReset();
@@ -130,6 +134,7 @@ describe("MCP connection status", () => {
 
   it("keeps the local MCP guide available before the companion is connected", async () => {
     harness.bridge.hasNativeMessagingPermission.mockResolvedValue(false);
+    harness.bridge.hasMcpAccessPermission.mockResolvedValue(false);
     const wrapper = mount(AIIntegrationsView, {
       global: { provide: workbench() },
     });
@@ -144,6 +149,7 @@ describe("MCP connection status", () => {
 
   it("shows permission required when the optional permission is absent", async () => {
     harness.bridge.hasNativeMessagingPermission.mockResolvedValue(false);
+    harness.bridge.hasMcpAccessPermission.mockResolvedValue(false);
     const wrapper = mount(AIIntegrationsView, {
       global: { provide: workbench() },
     });
@@ -153,7 +159,8 @@ describe("MCP connection status", () => {
     expect(
       wrapper.findAll("button").some((button) => button.text() === "Enable local sharing"),
     ).toBe(true);
-    expect(wrapper.find(".mcp-status").text()).toContain("Grant Native Messaging permission");
+    expect(wrapper.find(".mcp-status").text()).toContain("Grant Native Messaging");
+    expect(wrapper.find(".mcp-status").text()).toContain("Firefox also asks");
     wrapper.unmount();
   });
 
@@ -419,7 +426,7 @@ describe("MCP connection status", () => {
 
     expect(harness.mcpStorage.enabled).toBe(false);
     expect(harness.bridge.checkNativeCompanion).not.toHaveBeenCalled();
-    expect(wrapper.find(".mcp-status").text()).toContain("Local sharing is off");
+    expect(wrapper.find(".mcp-status").text()).toContain("Local MCP sharing is disabled");
     wrapper.unmount();
   });
 

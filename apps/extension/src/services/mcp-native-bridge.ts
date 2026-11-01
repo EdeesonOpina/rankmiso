@@ -7,6 +7,7 @@ export const MCP_BRIDGE_PROTOCOL_VERSION = 1;
 export const MAX_NATIVE_MESSAGE_BYTES = 900 * 1024;
 const RESPONSE_TIMEOUT_MS = 15_000;
 const PERMISSION_DECISION_TIMEOUT_MS = 10_000;
+const FIREFOX_AUDIT_DATA_PERMISSIONS = ["browsingActivity", "websiteContent"] as const;
 
 export interface SharedAudit {
   snapshotId: string;
@@ -55,7 +56,16 @@ const sharedAuditLists = new Map<
   { checkedAt: number; result: Awaited<ReturnType<typeof fetchSharedAudits>> }
 >();
 browser.permissions.onRemoved.addListener((permissions) => {
-  if (permissions.permissions?.includes("nativeMessaging")) {
+  const removedData = (permissions as typeof permissions & { data_collection?: string[] })
+    .data_collection;
+  if (
+    permissions.permissions?.includes("nativeMessaging") ||
+    removedData?.some((permission: string) =>
+      FIREFOX_AUDIT_DATA_PERMISSIONS.includes(
+        permission as (typeof FIREFOX_AUDIT_DATA_PERMISSIONS)[number],
+      ),
+    )
+  ) {
     permissionGeneration++;
     companionCheckedAt = 0;
     companionCheck = null;
@@ -84,21 +94,58 @@ export async function hasNativeMessagingPermission(): Promise<boolean> {
   return browser.permissions.contains({ permissions: ["nativeMessaging"] });
 }
 
+export async function hasSharedAuditDataPermission(): Promise<boolean> {
+  if (!supportsFirefoxDataConsent()) return true;
+  const permissions = await browser.permissions.getAll();
+  const granted = (permissions as typeof permissions & { data_collection?: string[] })
+    .data_collection;
+  return FIREFOX_AUDIT_DATA_PERMISSIONS.every((permission) => granted?.includes(permission));
+}
+
+export async function hasMcpAccessPermission(): Promise<boolean> {
+  return (await hasNativeMessagingPermission()) && (await hasSharedAuditDataPermission());
+}
+
 /** Must be called directly from a user-initiated button action. */
-export async function requestNativeMessagingPermission(): Promise<boolean | null> {
+export async function requestNativeMessagingPermission(
+  includeSharedAuditData = false,
+): Promise<boolean | null> {
   if (pendingPermissionRequest) return null;
 
-  let onAdded: ((permissions: { permissions?: string[] }) => void) | undefined;
-  const permissionAdded = new Promise<boolean>((resolve) => {
+  let onAdded:
+    ((permissions: { permissions?: string[]; data_collection?: string[] }) => void) | undefined;
+  const permissionAdded = new Promise<void>((resolve) => {
     onAdded = (permissions) => {
-      if (!permissions.permissions?.includes("nativeMessaging")) return;
-      resolve(true);
+      if (
+        !permissions.permissions?.includes("nativeMessaging") &&
+        !permissions.data_collection?.some((permission) =>
+          FIREFOX_AUDIT_DATA_PERMISSIONS.includes(
+            permission as (typeof FIREFOX_AUDIT_DATA_PERMISSIONS)[number],
+          ),
+        )
+      )
+        return;
+      void Promise.all([hasNativeMessagingPermission(), hasSharedAuditDataPermission()]).then(
+        ([nativeGranted, dataGranted]) => {
+          if (nativeGranted && (!includeSharedAuditData || dataGranted)) resolve();
+        },
+      );
     };
     browser.permissions.onAdded.addListener(onAdded);
   });
   let request: Promise<boolean>;
   try {
-    request = browser.permissions.request({ permissions: ["nativeMessaging"] });
+    const requests = [browser.permissions.request({ permissions: ["nativeMessaging"] })];
+    if (includeSharedAuditData && supportsFirefoxDataConsent()) {
+      const requestDataCollection = browser.permissions.request as unknown as (details: {
+        data_collection: readonly (typeof FIREFOX_AUDIT_DATA_PERMISSIONS)[number][];
+      }) => Promise<boolean>;
+      requests.push(requestDataCollection({ data_collection: FIREFOX_AUDIT_DATA_PERMISSIONS }));
+    }
+    request =
+      requests.length === 1
+        ? requests[0]!
+        : Promise.all(requests).then((results) => results.every(Boolean));
   } catch {
     if (onAdded) browser.permissions.onAdded.removeListener(onAdded);
     throw new NativeCompanionError(
@@ -143,12 +190,19 @@ export async function requestNativeMessagingPermission(): Promise<boolean | null
   return result.kind === "added" || result.granted;
 }
 
+function supportsFirefoxDataConsent(): boolean {
+  const runtime = browser.runtime as typeof browser.runtime & {
+    getBrowserInfo?: () => Promise<unknown>;
+  };
+  return typeof runtime.getBrowserInfo === "function";
+}
+
 export async function checkNativeCompanion(force = false): Promise<boolean> {
-  if (!(await hasNativeMessagingPermission())) {
+  if (!(await hasMcpAccessPermission())) {
     companionCheckedAt = 0;
     throw new NativeCompanionError(
       "permission-required",
-      "Native Messaging permission is not enabled.",
+      "Required MCP access permission is not enabled.",
     );
   }
   if (!force && Date.now() - companionCheckedAt < MCP_STATUS_FRESH_MS) return true;
@@ -170,6 +224,9 @@ export async function checkNativeCompanion(force = false): Promise<boolean> {
 }
 
 export async function shareAudit(audit: AuditResult): Promise<{ snapshot: SharedAudit }> {
+  if (!(await hasMcpAccessPermission())) {
+    throw new NativeCompanionError("permission-required", "MCP access permission is not enabled.");
+  }
   // Send the exact full-audit representation used by the existing JSON export.
   const result = await nativeRequest<{ snapshot: unknown }>("share_audit", {
     audit: JSON.parse(serializeAuditJson(audit)) as AuditResult,
@@ -187,11 +244,11 @@ export async function listSharedAudits(
 ): Promise<{ snapshots: SharedAudit[]; total: number; offset: number; nextOffset: number | null }> {
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > 500)
     throw new Error("Invalid shared audit list offset.");
-  if (!(await hasNativeMessagingPermission())) {
+  if (!(await hasMcpAccessPermission())) {
     sharedAuditLists.clear();
     throw new NativeCompanionError(
       "permission-required",
-      "Native Messaging permission is not enabled.",
+      "Required MCP access permission is not enabled.",
     );
   }
   const cached = sharedAuditLists.get(offset);
@@ -245,6 +302,9 @@ async function fetchSharedAudits(
 }
 
 export async function removeSharedAudit(snapshotId: string): Promise<{ removed: true }> {
+  if (!(await hasMcpAccessPermission())) {
+    throw new NativeCompanionError("permission-required", "MCP access permission is not enabled.");
+  }
   if (!/^rankmiso-shared-[0-9]+-[0-9]+$/.test(snapshotId)) {
     throw new Error("Invalid shared audit identifier.");
   }
@@ -262,7 +322,7 @@ async function nativeRequest<T>(type: string, payload: Record<string, unknown> =
     if (!(await hasNativeMessagingPermission())) {
       throw new NativeCompanionError(
         "permission-required",
-        "Native Messaging permission is not enabled.",
+        "Required MCP access permission is not enabled.",
       );
     }
 
