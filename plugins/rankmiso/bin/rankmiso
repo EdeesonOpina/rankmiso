@@ -13,7 +13,7 @@
 set -eu
 umask 077
 
-PLUGIN_VERSION=0.1.0
+PLUGIN_VERSION=0.1.1
 RELEASE=v0.5.1
 RELEASE_BASE=https://github.com/EdeesonOpina/rankmiso/releases/download
 # The companion binaries report their crate version. Any 0.1.x speaks the
@@ -393,7 +393,7 @@ connect() {
   report "$plat"
   if [ "$overall" = READY ]; then
     say ""
-    say "RankMiso is connected. Reload plugins (/reload-plugins in Claude Code) or start a new Codex session, then share an audit from the extension."
+    say "RankMiso is connected. Restart Claude Code (or reconnect RankMiso in /mcp), or start a new Codex session, so the RankMiso tools load. Restart your browser, then share an audit from the extension."
   else
     return 1
   fi
@@ -405,7 +405,7 @@ case "${1:-help}" in
     case "$plat" in unsupported:*) setup_required_server "$(unsupported_message "$plat")" ;; esac
     resolve_paths "$plat"
     if ! binaries_present; then
-      setup_required_server "The RankMiso companion is not installed yet. Use the RankMiso connect skill (Claude Code: /rankmiso:connect, or ask: Connect RankMiso), then run /reload-plugins in Claude Code or start a new Codex session."
+      setup_required_server "The RankMiso companion is not installed yet. Use the RankMiso connect skill (Claude Code: /rankmiso:connect, or ask: Connect RankMiso), then restart Claude Code (or reconnect RankMiso in /mcp) or start a new Codex session."
     fi
     version=$(installed_version)
     case "$version" in

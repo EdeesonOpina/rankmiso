@@ -16,7 +16,7 @@ The RankMiso plugin connects Claude Code or Codex to SEO audits you share from t
 | `.claude-plugin/marketplace.json` | Claude Code marketplace catalog. |
 | `.agents/plugins/marketplace.json` | Codex marketplace catalog. |
 
-Versions: browser extension v0.5.0 (Chrome Web Store and Firefox Add-ons), MCP companion v0.5.1 (GitHub pre-release), plugin 0.1.0. Each is versioned separately.
+Versions: browser extension v0.5.0 (Chrome Web Store and Firefox Add-ons), MCP companion v0.5.1 (GitHub pre-release), plugin 0.1.1. Each is versioned separately.
 
 Install: in Claude Code, `/plugin marketplace add EdeesonOpina/rankmiso` then `/plugin install rankmiso@rankmiso`. In Codex, `codex plugin marketplace add EdeesonOpina/rankmiso` then `codex plugin add rankmiso@rankmiso`.
 
@@ -41,7 +41,7 @@ If a current compatible companion is already installed, it is reused. Nothing is
 ```text
 RankMiso Integration
 
-Plugin: rankmiso 0.1.0 (companion release v0.5.1)
+Plugin: rankmiso 0.1.1 (companion release v0.5.1)
 Platform: linux-x86_64
 MCP Companion: Installed (rankmiso-mcp 0.1.1) at ~/.local/share/rankmiso-mcp/bin
 Audit folder: ~/.local/share/rankmiso-mcp/audits

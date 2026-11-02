@@ -19,7 +19,7 @@ The launcher is `bin/rankmiso` in this plugin, two folders above this file. Run 
 
    **RankMiso is connected.** Your browser and AI assistant can now exchange SEO audit results through the local companion. Open RankMiso in Chrome or Firefox, audit a page, and choose Share with MCP.
 
-   Then tell the user to reload the MCP connection: `/reload-plugins` in Claude Code, or start a new Codex session.
+   Then tell the user to load the RankMiso tools: restart Claude Code (or open `/mcp` and reconnect `plugin:rankmiso:rankmiso`), or start a new Codex session. `/reload-plugins` alone does not restart a server that is already running. Also tell them to quit and reopen the browser.
 
 Rules:
 - Never pass `--yes` without approval given in this conversation.
