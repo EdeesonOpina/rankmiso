@@ -1,6 +1,6 @@
 # RankMiso for Claude Code
 
-Requires Claude Code with plugin support, on Linux x86_64 or macOS. See [supported platforms](README.md#supported-platforms).
+Requires Claude Code with plugin support. Verified on Linux x86_64; macOS is not yet tested on a Mac; Windows is not supported by the plugin. See [supported platforms](README.md#supported-platforms).
 
 ## Install
 
@@ -13,7 +13,6 @@ In Claude Code:
 
 Or from a terminal: `claude plugin marketplace add EdeesonOpina/rankmiso`, then `claude plugin install rankmiso@rankmiso`.
 
-The marketplace is read from the repository's default branch, so these commands work after the plugin is merged there.
 
 ## Connect
 
@@ -23,7 +22,7 @@ The MCP server appears as `plugin:rankmiso:rankmiso`. Its tools are named `mcp__
 
 ## Use
 
-1. In Chrome or Firefox, open RankMiso, audit a page, and choose Share with AI.
+1. In Chrome or Firefox, open RankMiso, audit a page, and choose Share with MCP.
 2. Ask Claude Code to analyze the latest RankMiso audit (`/rankmiso:analyze-audit`), or to fix the findings in your code (`/rankmiso:fix-seo`).
 
 ## Troubleshoot

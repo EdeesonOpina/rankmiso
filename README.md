@@ -14,8 +14,8 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-c42a20" />
-  <img alt="In stores: v0.3.0" src="https://img.shields.io/badge/in%20stores-v0.3.0-14161c" />
-  <img alt="In review: v0.4.0" src="https://img.shields.io/badge/in%20review-v0.4.0-7a7f8c" />
+  <img alt="In stores: v0.5.0" src="https://img.shields.io/badge/in%20stores-v0.5.0-14161c" />
+  <img alt="MCP companion: v0.5.1" src="https://img.shields.io/badge/MCP%20companion-v0.5.1-7a7f8c" />
   <img alt="Chrome, Edge and Firefox" src="https://img.shields.io/badge/browsers-Chrome%20·%20Edge%20·%20Firefox-f2a93b" />
   <img alt="Built with Rust and Vue" src="https://img.shields.io/badge/built%20with-Rust%20%2B%20Vue-5fd39a" />
 </p>
@@ -35,7 +35,7 @@ It belongs to the Miso ecosystem, where the recipe is simple: powerful tools, le
 RankMiso is on the Chrome Web Store and Firefox Add-ons. Edge runs the Chromium build, sideloaded. Safari is not supported.
 
 > [!NOTE]
-> v0.3.0 is the version in the stores today. v0.4.0 has been submitted to Chrome and Firefox and is waiting on review. The new features below arrive when it is approved. Release notes: [docs/releases/v0.4.0.md](docs/releases/v0.4.0.md).
+> v0.5.0 is the version in the Chrome Web Store and Firefox Add-ons. It adds optional audit sharing with Claude Code and Codex through a local companion (current companion: v0.5.1). Release notes: [v0.5.0](docs/releases/v0.5.0-rc1.md), [v0.4.0](docs/releases/v0.4.0.md).
 
 ## 🍜 What's in the bowl
 
@@ -58,7 +58,7 @@ The little things are handled too. Counts use thousands separators, long address
 
 ## ✨ Fresh from the kitchen
 
-New in v0.4.0, now in store review:
+New in v0.4.0:
 
 - **Automatic Website Checks.** Open the sidebar and the fox reads each page you switch to. This is opt-in. You grant optional website access first, and you can revoke it in your browser at any time.
 - **Individual Website Access.** Rather allow sites one at a time? Approve only the websites you pick.
@@ -76,7 +76,32 @@ Save a report when you want a before and after. Saved comparisons stay on your d
 
 ### 🤖 A Little AI Seasoning — RankMiso MCP
 
-**Preview:** RankMiso integrates with Claude Code and Codex through a local MCP plugin in this repository. Install the RankMiso plugin, ask your assistant to “Connect RankMiso”, and approve the one-time setup. It downloads and verifies the Rust companion, registers Chrome and Firefox, and needs no manual MCP configuration. Verified on Linux x86_64 with Google Chrome; macOS setup is not yet tested on a Mac. No Miso account, no cloud backend, and no automatic browser access. See [Claude Code](docs/integrations/claude-code.md) and [Codex](docs/integrations/codex.md). Manual setup is in the [MCP guide](docs/mcp/README.md). This integration is not included in the published v0.4.0 extension.
+Share an audit with Claude Code or Codex and let your coding assistant explain it or fix the issues in your code. Everything runs locally through the RankMiso MCP companion. There is no Miso account or backend, and nothing is shared until you choose **Share with MCP** in the extension.
+
+**Claude Code**
+
+```text
+/plugin marketplace add EdeesonOpina/rankmiso
+/plugin install rankmiso@rankmiso
+```
+
+**Codex**
+
+```sh
+codex plugin marketplace add EdeesonOpina/rankmiso
+codex plugin add rankmiso@rankmiso
+```
+
+Then ask your assistant to **Connect RankMiso** and approve the one-time setup. The plugin downloads the companion from the GitHub release, checks its SHA-256, installs it for your user, and registers Chrome and Firefox. You don't edit any config files. Reload plugins in Claude Code (`/reload-plugins`) or start a new Codex session, then share an audit from the extension.
+
+| Environment | Status |
+| --- | --- |
+| Linux x86_64 with Google Chrome | Verified |
+| macOS | Not yet tested on a Mac |
+| Windows | Automatic plugin setup not supported yet; use the [manual install](docs/mcp/INSTALL.md) |
+| Firefox sharing, including Snap Firefox | Not yet verified |
+
+Your AI assistant may send the audit content it reads to its model provider, under that client's settings. Details: [Claude Code](docs/integrations/claude-code.md), [Codex](docs/integrations/codex.md), [how the plugin works](docs/integrations/README.md). Advanced: [manual companion install](docs/mcp/INSTALL.md) from [GitHub Releases](https://github.com/EdeesonOpina/rankmiso/releases/tag/v0.5.1).
 
 > [!NOTE]
 > Firefox doesn't have everything yet. Standalone sitemap discovery, PageSpeed Insights, and some optional remote technical checks are Chromium only. See [browser compatibility](docs/browser-support/compatibility.md).

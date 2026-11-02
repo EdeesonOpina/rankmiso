@@ -1,6 +1,6 @@
 # Permissions
 
-The published v0.3.0 package and the current F1-H.1 development build differ. The notes below describe the current generated development manifests; v0.3.0 remains unchanged until a maintainer-authorized release.
+The notes below describe the generated manifests in this repository. The published store version is v0.5.0, which also declares `nativeMessaging` as an optional permission for local AI sharing.
 
 Required API permissions remain:
 

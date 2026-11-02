@@ -14,7 +14,7 @@ Run `rankmiso status` (`sh <plugin root>/bin/rankmiso status`; the plugin root i
 | `Audit folder: Config missing or points elsewhere` | An earlier setup uses another audit folder. The installer refuses to move audits. Show the path and let the user decide. |
 | `MCP Server: Did not initialize` | Run `rankmiso mcp < /dev/null` and quote its error. |
 | `Chrome:` or `Firefox:` `Not registered` / `Invalid` | Use the connect skill. It repairs the registration with the installed companion and downloads nothing. `Invalid` files that belong to another program are left unchanged. Report their path. |
-| `Shared Audit: None yet` | Not a failure. The user opens RankMiso in the browser, audits a page, and chooses Share with AI. The first share asks for the browser's Native Messaging permission. |
+| `Shared Audit: None yet` | Not a failure. The user opens RankMiso in the browser, audits a page, and chooses Share with MCP. The first share asks for the browser's Native Messaging permission. |
 | `Note: Snap Firefox` | Snap Firefox isolates native hosts. Suggest Chrome or a non-Snap Firefox. Do not weaken the sandbox. |
 
 If the status is READY but the assistant has no RankMiso tools:

@@ -16,7 +16,9 @@ The RankMiso plugin connects Claude Code or Codex to SEO audits you share from t
 | `.claude-plugin/marketplace.json` | Claude Code marketplace catalog. |
 | `.agents/plugins/marketplace.json` | Codex marketplace catalog. |
 
-Plugin version: 0.1.0. It is versioned separately from the extension and the companion.
+Versions: browser extension v0.5.0 (Chrome Web Store and Firefox Add-ons), MCP companion v0.5.1 (GitHub pre-release), plugin 0.1.0. Each is versioned separately.
+
+Install: in Claude Code, `/plugin marketplace add EdeesonOpina/rankmiso` then `/plugin install rankmiso@rankmiso`. In Codex, `codex plugin marketplace add EdeesonOpina/rankmiso` then `codex plugin add rankmiso@rankmiso`.
 
 ## One-time setup
 
@@ -28,7 +30,7 @@ Ask the assistant to **Connect RankMiso**. In Claude Code you can also run `/ran
 4. Runs the archive's own `rankmiso-setup install`. That installer copies the binaries atomically into your user folder, creates the private audit folder, registers the browser host for the exact Chrome ID `gdklhfalmmahhgimegjlfnhmacimeonl` and Firefox ID `rankmiso@rankmiso.extension`, and validates the result.
 5. Prints a status report.
 
-No administrator rights are used. No Claude or Codex config file is edited, because the plugin's own MCP entry runs the launcher. Setup never shares an audit. You still choose Share with AI in the extension.
+No administrator rights are used. Your AI assistant may send the audit content it reads to its model provider, under that client's settings. No Claude or Codex config file is edited, because the plugin's own MCP entry runs the launcher. Setup never shares an audit. You still choose Share with MCP in the extension.
 
 If a current compatible companion is already installed, it is reused. Nothing is downloaded or overwritten, and saved audits are kept. A missing or wrong browser registration is repaired with the installed companion. A companion with an unsupported version, an audit folder configured elsewhere, or a host registration that points at another program is left unchanged and reported.
 
@@ -46,7 +48,7 @@ Audit folder: ~/.local/share/rankmiso-mcp/audits
 MCP Server: Ready (5 read-only tools)
 Chrome: Registered
 Firefox: Registered
-Shared Audit: None yet. Open RankMiso in your browser, audit a page, and choose Share with AI.
+Shared Audit: None yet. Open RankMiso in your browser, audit a page, and choose Share with MCP.
 
 Status: READY
 ```
@@ -65,9 +67,9 @@ To pin a later release, update `RELEASE`, the three SHA-256 values, and `PINNED_
 
 | Platform | Plugin setup | Notes |
 | --- | --- | --- |
-| Linux x86_64 | Verified: clean install and v0.5.0 → v0.5.1 upgrade from the published archives, Claude Code 2.1.316, Codex 0.166.0, and Google Chrome 156 sharing with the Chrome Web Store extension 0.5.0 | Google Chrome and `~/.mozilla` Firefox are registered. Snap Firefox isolates native hosts and is not verified. Chromium, Brave, and Edge are not registered by this release. |
-| macOS Apple Silicon, macOS Intel | Implemented, not run on a Mac | Pinned v0.5.1 archives passed native CI. Binaries are not notarized. Files downloaded with `curl` are not quarantined, but this has not been checked on a Mac. |
-| Windows x86_64 | Not supported by the plugin | The launcher needs `sh`. Use the Windows package and `docs/mcp/INSTALL.md`. |
+| Linux x86_64 | Verified: clean install and v0.5.0 → v0.5.1 upgrade from the published archives, Claude Code 2.1.316, Codex 0.166.0, and Google Chrome 156 sharing with the Chrome Web Store extension 0.5.0 | Google Chrome and `~/.mozilla` Firefox are registered. Firefox sharing is not yet verified, including Snap Firefox, which isolates native hosts. Chromium, Brave, and Edge are not registered by this release. |
+| macOS Apple Silicon, macOS Intel | Runtime not verified (not run on a Mac) | Pinned v0.5.1 archives passed native CI. Binaries are not notarized. Files downloaded with `curl` are not quarantined, but this has not been checked on a Mac. |
+| Windows x86_64 | Automatic plugin setup not supported yet | The launcher needs `sh`. Use the Windows package and `docs/mcp/INSTALL.md`. |
 | Linux ARM64, Windows ARM64 | Not supported | No companion build exists. The launcher says so. |
 
 ## Updates and removal

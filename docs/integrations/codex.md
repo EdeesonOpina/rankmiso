@@ -1,6 +1,6 @@
 # RankMiso for Codex
 
-Requires a Codex version with plugin support, running locally on Linux x86_64 or macOS. RankMiso uses a local stdio MCP server, so it does not work in Codex cloud tasks. See [supported platforms](README.md#supported-platforms).
+Requires a Codex version with plugin support, running locally. Verified on Linux x86_64; macOS is not yet tested on a Mac; Windows is not supported by the plugin. RankMiso uses a local stdio MCP server, so it does not work in Codex cloud tasks. See [supported platforms](README.md#supported-platforms).
 
 ## Install
 
@@ -9,7 +9,7 @@ codex plugin marketplace add EdeesonOpina/rankmiso
 codex plugin add rankmiso@rankmiso
 ```
 
-You can also open `/plugins` in Codex and install RankMiso from the RankMiso marketplace. Add `--ref <branch>` to the marketplace source until the plugin is on the default branch.
+You can also open `/plugins` in Codex and install RankMiso from the RankMiso marketplace.
 
 ## Connect
 
@@ -19,7 +19,7 @@ Start a new Codex session and ask "Connect RankMiso". Codex runs the plugin's `c
 
 ## Use
 
-1. In Chrome or Firefox, open RankMiso, audit a page, and choose Share with AI.
+1. In Chrome or Firefox, open RankMiso, audit a page, and choose Share with MCP.
 2. Ask Codex to analyze the latest RankMiso audit, or to fix its findings in your code.
 
 ## Troubleshoot

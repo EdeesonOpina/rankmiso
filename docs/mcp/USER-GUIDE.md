@@ -16,7 +16,7 @@ The tools can read existing RankMiso exports. They cannot open a website, start 
 
 ## Requirements and verification status
 
-- RankMiso v0.5.0 or later. The published v0.4.0 extension does not include MCP.
+- RankMiso v0.5.0 or later, the current version in the Chrome Web Store and Firefox Add-ons.
 - The optional RankMiso companion for Windows x86_64, macOS Apple Silicon, macOS Intel, or Linux x86_64.
 - Chrome or Firefox for browser sharing. The companion registers both, but Firefox live Native Messaging has not been verified.
 - Codex CLI or Claude Code for the AI-client connection.
