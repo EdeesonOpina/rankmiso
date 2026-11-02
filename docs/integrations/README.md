@@ -9,7 +9,7 @@ The RankMiso plugin connects Claude Code or Codex to SEO audits you share from t
 
 | Path | Purpose |
 | --- | --- |
-| `plugins/rankmiso/bin/rankmiso` | POSIX `sh` launcher. `mcp` starts the installed companion, `status` checks the setup, `connect` installs or repairs it. |
+| `plugins/rankmiso/bin/rankmiso` | POSIX `sh` launcher. `mcp` starts the installed companion. Until it is installed, `mcp` answers with no tools and a setup instruction, so clients do not record a failed server. `status` checks the setup. `connect` installs, repairs, or upgrades it. |
 | `plugins/rankmiso/.mcp.json` | Claude Code MCP entry: `sh ${CLAUDE_PLUGIN_ROOT}/bin/rankmiso mcp`. |
 | `plugins/rankmiso/mcp.json` | Codex MCP entry: `sh ./bin/rankmiso mcp`, run from the plugin folder. |
 | `plugins/rankmiso/skills/` | `connect`, `troubleshoot`, `analyze-audit`, `fix-seo`. |

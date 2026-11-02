@@ -215,6 +215,34 @@ report() {
   say "Status: $overall"
 }
 
+# Speaks minimal MCP (initialize, ping, an empty tools/list) when the companion
+# cannot run. Clients then do not record a failed server, and the model reads
+# the setup instruction. It exposes no tools and exits when stdin closes.
+setup_required_server() {
+  note=$(json_escape "$1" | tr '\n' ' ')
+  err "$1"
+  while IFS= read -r line; do
+    id=$(printf '%s' "$line" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')
+    [ -n "$id" ] || id=$(printf '%s' "$line" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\("[^"]*"\).*/\1/p')
+    [ -n "$id" ] || continue
+    method=$(printf '%s' "$line" | sed -n 's/.*"method"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    case "$method" in
+      initialize)
+        proto=$(printf '%s' "$line" | sed -n 's/.*"protocolVersion"[[:space:]]*:[[:space:]]*"\([0-9-]*\)".*/\1/p')
+        result='{"protocolVersion":"'"${proto:-2025-06-18}"'","capabilities":{"tools":{}},"serverInfo":{"name":"rankmiso-setup-required","version":"'"$PLUGIN_VERSION"'"},"instructions":"'"$note"'"}'
+        ;;
+      tools/list) result='{"tools":[]}' ;;
+      ping) result='{}' ;;
+      *)
+        printf '{"jsonrpc":"2.0","id":%s,"error":{"code":-32601,"message":"%s"}}\n' "$id" "$note"
+        continue
+        ;;
+    esac
+    printf '{"jsonrpc":"2.0","id":%s,"result":%s}\n' "$id" "$result"
+  done
+  exit 0
+}
+
 safe_archive_listing() {
   # Exactly the five release files, regular files only, no paths.
   listing=$(tar -tvzf "$1") || return 1
@@ -374,16 +402,15 @@ connect() {
 case "${1:-help}" in
   mcp)
     plat=$(platform)
-    case "$plat" in unsupported:*) unsupported_message "$plat" >&2; exit 2 ;; esac
+    case "$plat" in unsupported:*) setup_required_server "$(unsupported_message "$plat")" ;; esac
     resolve_paths "$plat"
     if ! binaries_present; then
-      err "The RankMiso companion is not installed. Ask your assistant to \"Connect RankMiso\" (Claude Code: /rankmiso:connect), then reconnect."
-      exit 1
+      setup_required_server "The RankMiso companion is not installed yet. Use the RankMiso connect skill (Claude Code: /rankmiso:connect, or ask: Connect RankMiso), then run /reload-plugins in Claude Code or start a new Codex session."
     fi
     version=$(installed_version)
     case "$version" in
       "$COMPATIBLE_PREFIX"*) ;;
-      *) err "Installed companion '${version:-did not start}' is not compatible with this plugin. Run the RankMiso troubleshoot skill."; exit 1 ;;
+      *) setup_required_server "The installed RankMiso companion (${version:-did not start}) is not compatible with this plugin. Use the RankMiso troubleshoot skill." ;;
     esac
     exec "$mcp_bin" --audit-dir "$audit_dir"
     ;;

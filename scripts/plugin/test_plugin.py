@@ -131,11 +131,28 @@ class LauncherTests(unittest.TestCase):
         self.assertFalse(self.chrome.exists())
         self.assertEqual(list(self.tmp.iterdir()), [], "temporary download was not cleaned up")
 
+    def assert_setup_required_server(self, expected_note):
+        """Without a usable companion, `mcp` answers MCP with no tools and a setup note."""
+        requests = [
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}},
+            {"jsonrpc": "2.0", "method": "notifications/initialized"},
+            {"jsonrpc": "2.0", "id": "two", "method": "tools/list"},
+            {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "rankmiso_list_audits", "arguments": {}}},
+        ]
+        out = subprocess.run(["sh", str(LAUNCHER), "mcp"], env=self.env, input="".join(json.dumps(r) + "\n" for r in requests), capture_output=True, text=True, timeout=30)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        replies = [json.loads(line) for line in out.stdout.splitlines()]
+        self.assertEqual([r["id"] for r in replies], [1, "two", 3])
+        self.assertEqual(replies[0]["result"]["protocolVersion"], "2025-06-18")
+        self.assertIn(expected_note, replies[0]["result"]["instructions"])
+        self.assertEqual(replies[1]["result"], {"tools": []})
+        self.assertIn(expected_note, replies[2]["error"]["message"])
+
     # Missing and unsupported setups
 
     def test_missing_companion_gives_guidance_and_plan_changes_nothing(self):
         self.assertIn("NOT INSTALLED", self.run_launcher("status", expected=1))
-        self.assertIn("Connect RankMiso", self.run_launcher("mcp", expected=1))
+        self.assert_setup_required_server("Connect RankMiso")
         plan = self.run_launcher("connect")
         self.assertIn("no changes made yet", plan)
         self.assertIn("d5fe5cea1eee54587b7ce8dc3223bf21019d959791a2e45997aea645f52866b8", plan)
@@ -146,7 +163,7 @@ class LauncherTests(unittest.TestCase):
         self.shim_command("uname", 'case "$1" in -s) echo Linux;; -m) echo aarch64;; esac\n')
         out = self.run_launcher("connect", "--yes", expected=2)
         self.assertIn("no Linux ARM64 companion build", out)
-        self.assertIn("no Linux ARM64", self.run_launcher("mcp", expected=2))
+        self.assert_setup_required_server("no Linux ARM64")
         self.assertEqual(list(self.home.iterdir()), [])
 
     def test_offline_download_fails_without_changes(self):
@@ -264,7 +281,7 @@ class LauncherTests(unittest.TestCase):
         out = self.run_launcher("connect", "--yes", env=self.offline_install_env(), expected=1)
         self.assertIn("does not support", out)
         self.assertIn("9.0.0", mcp.read_text())
-        self.assertIn("not compatible", self.run_launcher("mcp", expected=1))
+        self.assert_setup_required_server("not compatible")
         self.assertIn("MCP Companion: Incompatible", self.run_launcher("status", expected=1))
 
     def stub_version(self, binary, version):
