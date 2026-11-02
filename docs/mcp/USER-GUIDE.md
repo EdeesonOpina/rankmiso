@@ -16,7 +16,7 @@ The tools can read existing RankMiso exports. They cannot open a website, start 
 
 ## Requirements and verification status
 
-- RankMiso v0.5.0 or later. The published v0.4.0 extension does not include MCP.
+- RankMiso v0.5.0 or later, the current version in the Chrome Web Store and Firefox Add-ons.
 - The optional RankMiso companion for Windows x86_64, macOS Apple Silicon, macOS Intel, or Linux x86_64.
 - Chrome or Firefox for browser sharing. The companion registers both, but Firefox live Native Messaging has not been verified.
 - Codex CLI or Claude Code for the AI-client connection.
@@ -25,7 +25,11 @@ All four companion targets passed native CI for builds, tests, archives, checksu
 
 ## Install the companion
 
-MCP is included in RankMiso v0.5.0. The optional companion will be available from the official RankMiso product page when its release packages are published and verified. Do not use a temporary CI artifact as a public installer. Once an official package is available, verify its SHA-256 checksum, extract it, then open a terminal in the extracted folder.
+MCP sharing is included in the RankMiso v0.5.0 browser extension. The companion is installed separately.
+
+**Easiest:** install the RankMiso plugin in Claude Code or Codex and ask it to “Connect RankMiso”. It downloads, verifies, and installs the companion after you approve ([Claude Code](../integrations/claude-code.md), [Codex](../integrations/codex.md)).
+
+**Manual:** download the archive for your system from the [v0.5.1 pre-release](https://github.com/EdeesonOpina/rankmiso/releases/tag/v0.5.1) (v0.5.0 cannot be started by browsers), verify its SHA-256 checksum, extract it, then open a terminal in the extracted folder. Do not use a CI artifact as an installer.
 
 Run the installer for your system:
 

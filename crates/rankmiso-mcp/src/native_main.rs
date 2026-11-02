@@ -79,8 +79,46 @@ fn default_config_path() -> Option<PathBuf> {
     Some(base.join("rankmiso-mcp").join("native-host.json"))
 }
 
+fn is_chrome_origin(arg: &str) -> bool {
+    arg.strip_prefix("chrome-extension://")
+        .and_then(|rest| rest.strip_suffix('/'))
+        .is_some_and(|id| id.len() == 32 && id.bytes().all(|b| (b'a'..=b'p').contains(&b)))
+}
+
+/// Accepts only the launch details browsers pass. Chrome sends the caller
+/// origin, plus `--parent-window=<handle>` on Windows. Firefox sends the host
+/// manifest path and the add-on ID. They are informational: the browser has
+/// already enforced the manifest's extension allowlist before starting us.
+fn is_browser_launch(args: &[String]) -> bool {
+    match args {
+        [] => true,
+        [origin] => is_chrome_origin(origin),
+        [origin, window] if is_chrome_origin(origin) => window
+            .strip_prefix("--parent-window=")
+            .is_some_and(|handle| !handle.is_empty() && handle.bytes().all(|b| b.is_ascii_digit())),
+        [manifest, addon] => {
+            manifest.to_ascii_lowercase().ends_with(".json")
+                && !addon.is_empty()
+                && !addon.starts_with('-')
+                && !addon.chars().any(|c| c.is_whitespace() || c.is_control())
+        }
+        _ => false,
+    }
+}
+
 fn main() -> ExitCode {
-    match std::env::args_os().nth(1).as_deref() {
+    let args: Vec<String> = match std::env::args_os()
+        .skip(1)
+        .map(|arg| arg.into_string())
+        .collect()
+    {
+        Ok(args) => args,
+        Err(_) => {
+            eprintln!("rankmiso-mcp-native-host: unexpected command-line argument");
+            return ExitCode::FAILURE;
+        }
+    };
+    match args.first().map(String::as_str) {
         Some(arg) if arg == "--version" || arg == "-V" => {
             println!("rankmiso-mcp-native-host {}", env!("CARGO_PKG_VERSION"));
             return ExitCode::SUCCESS;
@@ -89,11 +127,11 @@ fn main() -> ExitCode {
             println!("rankmiso-mcp-native-host {}\n\nThis executable is started by Chrome or Firefox using Native Messaging.", env!("CARGO_PKG_VERSION"));
             return ExitCode::SUCCESS;
         }
-        Some(_) => {
+        _ if is_browser_launch(&args) => {}
+        _ => {
             eprintln!("rankmiso-mcp-native-host: unexpected command-line argument");
             return ExitCode::FAILURE;
         }
-        None => {}
     }
     #[cfg(windows)]
     if let Err(error) = set_native_messaging_binary_mode() {

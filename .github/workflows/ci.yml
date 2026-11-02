@@ -19,6 +19,8 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      - run: cargo build -p rankmiso-mcp --bins
+      - run: python scripts/plugin/test_plugin.py
 
   extension:
     runs-on: ubuntu-latest

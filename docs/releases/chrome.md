@@ -1,6 +1,6 @@
 # Chrome release
 
-This is the historical v0.4.0 Chrome submission checklist. v0.4.0 is the current public version; v0.5.0 RC1 metadata and remaining store work are tracked in [the RC1 release notes](v0.5.0-rc1.md).
+This is the historical v0.4.0 Chrome submission checklist. v0.5.0 is the current public version; see [the v0.5.0 release notes](v0.5.0-rc1.md).
 
 The product name is already RankMiso. Icons are already generated from the fox sticker.
 
