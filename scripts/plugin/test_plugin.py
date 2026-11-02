@@ -138,7 +138,7 @@ class LauncherTests(unittest.TestCase):
         self.assertIn("Connect RankMiso", self.run_launcher("mcp", expected=1))
         plan = self.run_launcher("connect")
         self.assertIn("no changes made yet", plan)
-        self.assertIn("8d3766354cad5329a66bbc217383d65d3dad0e449113adc9877006e8fb33f81a", plan)
+        self.assertIn("d5fe5cea1eee54587b7ce8dc3223bf21019d959791a2e45997aea645f52866b8", plan)
         self.assertIn("rankmiso connect --yes", plan)
         self.assertEqual(list(self.home.iterdir()), [])
 
@@ -270,14 +270,16 @@ class LauncherTests(unittest.TestCase):
     def stub_version(self, binary, version):
         (self.data / "bin" / binary).write_text(f"#!/bin/sh\necho '{binary} {version}'\n")
 
-    def test_v050_host_is_reported_as_blocking_browser_sharing(self):
+    def test_v050_host_is_reported_and_offered_the_upgrade(self):
         self.require_build()
         self.run_launcher("connect", "--yes", env=self.offline_install_env())
         self.stub_version("rankmiso-mcp-native-host", "0.1.0")
         self.assertIn("Browser sharing: Blocked", self.run_launcher("status", expected=1))
-        out = self.run_launcher("connect", "--yes", expected=1)
-        self.assertIn("needs a newer companion", out)
+        self.assertIn("Upgrade the installed companion", self.run_launcher("connect"))
         self.assertIn("0.1.0", (self.data / "bin/rankmiso-mcp-native-host").read_text())
+        out = self.run_launcher("connect", "--yes", env=self.offline_install_env())
+        self.assertIn("Status: READY", out)
+        self.assertNotIn("0.1.0", (self.data / "bin/rankmiso-mcp-native-host").read_bytes().decode("latin-1")[:64])
 
     def test_outdated_companion_upgrades_only_after_verification(self):
         self.require_build()
@@ -287,8 +289,8 @@ class LauncherTests(unittest.TestCase):
         for binary in ["rankmiso-mcp", "rankmiso-mcp-native-host"]:
             self.stub_version(binary, "0.1.0")
         path, _ = self.archive()
-        newer = {"RANKMISO_TEST_ARCHIVE": str(path), "RANKMISO_TEST_PINNED_PATCH": "1"}
-        self.assertIn("Replace the installed rankmiso-mcp 0.1.0", self.run_launcher("connect", env=newer))
+        newer = {"RANKMISO_TEST_ARCHIVE": str(path)}
+        self.assertIn("Upgrade the installed companion (rankmiso-mcp 0.1.0) to v0.5.1", self.run_launcher("connect", env=newer))
         # A failed download or checksum leaves the working install alone.
         self.run_launcher("connect", "--yes", env={**newer, "RANKMISO_TEST_SHA256": "0" * 64}, expected=1)
         self.assertIn("0.1.0", (self.data / "bin/rankmiso-mcp").read_text())
@@ -307,7 +309,7 @@ class LauncherTests(unittest.TestCase):
         # it has already replaced the binaries.
         self.firefox.write_text(json.dumps({"name": HOST_NAME, "description": "other", "path": "/opt/other", "type": "stdio", "allowed_extensions": ["x@y"]}))
         path, digest = self.archive()
-        out = self.run_launcher("connect", "--yes", env={"RANKMISO_TEST_ARCHIVE": str(path), "RANKMISO_TEST_SHA256": digest, "RANKMISO_TEST_PINNED_PATCH": "1"}, expected=1)
+        out = self.run_launcher("connect", "--yes", env={"RANKMISO_TEST_ARCHIVE": str(path), "RANKMISO_TEST_SHA256": digest}, expected=1)
         self.assertIn("previous companion binaries were restored", out)
         self.assertEqual(old, {name: (self.data / "bin" / name).read_bytes() for name in BINARIES})
         self.assertEqual(sorted(p.name for p in (self.data / "bin").iterdir()), sorted(BINARIES))
