@@ -1,0 +1,445 @@
+#!/bin/sh
+# RankMiso plugin launcher for Claude Code and Codex.
+#
+#   rankmiso mcp            start the installed RankMiso MCP companion (stdio)
+#   rankmiso status         report what is installed and working
+#   rankmiso connect        show what setup would change (no changes)
+#   rankmiso connect --yes  install or repair the companion after user approval
+#   rankmiso uninstall --yes  remove the shared companion (keeps audit files)
+#
+# The companion itself is the Rust `rankmiso-mcp` release. This script only
+# finds it, or downloads the pinned official archive and runs its own
+# `rankmiso-setup install`.
+set -eu
+umask 077
+
+PLUGIN_VERSION=0.1.0
+RELEASE=v0.5.1
+RELEASE_BASE=https://github.com/EdeesonOpina/rankmiso/releases/download
+# The companion binaries report their crate version. Any 0.1.x speaks the
+# same MCP tools and Native Messaging protocol version 1.
+COMPATIBLE_PREFIX="rankmiso-mcp 0.1."
+# Patch version the pinned release reports. An older installed 0.1.x is
+# offered an upgrade. Native hosts 0.1.0 reject the arguments browsers pass
+# at launch, so browser sharing needs 0.1.1 or later.
+PINNED_PATCH=1
+FIRST_WORKING_HOST_PATCH=1
+HOST_NAME=com.misoecosystem.rankmiso
+CHROME_ID=gdklhfalmmahhgimegjlfnhmacimeonl
+FIREFOX_ID=rankmiso@rankmiso.extension
+
+say() { printf '%s\n' "$*"; }
+err() { printf 'rankmiso: %s\n' "$*" >&2; }
+
+platform() {
+  os=$(uname -s 2>/dev/null || echo unknown)
+  arch=$(uname -m 2>/dev/null || echo unknown)
+  case "$os/$arch" in
+    Linux/x86_64 | Linux/amd64) echo linux-x86_64 ;;
+    Darwin/arm64 | Darwin/aarch64) echo macos-aarch64 ;;
+    Darwin/x86_64) echo macos-x86_64 ;;
+    *) echo "unsupported:$os/$arch" ;;
+  esac
+}
+
+# SHA-256 of the official v0.5.1 archives (built by workflow run 41382210579
+# from 44f9584), checked against the GitHub release asset digests and
+# independent public downloads.
+pinned_sha256() {
+  case "$1" in
+    linux-x86_64) echo d5fe5cea1eee54587b7ce8dc3223bf21019d959791a2e45997aea645f52866b8 ;;
+    macos-aarch64) echo 6f77d4ce15e7d53fa46f00a776d286ee33d3341a097ca746a9c6c24c70d58900 ;;
+    macos-x86_64) echo af08724d73155c82abce59f7383b4ecd91226bc11310f726871ea3f947ba372f ;;
+    *) return 1 ;;
+  esac
+}
+
+unsupported_message() {
+  case "$1" in
+    *Linux/aarch64* | *Linux/arm64*)
+      say "RankMiso has no Linux ARM64 companion build yet. Automatic setup is not available on this computer." ;;
+    *MINGW* | *MSYS* | *CYGWIN* | *Windows*)
+      say "The RankMiso plugin cannot set up Windows automatically yet. Use the Windows companion package from the $RELEASE release (docs/mcp/INSTALL.md)." ;;
+    *)
+      say "RankMiso has no companion build for ${1#unsupported:}. Supported: Linux x86_64, macOS Apple Silicon, macOS Intel." ;;
+  esac
+}
+
+# Mirror of `install_paths()` and `manifest_dirs()` in
+# crates/rankmiso-mcp/src/installer.rs. Keep the two in step.
+resolve_paths() {
+  : "${HOME:?HOME is not set}"
+  case "$1" in
+    linux-*)
+      data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/rankmiso-mcp"
+      config_file="${XDG_CONFIG_HOME:-$HOME/.config}/rankmiso-mcp/native-host.json"
+      chrome_dir="${CHROME_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}}/google-chrome/NativeMessagingHosts"
+      firefox_dir="$HOME/.mozilla/native-messaging-hosts"
+      ;;
+    macos-*)
+      data_dir="$HOME/Library/Application Support/rankmiso-mcp"
+      config_file="$data_dir/native-host.json"
+      chrome_dir="$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts"
+      firefox_dir="$HOME/Library/Application Support/Mozilla/NativeMessagingHosts"
+      ;;
+  esac
+  bin_dir="$data_dir/bin"
+  audit_dir="$data_dir/audits"
+  mcp_bin="$bin_dir/rankmiso-mcp"
+  host_bin="$bin_dir/rankmiso-mcp-native-host"
+  setup_bin="$bin_dir/rankmiso-setup"
+}
+
+is_regular_executable() { [ -f "$1" ] && [ ! -L "$1" ] && [ -x "$1" ]; }
+
+binaries_present() {
+  is_regular_executable "$mcp_bin" && is_regular_executable "$host_bin" && is_regular_executable "$setup_bin"
+}
+
+installed_version() { "$mcp_bin" --version 2>/dev/null | head -n 1; }
+
+# "rankmiso-mcp 0.1.7" -> 7; empty when the version is not 0.1.x.
+patch_of() {
+  case "$1" in
+    *" 0.1."*) p=${1##* 0.1.}; case "$p" in '' | *[!0-9]*) ;; *) echo "$p" ;; esac ;;
+  esac
+}
+
+json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
+
+# The installer writes manifests with serde_json's pretty printer, so a
+# byte-exact comparison is the strictest check that needs no JSON parser.
+expected_manifest() {
+  host_real="$(cd -P "$bin_dir" 2>/dev/null && pwd -P)/rankmiso-mcp-native-host"
+  if [ "$1" = chrome ]; then
+    key=allowed_origins value="chrome-extension://$CHROME_ID/"
+  else
+    key=allowed_extensions value=$FIREFOX_ID
+  fi
+  printf '{\n  "name": "%s",\n  "description": "RankMiso local audit sharing companion",\n  "path": "%s",\n  "type": "stdio",\n  "%s": [\n    "%s"\n  ]\n}' \
+    "$HOST_NAME" "$(json_escape "$host_real")" "$key" "$value"
+}
+
+registration_state() {
+  file="$2/$HOST_NAME.json"
+  if [ ! -e "$file" ] && [ ! -L "$file" ]; then echo "Not registered"; return; fi
+  if [ -L "$file" ] || [ ! -f "$file" ]; then echo "Invalid (not a regular file: $file)"; return; fi
+  if [ "$(cat "$file")" = "$(expected_manifest "$1")" ]; then
+    echo Registered
+  else
+    echo "Invalid (points elsewhere or wrong extension ID: $file)"
+  fi
+}
+
+config_ok() {
+  [ -f "$config_file" ] && [ ! -L "$config_file" ] || return 1
+  real_audit="$(cd -P "$audit_dir" 2>/dev/null && pwd -P)" || return 1
+  [ "$(cat "$config_file")" = "{\"auditDir\":\"$(json_escape "$real_audit")\"}" ]
+}
+
+shared_audit_count() {
+  n=0
+  for f in "$audit_dir"/rankmiso-shared-*.json; do
+    [ -f "$f" ] && n=$((n + 1))
+  done
+  echo "$n"
+}
+
+# Starts the server once, initializes, lists tools, and closes stdin.
+mcp_probe() {
+  {
+    printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"rankmiso-plugin-status","version":"'"$PLUGIN_VERSION"'"}}}'
+    printf '%s\n' '{"jsonrpc":"2.0","method":"notifications/initialized"}'
+    printf '%s\n' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+    sleep 1
+  } | "$mcp_bin" --audit-dir "$audit_dir" 2>/dev/null | grep -o '"name":"rankmiso_[a-z_]*"' | sort -u | wc -l | tr -d ' '
+}
+
+# Prints the report and sets `overall` to READY, NEEDS ATTENTION or NOT INSTALLED.
+report() {
+  plat=$1
+  overall=READY
+  say "RankMiso Integration"
+  say ""
+  say "Plugin: rankmiso $PLUGIN_VERSION (companion release $RELEASE)"
+  say "Platform: $plat"
+  if ! binaries_present; then
+    say "MCP Companion: Not installed"
+    say "Status: NOT INSTALLED"
+    say "Next: ask your assistant to \"Connect RankMiso\" (Claude Code: /rankmiso:connect)."
+    overall="NOT INSTALLED"
+    return
+  fi
+  version=$(installed_version)
+  case "$version" in
+    "$COMPATIBLE_PREFIX"*) say "MCP Companion: Installed ($version) at $bin_dir" ;;
+    *)
+      say "MCP Companion: Incompatible (${version:-did not start}); this plugin needs ${COMPATIBLE_PREFIX}x"
+      overall="NEEDS ATTENTION"
+      ;;
+  esac
+  if config_ok; then say "Audit folder: $audit_dir"; else
+    say "Audit folder: Config missing or points elsewhere ($config_file)"
+    overall="NEEDS ATTENTION"
+  fi
+  tools=$(mcp_probe || echo 0)
+  if [ "$tools" -ge 5 ]; then say "MCP Server: Ready ($tools read-only tools)"; else
+    say "MCP Server: Did not initialize"
+    overall="NEEDS ATTENTION"
+  fi
+  host_patch=$(patch_of "$("$host_bin" --version 2>/dev/null | head -n 1)")
+  if [ -n "$host_patch" ] && [ "$host_patch" -lt "$FIRST_WORKING_HOST_PATCH" ]; then
+    say "Browser sharing: Blocked. This companion's browser host (0.1.$host_patch, from v0.5.0) exits when Chrome or Firefox starts it. Run connect to upgrade to $RELEASE."
+    overall="NEEDS ATTENTION"
+  fi
+  chrome=$(registration_state chrome "$chrome_dir")
+  firefox=$(registration_state firefox "$firefox_dir")
+  say "Chrome: $chrome"
+  say "Firefox: $firefox"
+  [ "$chrome" = Registered ] && [ "$firefox" = Registered ] || overall="NEEDS ATTENTION"
+  case "$plat" in linux-*)
+    if [ -e /snap/bin/firefox ]; then
+      say "Note: Snap Firefox is installed. It reads native hosts from its sandbox, so sharing from Snap Firefox is not verified. Chrome or a non-Snap Firefox is known to work."
+    fi
+    if [ ! -d "$(dirname "$chrome_dir")" ] && command -v chromium >/dev/null 2>&1; then
+      say "Note: only Google Chrome is registered. Chromium, Brave and Edge are not registered by this release."
+    fi
+  esac
+  count=$(shared_audit_count)
+  if [ "$count" -eq 0 ]; then
+    say "Shared Audit: None yet. Open RankMiso in your browser, audit a page, and choose Share with MCP."
+  else
+    say "Shared Audit: $count available"
+  fi
+  say ""
+  say "Status: $overall"
+}
+
+# Speaks minimal MCP (initialize, ping, an empty tools/list) when the companion
+# cannot run. Clients then do not record a failed server, and the model reads
+# the setup instruction. It exposes no tools and exits when stdin closes.
+setup_required_server() {
+  note=$(json_escape "$1" | tr '\n' ' ')
+  err "$1"
+  while IFS= read -r line; do
+    id=$(printf '%s' "$line" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')
+    [ -n "$id" ] || id=$(printf '%s' "$line" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\("[^"]*"\).*/\1/p')
+    [ -n "$id" ] || continue
+    method=$(printf '%s' "$line" | sed -n 's/.*"method"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    case "$method" in
+      initialize)
+        proto=$(printf '%s' "$line" | sed -n 's/.*"protocolVersion"[[:space:]]*:[[:space:]]*"\([0-9-]*\)".*/\1/p')
+        result='{"protocolVersion":"'"${proto:-2025-06-18}"'","capabilities":{"tools":{}},"serverInfo":{"name":"rankmiso-setup-required","version":"'"$PLUGIN_VERSION"'"},"instructions":"'"$note"'"}'
+        ;;
+      tools/list) result='{"tools":[]}' ;;
+      ping) result='{}' ;;
+      *)
+        printf '{"jsonrpc":"2.0","id":%s,"error":{"code":-32601,"message":"%s"}}\n' "$id" "$note"
+        continue
+        ;;
+    esac
+    printf '{"jsonrpc":"2.0","id":%s,"result":%s}\n' "$id" "$result"
+  done
+  exit 0
+}
+
+safe_archive_listing() {
+  # Exactly the five release files, regular files only, no paths.
+  listing=$(tar -tvzf "$1") || return 1
+  printf '%s\n' "$listing" | while IFS= read -r line; do
+    case "$line" in
+      -*) ;;
+      d*) case "$line" in *' ./') ;; *) echo bad ;; esac ;;
+      *) echo bad ;;
+    esac
+  done | grep -q bad && return 1
+  names=$(tar -tzf "$1" | sed 's#^\./##' | sed '/^$/d' | LC_ALL=C sort | tr '\n' ' ')
+  [ "$names" = "LICENSE README-INSTALL.md rankmiso-mcp rankmiso-mcp-native-host rankmiso-setup " ]
+}
+
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d ' ' -f 1
+  else shasum -a 256 "$1" | cut -d ' ' -f 1; fi
+}
+
+download_and_install() {
+  plat=$1
+  asset="rankmiso-mcp-companion-$RELEASE-$plat.tar.gz"
+  url="$RELEASE_BASE/$RELEASE/$asset"
+  expected=$(pinned_sha256 "$plat")
+  work=$(mktemp -d "${TMPDIR:-/tmp}/rankmiso-connect.XXXXXX")
+  trap 'rm -rf "$work"' EXIT HUP INT TERM
+  archive="$work/$asset"
+  if [ -n "${RANKMISO_TEST_ARCHIVE:-}" ]; then
+    # Test hook only: skips the network, keeps every verification step.
+    cp "$RANKMISO_TEST_ARCHIVE" "$archive"
+    expected=${RANKMISO_TEST_SHA256:-$expected}
+  else
+    say "Downloading $url"
+    if ! curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
+      --retry 2 --connect-timeout 15 --max-time 300 --output "$archive" "$url"; then
+      err "Download failed. Check your internet connection and retry. Nothing was installed or changed."
+      return 1
+    fi
+  fi
+  actual=$(sha256_of "$archive")
+  if [ "$actual" != "$expected" ]; then
+    err "Checksum mismatch for $asset (expected $expected, got $actual). The file was deleted and nothing was installed."
+    return 1
+  fi
+  say "Verified SHA-256 $actual"
+  if ! safe_archive_listing "$archive"; then
+    err "The archive does not contain exactly the expected RankMiso files. Nothing was installed."
+    return 1
+  fi
+  mkdir "$work/x"
+  tar -xzf "$archive" -C "$work/x" --no-same-owner
+  for f in rankmiso-mcp rankmiso-mcp-native-host rankmiso-setup; do
+    if ! is_regular_executable "$work/x/$f"; then
+      err "Extracted $f is not a regular executable. Nothing was installed."
+      return 1
+    fi
+  done
+  # Keep the working binaries until the new install has validated.
+  backup=
+  if binaries_present; then
+    backup="$bin_dir/.rankmiso-backup.$$"
+    mkdir "$backup"
+    for f in rankmiso-mcp rankmiso-mcp-native-host rankmiso-setup; do cp -p "$bin_dir/$f" "$backup/$f"; done
+  fi
+  # The release's own installer copies the binaries atomically, writes the
+  # private config, registers both browsers and validates the result.
+  if run_setup "$work/x/rankmiso-setup"; then
+    [ -z "$backup" ] || rm -rf "$backup"
+    return 0
+  fi
+  if [ -n "$backup" ]; then
+    for f in rankmiso-mcp rankmiso-mcp-native-host rankmiso-setup; do mv -f "$backup/$f" "$bin_dir/$f"; done
+    rmdir "$backup"
+    err "Setup failed. The previous companion binaries were restored."
+  fi
+  return 1
+}
+
+# Runs `rankmiso-setup install` and hides its manual "configure codex/claude"
+# hint, which the plugin's own MCP config replaces.
+run_setup() {
+  log=$(mktemp "${TMPDIR:-/tmp}/rankmiso-setup.XXXXXX")
+  if "$1" install >"$log" 2>&1; then rc=0; else rc=$?; fi
+  grep -v '^Next: ' "$log" || true
+  rm -f "$log"
+  return "$rc"
+}
+
+connect() {
+  plat=$(platform)
+  case "$plat" in unsupported:*) unsupported_message "$plat"; return 2 ;; esac
+  resolve_paths "$plat"
+  approved=no
+  [ "${1:-}" = "--yes" ] && approved=yes
+
+  if binaries_present; then
+    version=$(installed_version)
+    case "$version" in
+      "$COMPATIBLE_PREFIX"*) ;;
+      *)
+        err "An installed companion reports '${version:-no version}', which this plugin does not support. It was left unchanged."
+        return 1
+        ;;
+    esac
+    # An unreadable host version counts as outdated, so it is replaced too.
+    host_patch=$(patch_of "$("$host_bin" --version 2>/dev/null | head -n 1)")
+    if [ "$(patch_of "$version")" -lt "$PINNED_PATCH" ] || [ "${host_patch:-0}" -lt "$PINNED_PATCH" ]; then
+      action=upgrade
+    else
+      report "$plat" >/dev/null
+      if [ "$overall" = READY ]; then
+        say "RankMiso is connected. The existing companion ($version) was reused; nothing was changed."
+        report "$plat"
+        return 0
+      fi
+      action=repair
+    fi
+  else
+    action=install
+  fi
+
+  if [ "$approved" != yes ]; then
+    say "RankMiso setup plan (no changes made yet):"
+    if [ "$action" = upgrade ]; then
+      say "  0. Upgrade the installed companion ($version) to $RELEASE. The current files stay in place until the new ones are verified. Audits and settings are kept."
+    fi
+    if [ "$action" != repair ]; then
+      say "  1. Download $RELEASE_BASE/$RELEASE/rankmiso-mcp-companion-$RELEASE-$plat.tar.gz over HTTPS."
+      say "  2. Check its SHA-256 against $(pinned_sha256 "$plat") and refuse any mismatch."
+      say "  3. Install rankmiso-mcp, rankmiso-mcp-native-host and rankmiso-setup into $bin_dir (your user only, no admin rights)."
+    else
+      say "  1. Repair the existing companion in $bin_dir using its own installer. Nothing is downloaded."
+    fi
+    say "  - Create the private audit folder $audit_dir (existing audits are kept)."
+    say "  - Register the browser host $HOST_NAME for Chrome ($CHROME_ID) in $chrome_dir"
+    say "    and Firefox ($FIREFOX_ID) in $firefox_dir."
+    say "Nothing is shared automatically. You still choose Share with MCP in the extension."
+    say "To proceed after the user approves, run: rankmiso connect --yes"
+    return 0
+  fi
+
+  if [ "$action" != repair ]; then
+    download_and_install "$plat"
+  else
+    run_setup "$setup_bin"
+  fi
+  say ""
+  report "$plat"
+  if [ "$overall" = READY ]; then
+    say ""
+    say "RankMiso is connected. Reload plugins (/reload-plugins in Claude Code) or start a new Codex session, then share an audit from the extension."
+  else
+    return 1
+  fi
+}
+
+case "${1:-help}" in
+  mcp)
+    plat=$(platform)
+    case "$plat" in unsupported:*) setup_required_server "$(unsupported_message "$plat")" ;; esac
+    resolve_paths "$plat"
+    if ! binaries_present; then
+      setup_required_server "The RankMiso companion is not installed yet. Use the RankMiso connect skill (Claude Code: /rankmiso:connect, or ask: Connect RankMiso), then run /reload-plugins in Claude Code or start a new Codex session."
+    fi
+    version=$(installed_version)
+    case "$version" in
+      "$COMPATIBLE_PREFIX"*) ;;
+      *) setup_required_server "The installed RankMiso companion (${version:-did not start}) is not compatible with this plugin. Use the RankMiso troubleshoot skill." ;;
+    esac
+    exec "$mcp_bin" --audit-dir "$audit_dir"
+    ;;
+  status)
+    plat=$(platform)
+    case "$plat" in unsupported:*) unsupported_message "$plat"; exit 2 ;; esac
+    resolve_paths "$plat"
+    report "$plat"
+    [ "$overall" = READY ]
+    ;;
+  connect)
+    shift
+    connect "${1:-}"
+    ;;
+  uninstall)
+    plat=$(platform)
+    case "$plat" in unsupported:*) unsupported_message "$plat"; exit 2 ;; esac
+    resolve_paths "$plat"
+    if [ "${2:-}" != "--yes" ]; then
+      say "This removes the shared companion from $bin_dir and its Chrome/Firefox registrations."
+      say "Claude Code, Codex and any direct MCP setup that use it will stop working. Audit files in $audit_dir are kept."
+      say "To proceed after the user approves, run: rankmiso uninstall --yes"
+      exit 0
+    fi
+    if ! is_regular_executable "$setup_bin"; then say "The companion is not installed."; exit 0; fi
+    "$setup_bin" uninstall
+    ;;
+  --version | -V) say "rankmiso plugin $PLUGIN_VERSION (companion $RELEASE)" ;;
+  *)
+    sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+esac

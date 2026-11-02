@@ -16,12 +16,14 @@ export default defineConfig({
     plugins: [tailwindcss()],
   }),
   manifest: ({ browser }) => ({
-    name: brandConfig.identity.name,
+    name: brandConfig.identity.extensionName,
+    short_name: brandConfig.identity.shortName,
     description: brandConfig.identity.description,
     icons,
     action: {
-      default_title: brandConfig.identity.name,
+      default_title: brandConfig.identity.shortName,
       default_icon: icons,
+      ...(browser === "firefox" ? { default_area: "navbar" } : {}),
     },
     permissions: [
       ...permissionsConfig.required.map((permission) => permission.name),
@@ -41,6 +43,7 @@ export default defineConfig({
               strict_min_version: "140.0",
               data_collection_permissions: {
                 required: ["none"],
+                optional: ["browsingActivity", "websiteContent"],
               },
             },
           }

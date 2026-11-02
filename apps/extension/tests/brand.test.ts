@@ -5,6 +5,8 @@ import { messages } from "../src/locales/en";
 describe("brand", () => {
   it("keeps the RankMiso identity in one config", () => {
     expect(brandConfig.identity.name).toBe("RankMiso");
+    expect(brandConfig.identity.extensionName).toBe("RankMiso — Free, Open-Source SEO Analyzer");
+    expect(brandConfig.identity.shortName).toBe("RankMiso");
     expect(brandConfig.identity.tagline).toBe("Every page. Every detail.");
     expect(brandConfig.identity.ecosystem).toBe("Miso Ecosystem");
     expect(brandConfig.assets.icon).toBe("/brand/icon.png");

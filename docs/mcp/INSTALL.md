@@ -4,7 +4,7 @@ The companion shares approved schema-v1 audits with the existing read-only MCP s
 
 ## Install
 
-No public companion download is available yet. The full **MCP companion artifacts** matrix runs for pull requests targeting `master`; ordinary development pull requests targeting `develop` use the separate repository CI and do not run native packaging. A maintainer can also run the native workflow manually from an authorized branch. Manual dispatch appears only after the workflow exists on the repository's default branch (`master`); select the source branch in the Actions form, preferably `master` for release preparation. Manual artifact upload defaults off. If explicitly enabled, platform archives and SHA-256 sidecars are kept for one day. Neither automatic nor manual builds publish a release.
+Companion archives are published as GitHub pre-releases. Use [v0.5.1](https://github.com/EdeesonOpina/rankmiso/releases/tag/v0.5.1) or later: the v0.5.0 browser host exits when Chrome or Firefox starts it, so browser sharing does not work with v0.5.0. The easiest setup is the Claude Code or Codex plugin, which downloads, verifies, and installs the companion for you ([docs/integrations](../integrations/README.md)). The full **MCP companion artifacts** matrix runs for pull requests targeting `master`; ordinary development pull requests targeting `develop` use the separate repository CI and do not run native packaging. A maintainer can also run the native workflow manually from an authorized branch. Manual dispatch appears only after the workflow exists on the repository's default branch (`master`); select the source branch in the Actions form, preferably `master` for release preparation. Manual artifact upload defaults off. If explicitly enabled, platform archives and SHA-256 sidecars are kept for one day. Neither automatic nor manual builds publish a release.
 
 When an official archive becomes available, verify its SHA-256 sidecar, extract it, open a terminal in the extracted folder, and run:
 
@@ -14,7 +14,7 @@ When an official archive becomes available, verify its SHA-256 sidecar, extract 
 | macOS Apple Silicon or Intel | `./rankmiso-setup install` |
 | Linux x86_64 | `./rankmiso-setup install` |
 
-The installer is per-user and requires no administrator privileges. It installs the MCP server, Native Messaging host and setup utility, registers the exact RankMiso identities with Chrome and Firefox, and creates private local audit storage. It does not grant the extension's optional Native Messaging permission. Open RankMiso → **AI** and enable local sharing to grant that permission.
+The installer is per-user and requires no administrator privileges. It installs the MCP server, Native Messaging host and setup utility, registers the exact RankMiso identities with Chrome and Firefox, and creates private local audit storage. It does not grant browser permissions. Open RankMiso → **AI** and enable local sharing to approve Native Messaging; Firefox also requests optional consent for the page address and website content included in shared audits.
 
 The public Chrome extension ID is `gdklhfalmmahhgimegjlfnhmacimeonl`; Firefox uses `rankmiso@rankmiso.extension`. No wildcard authorization is used.
 

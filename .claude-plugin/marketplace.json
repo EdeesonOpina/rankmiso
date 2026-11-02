@@ -1,0 +1,16 @@
+{
+  "name": "rankmiso",
+  "description": "RankMiso plugins from Miso Ecosystem",
+  "owner": {
+    "name": "Miso Ecosystem",
+    "url": "https://github.com/EdeesonOpina"
+  },
+  "plugins": [
+    {
+      "name": "rankmiso",
+      "source": "./plugins/rankmiso",
+      "description": "Read SEO audits you explicitly share from the RankMiso browser extension through the local MCP companion.",
+      "category": "development"
+    }
+  ]
+}

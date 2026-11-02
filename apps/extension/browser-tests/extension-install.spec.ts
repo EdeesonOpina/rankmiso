@@ -15,6 +15,12 @@ test("built extension loads and renders its popup", async () => {
   try {
     const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
     const extensionId = new URL(worker.url()).host;
+    const chromeManifest = JSON.parse(
+      await readFile(join(extensionPath, "manifest.json"), "utf8"),
+    ) as { name?: string; short_name?: string; version?: string };
+    expect(chromeManifest.name).toBe("RankMiso — Free, Open-Source SEO Analyzer");
+    expect(chromeManifest.short_name).toBe("RankMiso");
+    expect(chromeManifest.version).toBe("0.5.0");
     const popup = await context.newPage();
     await popup.goto(`chrome-extension://${extensionId}/popup.html`);
     await popup.setViewportSize({ width: 420, height: 720 });
@@ -77,8 +83,15 @@ test("Firefox package includes its add-on id and local WASM asset", async () => 
   const extensionPath = resolve(".output/firefox-mv3");
   const manifest = JSON.parse(await readFile(join(extensionPath, "manifest.json"), "utf8")) as {
     browser_specific_settings?: {
-      gecko?: { id?: string; data_collection_permissions?: { required?: string[] } };
+      gecko?: {
+        id?: string;
+        data_collection_permissions?: { required?: string[]; optional?: string[] };
+      };
     };
+    action?: { default_area?: string; default_popup?: string };
+    name?: string;
+    short_name?: string;
+    version?: string;
     host_permissions?: string[];
     optional_host_permissions?: string[];
     permissions?: string[];
@@ -94,8 +107,17 @@ test("Firefox package includes its add-on id and local WASM asset", async () => 
   ).join("\n");
 
   expect(manifest.browser_specific_settings?.gecko?.id).toBe("rankmiso@rankmiso.extension");
+  expect(manifest.name).toBe("RankMiso — Free, Open-Source SEO Analyzer");
+  expect(manifest.short_name).toBe("RankMiso");
+  expect(manifest.version).toBe("0.5.0");
+  expect(manifest.action?.default_area).toBe("navbar");
+  expect(manifest.action?.default_popup).toBe("popup.html");
   expect(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.required).toEqual([
     "none",
+  ]);
+  expect(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.optional).toEqual([
+    "browsingActivity",
+    "websiteContent",
   ]);
   expect(manifest.host_permissions).toBeUndefined();
   expect(manifest.permissions).toEqual(["storage", "activeTab", "scripting"]);
@@ -119,6 +141,6 @@ test("Chromium declares optional HTTP/HTTPS access without requiring it", async 
 
   expect(manifest.host_permissions).toBeUndefined();
   expect(manifest.permissions).toEqual(["storage", "activeTab", "scripting", "sidePanel"]);
-  expect(manifest.optional_permissions).toEqual(["tabs"]);
+  expect(manifest.optional_permissions).toEqual(["tabs", "nativeMessaging"]);
   expect(manifest.optional_host_permissions).toEqual(["http://*/*", "https://*/*"]);
 });

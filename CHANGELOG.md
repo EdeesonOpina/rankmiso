@@ -1,6 +1,15 @@
 # Changelog
 
-## 0.4.0 — submitted for store review (2026-10-30)
+## 0.5.0-rc.1 — release candidate (unpublished)
+
+- Set the extension display name to “RankMiso — Free, Open-Source SEO Analyzer”, with “RankMiso” as its short name.
+- Add the local MCP companion, explicit audit sharing, Shared Audits management, and the beginner-friendly AI coding assistant guide.
+- Request Firefox's optional browsing-activity and website-content consent before sharing or reading audit snapshots.
+- Keep five MCP tools read-only and local; no cloud service, account, telemetry, or automatic sharing is introduced.
+- Companion builds passed native CI for Linux x86_64, Windows x86_64, macOS ARM64, and macOS Intel. Live Firefox Native Messaging, Windows/macOS browser sharing, and production Chrome-ID sharing remain unverified.
+- RC1 is not published. Signing, notarization, store privacy disclosures, and official companion downloads remain release work.
+
+## 0.4.0 — published (2026-10-30)
 
 - Add opt-in Automatic Website Checks with optional broad HTTP/HTTPS access, and retain Individual Website Access.
 - Add Smart Refresh for a fresh local snapshot and SEO audit without reloading the page.
@@ -10,7 +19,7 @@
 - Use RankMiso’s head-only fox in the Score History empty state.
 - Keep Firefox standalone sitemap discovery and other Chromium-only remote checks unavailable.
 
-Submitted to the Chrome Web Store and Firefox Add-ons. v0.3.0 stays the published release until review completes.
+This is the current public baseline. The v0.5.0 release candidate is unpublished.
 
 ## 0.3.0 — published (2026-10-28)
 

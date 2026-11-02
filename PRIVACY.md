@@ -1,6 +1,6 @@
 # Privacy
 
-This document describes v0.4.0, which has been submitted for store review. The published v0.3.0 extension remains governed by the privacy disclosures shown on its store listing until v0.4.0 is approved and released. RankMiso reads pages only with access granted through the browser.
+This document describes RankMiso v0.5.0, the current version in the Chrome Web Store and Firefox Add-ons. RankMiso reads pages only with access granted through the browser.
 
 ## What stays on your computer
 
@@ -38,3 +38,11 @@ Opening RankMiso reads the page you invoked it on through the browser's toolbar 
 ## Clearing data
 
 Choose **Clear saved settings** to remove the appearance preference and saved PageSpeed API key. In Reports, delete saved comparisons individually or choose **Delete all saved reports**.
+
+## Optional AI sharing
+
+RankMiso v0.5.0 can share an audit with AI coding assistants such as Claude Code and Codex through the RankMiso MCP companion, a separate program that runs on your computer. Nothing is shared unless you turn on local sharing, approve the browser's Native Messaging permission, and confirm **Share with MCP** for a specific audit.
+
+A shared audit, including the page address and title, is saved to a private folder for your user on your computer. It is not sent to Miso Ecosystem. The companion's MCP tools only read these files. Remove a shared audit in RankMiso's AI page, or delete the file.
+
+When your AI assistant reads a shared audit, it may send that content to its model provider, according to the assistant's settings and privacy terms. Local storage does not mean the AI processing is local. The RankMiso plugin for Claude Code and Codex downloads the companion from the RankMiso GitHub releases only after you approve, and checks its SHA-256 before installing it. RankMiso collects no telemetry.

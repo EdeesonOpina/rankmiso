@@ -153,9 +153,15 @@ describe("full report MCP sharing action", () => {
     });
     const wrapper = mountView();
     await wrapper.get(".mcp-share-action button").trigger("click");
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Grant Native Messaging permission"));
+    await vi.waitFor(() =>
+      expect(wrapper.text()).toContain(
+        "Grant Native Messaging so RankMiso can contact its local companion.",
+      ),
+    );
     expect(wrapper.text()).not.toContain("Share this audit with MCP?");
-    expect(wrapper.text()).toContain("Grant Native Messaging permission");
+    expect(wrapper.text()).toContain(
+      "Firefox also asks before allowing access to shared audit data.",
+    );
     expect(harness.browser.permissions.request).not.toHaveBeenCalled();
     await wrapper.get("dialog .primary").trigger("click");
     await vi.waitFor(() => expect(wrapper.text()).toContain("Share this audit with MCP?"));
@@ -233,9 +239,13 @@ describe("full report MCP sharing action", () => {
     harness.browser.permissions.request.mockResolvedValue(false);
     const wrapper = mountView();
     await wrapper.get(".mcp-share-action button").trigger("click");
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Grant Native Messaging permission"));
+    await vi.waitFor(() =>
+      expect(wrapper.text()).toContain(
+        "Grant Native Messaging so RankMiso can contact its local companion.",
+      ),
+    );
     await wrapper.get("dialog .primary").trigger("click");
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Grant Native Messaging permission"));
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Permission Required"));
     expect(wrapper.text()).not.toContain("Share this audit with MCP?");
     expect(harness.requests).toEqual([]);
     wrapper.unmount();
@@ -251,7 +261,11 @@ describe("full report MCP sharing action", () => {
 
     try {
       await wrapper.get(".mcp-share-action button").trigger("click");
-      await vi.waitFor(() => expect(wrapper.text()).toContain("Grant Native Messaging permission"));
+      await vi.waitFor(() =>
+        expect(wrapper.text()).toContain(
+          "Grant Native Messaging so RankMiso can contact its local companion.",
+        ),
+      );
       await wrapper.get("dialog .primary").trigger("click");
       await vi.advanceTimersByTimeAsync(10_000);
       await nextTick();
