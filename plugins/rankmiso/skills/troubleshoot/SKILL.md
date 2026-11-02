@@ -18,7 +18,7 @@ Run `rankmiso status` (`sh <plugin root>/bin/rankmiso status`; the plugin root i
 | `Note: Snap Firefox` | Snap Firefox isolates native hosts. Suggest Chrome or a non-Snap Firefox. Do not weaken the sandbox. |
 
 If the status is READY but the assistant has no RankMiso tools:
-- Claude Code: run `/reload-plugins` or `/mcp` and reconnect `plugin:rankmiso:rankmiso`.
+- Claude Code: restart Claude Code, or open `/mcp` and reconnect `plugin:rankmiso:rankmiso`. `/reload-plugins` alone does not restart a running server.
 - Codex: start a new session.
 - A manually added server named `rankmiso` from an older setup also works, but it duplicates the tools. Check with `claude mcp get rankmiso` or `codex mcp get rankmiso`. Remove it only if the user agrees.
 

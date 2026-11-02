@@ -7,22 +7,26 @@ vi.mock("wxt/browser", () => ({
 }));
 
 describe("bundled MCP guide", () => {
-  it("opens without a companion and covers install, sharing, clients, privacy, and limitations", () => {
+  it("opens without a companion and covers plugin setup, sharing, privacy, limitations, and manual setup", () => {
     const wrapper = mount(App);
 
-    expect(wrapper.text()).toContain("MCP is part of RankMiso v0.5.0");
-    expect(wrapper.text()).toContain("when its release packages are published and verified");
-    expect(wrapper.text()).toContain("Enable local sharing");
-    expect(wrapper.text()).toContain("rankmiso-setup configure codex");
-    expect(wrapper.text()).toContain("claude mcp get rankmiso");
-    expect(wrapper.text()).toContain("does not guarantee local AI processing");
-    expect(wrapper.text()).toContain("Firefox live connection remain unverified");
+    const text = wrapper.text();
+    expect(text).toContain("companion v0.5.1 or later");
+    expect(text).toContain("/plugin marketplace add EdeesonOpina/rankmiso");
+    expect(text).toContain("/plugin install rankmiso@rankmiso");
+    expect(text).toContain("codex plugin marketplace add EdeesonOpina/rankmiso");
+    expect(text).toContain("codex plugin add rankmiso@rankmiso");
+    expect(text).toContain("Connect RankMiso");
+    expect(text).toContain("Restart your AI client");
+    expect(text).toContain("Enable local sharing");
+    expect(text).toContain("Share with MCP");
+    expect(text).toContain("does not guarantee local AI processing");
+    expect(text).toContain("Firefox, including Snap Firefox: sharing is not verified yet");
+    expect(text).toContain("rankmiso-setup configure codex");
     expect(wrapper.get(".mcp-guide-site-link").attributes("href")).toBe(
-      "https://misoecosystem.com/products/rankmiso/#mcp",
+      "https://github.com/EdeesonOpina/rankmiso/blob/master/docs/integrations/README.md",
     );
-    expect(wrapper.get(".mcp-guide-site-link").text()).toContain(
-      "View official companion downloads and setup",
-    );
+    expect(wrapper.get(".mcp-guide-site-link").text()).toContain("Full setup guide on GitHub");
     expect(wrapper.get(".mcp-guide-site-link").attributes("target")).toBe("_blank");
     expect(wrapper.get(".mcp-guide-back").attributes("href")).toBe(
       "chrome-extension://rankmiso/dashboard.html?section=ai-integrations",

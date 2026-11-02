@@ -92,7 +92,7 @@ codex plugin marketplace add EdeesonOpina/rankmiso
 codex plugin add rankmiso@rankmiso
 ```
 
-Then ask your assistant to **Connect RankMiso** and approve the one-time setup. The plugin downloads the companion from the GitHub release, checks its SHA-256, installs it for your user, and registers Chrome and Firefox. You don't edit any config files. Reload plugins in Claude Code (`/reload-plugins`) or start a new Codex session, then share an audit from the extension.
+Then ask your assistant to **Connect RankMiso** and approve the one-time setup. The plugin downloads the companion from the GitHub release, checks its SHA-256, installs it for your user, and registers Chrome and Firefox. You don't edit any config files. Restart Claude Code (or reconnect RankMiso in `/mcp`) or start a new Codex session, then share an audit from the extension.
 
 | Environment | Status |
 | --- | --- |

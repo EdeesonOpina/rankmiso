@@ -1,6 +1,6 @@
 # RankMiso for Claude Code and Codex: product page copy
 
-Copy for the RankMiso page on misoecosystem.com. Verified on 2026-11-02 against extension v0.5.0, companion v0.5.1, and plugin 0.1.0.
+Copy for the RankMiso page on misoecosystem.com. Verified on 2026-11-02 against extension v0.5.0, companion v0.5.1, and plugin 0.1.1.
 
 ## Use RankMiso with your AI coding assistant
 
@@ -24,7 +24,7 @@ codex plugin add rankmiso@rankmiso
 
 **2. Connect once**
 
-Ask your assistant: **Connect RankMiso**. It shows what it will install and asks for your approval. Then it downloads the RankMiso companion, verifies it, and connects it to Chrome and Firefox. You don't download or configure anything yourself. Afterwards, run `/reload-plugins` in Claude Code, or start a new Codex session.
+Ask your assistant: **Connect RankMiso**. It shows what it will install and asks for your approval. Then it downloads the RankMiso companion, verifies it, and connects it to Chrome and Firefox. You don't download or configure anything yourself. Afterwards, restart Claude Code (or reconnect RankMiso in `/mcp`), or start a new Codex session, and restart your browser.
 
 **3. Share an audit**
 
