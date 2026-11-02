@@ -1,6 +1,6 @@
 # Firefox release
 
-Published version: v0.3.0. v0.4.0 has been submitted for review. Preserve the existing package id `rankmiso@rankmiso.extension` so Firefox treats it as an update to the existing add-on.
+This is the historical v0.4.0 Firefox submission checklist. v0.4.0 is the current public version. Preserve the existing package id `rankmiso@rankmiso.extension` so Firefox treats v0.5.0 as an update to the existing add-on. See [the v0.5.0 RC1 release notes](v0.5.0-rc1.md) for current verification and privacy status.
 
 The listing's privacy policy URL must be a public HTTPS page that matches `PRIVACY.md`.
 

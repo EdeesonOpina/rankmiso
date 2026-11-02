@@ -1,6 +1,6 @@
 # Chrome release
 
-RankMiso v0.3.0 is the published Chrome Web Store version. v0.4.0 has been submitted for review. This document covers that release.
+This is the historical v0.4.0 Chrome submission checklist. v0.4.0 is the current public version; v0.5.0 RC1 metadata and remaining store work are tracked in [the RC1 release notes](v0.5.0-rc1.md).
 
 The product name is already RankMiso. Icons are already generated from the fox sticker.
 

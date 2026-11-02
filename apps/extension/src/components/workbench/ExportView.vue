@@ -19,7 +19,7 @@ import {
   checkNativeCompanion,
   isNativeMessagingPermissionRequestPending,
   requestNativeMessagingPermission,
-  hasNativeMessagingPermission,
+  hasMcpAccessPermission,
   NativeCompanionError,
   MAX_NATIVE_MESSAGE_BYTES,
   shareAudit,
@@ -175,7 +175,7 @@ async function checkShareConnection() {
   connectStatus.value = "checking";
   try {
     if (mcpPermissionPending.value || isNativeMessagingPermissionRequestPending()) {
-      mcpPermission.value = await hasNativeMessagingPermission();
+      mcpPermission.value = await hasMcpAccessPermission();
       if (!connectOpen.value) return;
       if (!mcpPermission.value) {
         connectStatus.value = "awaiting-permission";
@@ -183,7 +183,7 @@ async function checkShareConnection() {
       }
       mcpPermissionPending.value = false;
     } else {
-      mcpPermission.value = await hasNativeMessagingPermission();
+      mcpPermission.value = await hasMcpAccessPermission();
       if (!connectOpen.value) return;
     }
     if (!mcpPermission.value) {
@@ -225,7 +225,7 @@ async function connectBeforeShare() {
     connectStatus.value = "checking";
     try {
       if (mcpPermissionPending.value || isNativeMessagingPermissionRequestPending()) {
-        mcpPermission.value = await hasNativeMessagingPermission();
+        mcpPermission.value = await hasMcpAccessPermission();
         if (!connectOpen.value) return;
         if (!mcpPermission.value) {
           connectStatus.value = "awaiting-permission";
@@ -233,7 +233,7 @@ async function connectBeforeShare() {
         }
         mcpPermissionPending.value = false;
       } else {
-        const granted = await requestNativeMessagingPermission();
+        const granted = await requestNativeMessagingPermission(true);
         if (!connectOpen.value) return;
         if (granted === null) {
           mcpPermissionPending.value = true;
@@ -244,7 +244,11 @@ async function connectBeforeShare() {
           connectStatus.value = "permission-required";
           return;
         }
-        mcpPermission.value = true;
+        mcpPermission.value = await hasMcpAccessPermission();
+        if (!mcpPermission.value) {
+          connectStatus.value = "permission-required";
+          return;
+        }
         try {
           await writeMcpIntegrationEnabled(true);
         } catch {
@@ -314,7 +318,7 @@ async function shareConfirmed() {
     // Invoke the permission request before awaiting anything so browsers retain
     // the confirming button's user gesture.
     if (mcpPermissionPending.value || isNativeMessagingPermissionRequestPending()) {
-      mcpPermission.value = await hasNativeMessagingPermission();
+      mcpPermission.value = await hasMcpAccessPermission();
       if (!mcpPermission.value) {
         if (isNativeMessagingPermissionRequestPending()) {
           mcpPermissionPending.value = true;
@@ -327,7 +331,7 @@ async function shareConfirmed() {
       }
       mcpPermissionPending.value = false;
     }
-    const granted = mcpPermission.value || (await requestNativeMessagingPermission());
+    const granted = mcpPermission.value || (await requestNativeMessagingPermission(true));
     if (granted === null) {
       mcpPermissionPending.value = true;
       shareMessage.value = t("mcp.permissionWaiting");
