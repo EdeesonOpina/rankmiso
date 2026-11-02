@@ -1,6 +1,6 @@
 {
   "name": "rankmiso",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Read SEO audits you explicitly share from the RankMiso browser extension through the local RankMiso MCP companion. Includes one-step companion setup, diagnostics, and SEO audit skills.",
   "author": {
     "name": "Miso Ecosystem",

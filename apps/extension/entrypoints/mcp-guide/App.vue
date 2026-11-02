@@ -20,17 +20,17 @@ const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
     </header>
 
     <p class="mcp-guide-notice" role="note">
-      MCP is part of RankMiso v0.5.0. The optional companion will be available from the official
-      RankMiso product page when its release packages are published and verified. Do not install
-      temporary CI artifacts as public software.
+      Use the RankMiso MCP companion v0.5.1 or later. The v0.5.0 companion cannot be started by
+      Chrome or Firefox, so sharing fails with <strong>Connection Failed</strong>. The plugin below
+      installs or upgrades it for you.
     </p>
     <a
       class="mcp-guide-site-link"
-      href="https://misoecosystem.com/products/rankmiso/#mcp"
+      href="https://github.com/EdeesonOpina/rankmiso/blob/master/docs/integrations/README.md"
       target="_blank"
       rel="noreferrer noopener"
     >
-      View official companion downloads and setup <ArrowUpRight aria-hidden="true" />
+      Full setup guide on GitHub <ArrowUpRight aria-hidden="true" />
     </a>
 
     <section>
@@ -48,75 +48,61 @@ const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
     </section>
 
     <section>
-      <h2>1. Install the companion</h2>
-      <p>
-        Use RankMiso v0.5.0 or later. When the official companion package is available, download the
-        package for your system, verify its SHA-256 checksum, and extract it. Open a terminal in the
-        extracted folder:
-      </p>
-      <ul>
-        <li>Windows x86_64: run <code>.\rankmiso-setup.exe install</code> in PowerShell.</li>
-        <li>macOS Apple Silicon or Intel: run <code>./rankmiso-setup install</code>.</li>
-        <li>Linux x86_64: run <code>./rankmiso-setup install</code>.</li>
-      </ul>
-      <p>
-        The installer is per-user and registers Chrome and Firefox. Windows and macOS native
-        installer checks passed in CI, but browser audit sharing on those systems is not verified.
-        Firefox live Native Messaging is also not verified. The unsigned CI packages are for
-        controlled testing only; do not bypass SmartScreen or Gatekeeper for an unverified file.
-      </p>
+      <h2>1. Install the RankMiso plugin</h2>
+      <p>In Claude Code, run each command on its own line:</p>
+      <pre><code>/plugin marketplace add EdeesonOpina/rankmiso
+/plugin install rankmiso@rankmiso</code></pre>
+      <p>In Codex, run in a terminal:</p>
+      <pre><code>codex plugin marketplace add EdeesonOpina/rankmiso
+codex plugin add rankmiso@rankmiso</code></pre>
     </section>
 
     <section>
-      <h2>2. Connect RankMiso and share</h2>
+      <h2>2. Connect once</h2>
+      <ol>
+        <li>Ask your assistant: <strong>Connect RankMiso</strong>.</li>
+        <li>
+          It shows what it will install and asks for your approval. After you approve, it downloads
+          the companion from the RankMiso GitHub release, checks its SHA-256, installs it for your
+          user, and registers Chrome and Firefox. You don't edit any files.
+        </li>
+        <li>
+          <strong>Restart your AI client</strong> so it loads the RankMiso tools: quit and reopen
+          Claude Code (or open <code>/mcp</code> and reconnect RankMiso), or start a new Codex
+          session.
+        </li>
+        <li>Quit and reopen your browser so it finds the companion.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>3. Share an audit</h2>
       <ol>
         <li>Analyze a website in RankMiso.</li>
         <li>
-          Open <strong>AI</strong>, choose <strong>Enable local sharing</strong>, and approve the
-          Native Messaging permission. Firefox also asks you to approve optional audit-data access.
+          Open <strong>AI Integrations</strong>, choose <strong>Enable local sharing</strong>, and
+          approve the Native Messaging permission. Firefox also asks you to approve optional
+          audit-data access.
         </li>
         <li>
           Open the audit's <strong>Export</strong> view and choose <strong>Share with MCP</strong>.
         </li>
         <li>Review the details and confirm. Sharing never happens automatically.</li>
-        <li>Return to <strong>AI</strong> to check the companion status and Shared Audits list.</li>
+        <li>
+          Return to <strong>AI Integrations</strong> to check the companion status and the Shared
+          Audits list.
+        </li>
       </ol>
       <p>
-        <strong>Connected</strong> means the browser reached the local companion. It does not mean
-        the AI client is configured or connected.
-      </p>
-    </section>
-
-    <section>
-      <h2>3. Configure your AI client</h2>
-      <p>
-        From the extracted companion folder, run the matching command after installing Codex CLI or
-        Claude Code:
-      </p>
-      <pre><code>./rankmiso-setup configure codex
-./rankmiso-setup configure claude</code></pre>
-      <p>On Windows, run the `.exe` commands in PowerShell:</p>
-      <pre><code>.\rankmiso-setup.exe configure codex
-.\rankmiso-setup.exe configure claude</code></pre>
-      <p>
-        Setup adds only the RankMiso server. If a server named <code>rankmiso</code> already exists,
-        setup stops and leaves it unchanged. After setup, restart the client. Check Codex with
-        <code>codex mcp list</code>; check Claude Code with <code>claude mcp list</code> and
-        <code>claude mcp get rankmiso</code> or <code>/mcp</code>.
-      </p>
-      <p>
-        Client registration and client connectivity are separate. The companion needs no API key;
-        signing in to the AI provider selected by Codex or Claude Code may still be required.
+        <strong>Connected</strong> means the browser reached the local companion. Your AI client
+        connects separately, through the plugin.
       </p>
     </section>
 
     <section>
       <h2>Try these prompts</h2>
       <ul class="mcp-guide-prompts">
-        <li>
-          Using RankMiso MCP, retrieve my latest shared audit. Explain errors, warnings, and
-          unavailable checks.
-        </li>
+        <li>Analyze my latest RankMiso audit. Explain errors, warnings, and unavailable checks.</li>
         <li>Read my audit and prioritize the most important technical SEO issues.</li>
         <li>Compare my two shared audits and explain which findings improved or regressed.</li>
         <li>
@@ -128,12 +114,21 @@ const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
     </section>
 
     <section>
+      <h2>Supported systems</h2>
+      <ul>
+        <li>Linux x86_64 with Google Chrome: verified.</li>
+        <li>macOS: not yet tested on a Mac.</li>
+        <li>Windows: the plugin cannot set up the companion yet. Use manual setup below.</li>
+        <li>Firefox, including Snap Firefox: sharing is not verified yet.</li>
+      </ul>
+    </section>
+
+    <section>
       <h2>Shared audits, privacy, and help</h2>
       <p>
-        The AI page lists snapshots with analyzed and shared times. Remove one from its row. The
-        companion uninstall keeps snapshots and local configuration. Removing a snapshot stops
-        future retrieval from this folder; it cannot retract content an AI provider already
-        received.
+        The AI Integrations page lists snapshots with analyzed and shared times. Remove one from its
+        row. Removing a snapshot stops future retrieval from this folder; it cannot retract content
+        an AI provider already received.
       </p>
       <p>
         RankMiso stores snapshots locally, requires no RankMiso cloud account, and does not collect
@@ -142,21 +137,34 @@ const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
         not guarantee local AI processing.
       </p>
       <p>
-        For <strong>Companion Not Found</strong>, install for the same OS user and restart the
-        browser. For <strong>Permission Required</strong>, enable sharing in AI and approve Native
-        Messaging (and Firefox's audit-data consent). For <strong>No shared audits</strong>, analyze
-        a page and explicitly confirm Share with MCP. For a missing AI server, check the client's
-        MCP list and restart it. Browser-to-companion and AI-client-to-MCP are separate connections.
+        For <strong>Companion Not Found</strong>, connect RankMiso for the same OS user and restart
+        the browser. For <strong>Connection Failed</strong>, ask your assistant to connect RankMiso
+        again; it upgrades an old companion. For <strong>Permission Required</strong>, enable
+        sharing and approve Native Messaging. For <strong>No shared audits</strong>, analyze a page
+        and confirm Share with MCP. If your assistant has no RankMiso tools, restart it, or ask it
+        to <strong>troubleshoot RankMiso</strong>.
+      </p>
+    </section>
+
+    <section>
+      <h2>Manual setup (advanced)</h2>
+      <p>
+        Download the archive for your system from the
+        <a
+          href="https://github.com/EdeesonOpina/rankmiso/releases/tag/v0.5.1"
+          target="_blank"
+          rel="noreferrer noopener"
+          >v0.5.1 GitHub release</a
+        >, verify its SHA-256 checksum, and extract it. In a terminal in that folder, run
+        <code>./rankmiso-setup install</code> (<code>.\rankmiso-setup.exe install</code> in
+        PowerShell on Windows), then <code>./rankmiso-setup configure codex</code> or
+        <code>./rankmiso-setup configure claude</code>, and restart the client.
       </p>
       <p>
-        Uninstall from the extracted official package with
-        <code>rankmiso-setup uninstall</code> (add <code>.exe</code> on Windows). It removes
-        binaries and browser registrations but preserves audits and local configuration. Remove the
-        separate client entry with <code>codex mcp remove rankmiso</code> or
-        <code>claude mcp remove rankmiso</code>.
-      </p>
-      <p class="mcp-guide-doc-link">
-        Windows/macOS browser sharing and Firefox live connection remain unverified.
+        The packages are unsigned. Do not bypass SmartScreen or Gatekeeper for a file you have not
+        verified. <code>rankmiso-setup uninstall</code> removes the binaries and browser
+        registrations but keeps your audits. Remove a manually added client entry with
+        <code>codex mcp remove rankmiso</code> or <code>claude mcp remove rankmiso</code>.
       </p>
     </section>
   </main>
