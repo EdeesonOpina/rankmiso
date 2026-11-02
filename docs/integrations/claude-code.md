@@ -16,7 +16,7 @@ Or from a terminal: `claude plugin marketplace add EdeesonOpina/rankmiso`, then 
 
 ## Connect
 
-Run `/rankmiso:connect`, or ask "Connect RankMiso". Approve the setup when asked. Claude Code also asks before it runs the setup command. Then run `/reload-plugins`, or reconnect `plugin:rankmiso:rankmiso` in `/mcp`.
+Run `/rankmiso:connect`, or ask "Connect RankMiso". Approve the setup when asked. Claude Code also asks before it runs the setup command. Then restart Claude Code, or open `/mcp` and reconnect `plugin:rankmiso:rankmiso`, so the RankMiso tools load. `/reload-plugins` alone does not restart a server that is already running. Restart your browser too.
 
 The MCP server appears as `plugin:rankmiso:rankmiso`. Its tools are named `mcp__plugin_rankmiso_rankmiso__rankmiso_list_audits`, and so on. The `bin/rankmiso` launcher is on the Bash tool's `PATH` while the plugin is enabled, so `rankmiso status` works in the terminal tool.
 
