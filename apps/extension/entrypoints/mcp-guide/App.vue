@@ -73,7 +73,7 @@ const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
         <li>Analyze a website in RankMiso.</li>
         <li>
           Open <strong>AI</strong>, choose <strong>Enable local sharing</strong>, and approve the
-          browser permission.
+          Native Messaging permission. Firefox also asks you to approve optional audit-data access.
         </li>
         <li>
           Open the audit's <strong>Export</strong> view and choose <strong>Share with MCP</strong>.
@@ -144,9 +144,9 @@ const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
       <p>
         For <strong>Companion Not Found</strong>, install for the same OS user and restart the
         browser. For <strong>Permission Required</strong>, enable sharing in AI and approve Native
-        Messaging. For <strong>No shared audits</strong>, analyze a page and explicitly confirm
-        Share with MCP. For a missing AI server, check the client's MCP list and restart it.
-        Browser-to-companion and AI-client-to-MCP are separate connections.
+        Messaging (and Firefox's audit-data consent). For <strong>No shared audits</strong>, analyze
+        a page and explicitly confirm Share with MCP. For a missing AI server, check the client's
+        MCP list and restart it. Browser-to-companion and AI-client-to-MCP are separate connections.
       </p>
       <p>
         Uninstall from the extracted official package with
@@ -239,6 +239,28 @@ const aiUrl = browser.runtime.getURL("/dashboard.html?section=ai-integrations");
   border-radius: 8px;
   background: var(--surface);
   line-height: 1.5;
+}
+.mcp-guide-site-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 8px 0 16px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--accentsoft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.mcp-guide-site-link:hover {
+  background: var(--accent);
+  color: var(--canvas);
+}
+.mcp-guide-site-link svg {
+  width: 15px;
+  height: 15px;
 }
 .mcp-guide-page section {
   padding: 16px 0;

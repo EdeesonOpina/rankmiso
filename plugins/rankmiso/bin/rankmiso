@@ -207,7 +207,7 @@ report() {
   esac
   count=$(shared_audit_count)
   if [ "$count" -eq 0 ]; then
-    say "Shared Audit: None yet. Open RankMiso in your browser, audit a page, and choose Share with AI."
+    say "Shared Audit: None yet. Open RankMiso in your browser, audit a page, and choose Share with MCP."
   else
     say "Shared Audit: $count available"
   fi
@@ -379,7 +379,7 @@ connect() {
     say "  - Create the private audit folder $audit_dir (existing audits are kept)."
     say "  - Register the browser host $HOST_NAME for Chrome ($CHROME_ID) in $chrome_dir"
     say "    and Firefox ($FIREFOX_ID) in $firefox_dir."
-    say "Nothing is shared automatically. You still choose Share with AI in the extension."
+    say "Nothing is shared automatically. You still choose Share with MCP in the extension."
     say "To proceed after the user approves, run: rankmiso connect --yes"
     return 0
   fi

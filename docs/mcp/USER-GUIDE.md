@@ -16,7 +16,7 @@ The tools can read existing RankMiso exports. They cannot open a website, start 
 
 ## Requirements and verification status
 
-- A RankMiso browser extension build that includes MCP (the published v0.4.0 extension does not include it).
+- RankMiso v0.5.0 or later, the current version in the Chrome Web Store and Firefox Add-ons.
 - The optional RankMiso companion for Windows x86_64, macOS Apple Silicon, macOS Intel, or Linux x86_64.
 - Chrome or Firefox for browser sharing. The companion registers both, but Firefox live Native Messaging has not been verified.
 - Codex CLI or Claude Code for the AI-client connection.
@@ -24,6 +24,8 @@ The tools can read existing RankMiso exports. They cannot open a website, start 
 All four companion targets passed native CI for builds, tests, archives, checksums, installer lifecycle, registration, and a Native Messaging protocol handshake. Linux packaged installation and protocol use were also verified locally. Isolated Chrome browser sharing was verified with a development extension ID. Production Chrome-ID sharing, Firefox browser use, and Windows/macOS browser sharing remain unverified. Native CI is not browser E2E.
 
 ## Install the companion
+
+MCP sharing is included in the RankMiso v0.5.0 browser extension. The companion is installed separately.
 
 **Easiest:** install the RankMiso plugin in Claude Code or Codex and ask it to “Connect RankMiso”. It downloads, verifies, and installs the companion after you approve ([Claude Code](../integrations/claude-code.md), [Codex](../integrations/codex.md)).
 
@@ -45,7 +47,7 @@ The installer works for the current user and does not need administrator access.
 ## Connect RankMiso and share an audit
 
 1. Open a website in Chrome or Firefox and analyze it with RankMiso.
-2. Open **AI** in RankMiso and select **Enable local sharing**. Approve the browser's optional Native Messaging permission when asked.
+2. Open **AI** in RankMiso and select **Enable local sharing**. Approve the browser's Native Messaging permission and, in Firefox, the requested audit-data consent when asked. The Firefox consent covers the page address and page content included in audits.
 3. Return to the audit's **Export** view and choose **Share with MCP**.
 4. Review the confirmation and select **Share audit**. Sharing never happens automatically.
 5. Return to **AI**. A successful companion connection appears as **Connected**; shared snapshots appear in **Shared audits**.
@@ -124,7 +126,7 @@ Snapshots are stored locally and are not automatically uploaded by RankMiso. Uni
 | Message or symptom | What to check |
 | --- | --- |
 | **Companion Not Found** | Install the companion for the same operating-system user that runs the browser. Restart the browser after installation. |
-| **Permission Required** | In RankMiso → **AI**, enable local sharing and approve the Native Messaging permission. If you denied it, allow it in the browser's extension settings, then check permission again. |
+| **Permission Required** | In RankMiso → **AI**, enable local sharing and approve Native Messaging. Firefox also asks for audit-data consent before RankMiso reads or shares saved audits. If you denied either request, restore it in the browser's extension settings, then check again. |
 | **Connection Failed** | Check that the companion is installed and the browser has not blocked it. Re-run `rankmiso-setup install` from the official extracted archive. |
 | **No shared audits** | Analyze a supported page, choose **Export → Share with MCP**, and confirm the share. Connecting alone does not share an audit. |
 | **RankMiso is missing in Codex** | Run `codex mcp list`. If the name already exists, inspect it instead of running setup over it. Restart Codex after configuring. |

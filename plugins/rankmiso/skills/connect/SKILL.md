@@ -17,7 +17,7 @@ The launcher is `bin/rankmiso` in this plugin, two folders above this file. Run 
 4. Only after the user approves in this conversation, run `rankmiso connect --yes`. If they decline, stop and say nothing was changed.
 5. Report the result from the final status lines. If it says `Status: READY`, say:
 
-   **RankMiso is connected.** Your browser and AI assistant can now exchange SEO audit results through the local companion. Open RankMiso in Chrome or Firefox, audit a page, and choose Share with AI.
+   **RankMiso is connected.** Your browser and AI assistant can now exchange SEO audit results through the local companion. Open RankMiso in Chrome or Firefox, audit a page, and choose Share with MCP.
 
    Then tell the user to reload the MCP connection: `/reload-plugins` in Claude Code, or start a new Codex session.
 

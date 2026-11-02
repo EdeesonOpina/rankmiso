@@ -1,6 +1,7 @@
 export interface BrandConfig {
   identity: {
     name: string;
+    extensionName: string;
     shortName: string;
     slug: string;
     ecosystem: string;
@@ -26,6 +27,7 @@ export interface BrandConfig {
 export const brandConfig: BrandConfig = {
   identity: {
     name: "RankMiso",
+    extensionName: "RankMiso — Free, Open-Source SEO Analyzer",
     shortName: "RankMiso",
     slug: "rankmiso",
     ecosystem: "Miso Ecosystem",
