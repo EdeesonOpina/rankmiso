@@ -1,0 +1,20 @@
+{
+  "name": "rankmiso",
+  "interface": {
+    "displayName": "RankMiso"
+  },
+  "plugins": [
+    {
+      "name": "rankmiso",
+      "source": {
+        "source": "local",
+        "path": "./plugins/rankmiso"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

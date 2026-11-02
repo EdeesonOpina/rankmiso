@@ -4,6 +4,10 @@ RankMiso MCP is a local, read-only Rust companion for SEO audit JSON. The MCP ex
 
 For beginner instructions, see [Using RankMiso with AI Coding Assistants](USER-GUIDE.md). For package commands and installation paths, see [Companion installation](INSTALL.md).
 
+## Claude Code and Codex plugins
+
+The recommended setup is the RankMiso plugin. It installs and verifies this companion for you. See [docs/integrations](../integrations/README.md). That page also describes a known issue: the v0.5.0 native host cannot be started by a real browser. Sharing needs a fixed companion release.
+
 ## Packaged installation
 
 M6.3 adds cross-platform artifact builds for Windows x86_64, macOS Apple Silicon, macOS Intel, and Linux x86_64. Pull requests targeting `master` run the native build and installer checks; ordinary `develop` pull requests use standard repository CI. Manual runs build packages only when requested and upload artifacts only when the maintainer opts in. Neither path publishes a GitHub Release. No public download is currently available. See the [beginner's guide](USER-GUIDE.md) and [installation reference](INSTALL.md).

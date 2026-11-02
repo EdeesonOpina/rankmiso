@@ -25,7 +25,9 @@ All four companion targets passed native CI for builds, tests, archives, checksu
 
 ## Install the companion
 
-**Public companion downloads are not available yet.** Do not use a CI artifact as a public installer. When an official release download is provided, verify its SHA-256 checksum, extract it, then open a terminal in the extracted folder.
+**Easiest:** install the RankMiso plugin in Claude Code or Codex and ask it to “Connect RankMiso”. It downloads, verifies, and installs the companion after you approve ([Claude Code](../integrations/claude-code.md), [Codex](../integrations/codex.md)).
+
+**Manual:** download the archive for your system from the [v0.5.1 pre-release](https://github.com/EdeesonOpina/rankmiso/releases/tag/v0.5.1) (v0.5.0 cannot be started by browsers), verify its SHA-256 checksum, extract it, then open a terminal in the extracted folder. Do not use a CI artifact as an installer.
 
 Run the installer for your system:
 

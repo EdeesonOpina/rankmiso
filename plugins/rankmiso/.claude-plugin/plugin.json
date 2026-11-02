@@ -1,0 +1,14 @@
+{
+  "name": "rankmiso",
+  "displayName": "RankMiso",
+  "version": "0.1.0",
+  "description": "Read SEO audits you explicitly share from the RankMiso browser extension through the local RankMiso MCP companion. Includes one-step companion setup, diagnostics, and SEO audit skills.",
+  "author": {
+    "name": "Miso Ecosystem",
+    "url": "https://github.com/EdeesonOpina"
+  },
+  "homepage": "https://github.com/EdeesonOpina/rankmiso",
+  "repository": "https://github.com/EdeesonOpina/rankmiso",
+  "license": "MIT",
+  "keywords": ["seo", "audit", "mcp", "rankmiso", "local"]
+}
