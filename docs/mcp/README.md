@@ -6,7 +6,7 @@ For beginner instructions, see [Using RankMiso with AI Coding Assistants](USER-G
 
 ## Claude Code and Codex plugins
 
-The recommended setup is the RankMiso plugin. It installs and verifies this companion for you. See [docs/integrations](../integrations/README.md). That page also describes a known issue: the v0.5.0 native host cannot be started by a real browser. Sharing needs a fixed companion release.
+The recommended setup is the RankMiso plugin. It installs and verifies this companion for you. See [docs/integrations](../integrations/README.md). Use companion v0.5.1 or later: the v0.5.0 native host cannot be started by a real browser.
 
 ## Packaged installation
 

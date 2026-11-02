@@ -131,14 +131,31 @@ class LauncherTests(unittest.TestCase):
         self.assertFalse(self.chrome.exists())
         self.assertEqual(list(self.tmp.iterdir()), [], "temporary download was not cleaned up")
 
+    def assert_setup_required_server(self, expected_note):
+        """Without a usable companion, `mcp` answers MCP with no tools and a setup note."""
+        requests = [
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}},
+            {"jsonrpc": "2.0", "method": "notifications/initialized"},
+            {"jsonrpc": "2.0", "id": "two", "method": "tools/list"},
+            {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "rankmiso_list_audits", "arguments": {}}},
+        ]
+        out = subprocess.run(["sh", str(LAUNCHER), "mcp"], env=self.env, input="".join(json.dumps(r) + "\n" for r in requests), capture_output=True, text=True, timeout=30)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        replies = [json.loads(line) for line in out.stdout.splitlines()]
+        self.assertEqual([r["id"] for r in replies], [1, "two", 3])
+        self.assertEqual(replies[0]["result"]["protocolVersion"], "2025-06-18")
+        self.assertIn(expected_note, replies[0]["result"]["instructions"])
+        self.assertEqual(replies[1]["result"], {"tools": []})
+        self.assertIn(expected_note, replies[2]["error"]["message"])
+
     # Missing and unsupported setups
 
     def test_missing_companion_gives_guidance_and_plan_changes_nothing(self):
         self.assertIn("NOT INSTALLED", self.run_launcher("status", expected=1))
-        self.assertIn("Connect RankMiso", self.run_launcher("mcp", expected=1))
+        self.assert_setup_required_server("Connect RankMiso")
         plan = self.run_launcher("connect")
         self.assertIn("no changes made yet", plan)
-        self.assertIn("8d3766354cad5329a66bbc217383d65d3dad0e449113adc9877006e8fb33f81a", plan)
+        self.assertIn("d5fe5cea1eee54587b7ce8dc3223bf21019d959791a2e45997aea645f52866b8", plan)
         self.assertIn("rankmiso connect --yes", plan)
         self.assertEqual(list(self.home.iterdir()), [])
 
@@ -146,7 +163,7 @@ class LauncherTests(unittest.TestCase):
         self.shim_command("uname", 'case "$1" in -s) echo Linux;; -m) echo aarch64;; esac\n')
         out = self.run_launcher("connect", "--yes", expected=2)
         self.assertIn("no Linux ARM64 companion build", out)
-        self.assertIn("no Linux ARM64", self.run_launcher("mcp", expected=2))
+        self.assert_setup_required_server("no Linux ARM64")
         self.assertEqual(list(self.home.iterdir()), [])
 
     def test_offline_download_fails_without_changes(self):
@@ -264,20 +281,22 @@ class LauncherTests(unittest.TestCase):
         out = self.run_launcher("connect", "--yes", env=self.offline_install_env(), expected=1)
         self.assertIn("does not support", out)
         self.assertIn("9.0.0", mcp.read_text())
-        self.assertIn("not compatible", self.run_launcher("mcp", expected=1))
+        self.assert_setup_required_server("not compatible")
         self.assertIn("MCP Companion: Incompatible", self.run_launcher("status", expected=1))
 
     def stub_version(self, binary, version):
         (self.data / "bin" / binary).write_text(f"#!/bin/sh\necho '{binary} {version}'\n")
 
-    def test_v050_host_is_reported_as_blocking_browser_sharing(self):
+    def test_v050_host_is_reported_and_offered_the_upgrade(self):
         self.require_build()
         self.run_launcher("connect", "--yes", env=self.offline_install_env())
         self.stub_version("rankmiso-mcp-native-host", "0.1.0")
         self.assertIn("Browser sharing: Blocked", self.run_launcher("status", expected=1))
-        out = self.run_launcher("connect", "--yes", expected=1)
-        self.assertIn("needs a newer companion", out)
+        self.assertIn("Upgrade the installed companion", self.run_launcher("connect"))
         self.assertIn("0.1.0", (self.data / "bin/rankmiso-mcp-native-host").read_text())
+        out = self.run_launcher("connect", "--yes", env=self.offline_install_env())
+        self.assertIn("Status: READY", out)
+        self.assertNotIn("0.1.0", (self.data / "bin/rankmiso-mcp-native-host").read_bytes().decode("latin-1")[:64])
 
     def test_outdated_companion_upgrades_only_after_verification(self):
         self.require_build()
@@ -287,8 +306,8 @@ class LauncherTests(unittest.TestCase):
         for binary in ["rankmiso-mcp", "rankmiso-mcp-native-host"]:
             self.stub_version(binary, "0.1.0")
         path, _ = self.archive()
-        newer = {"RANKMISO_TEST_ARCHIVE": str(path), "RANKMISO_TEST_PINNED_PATCH": "1"}
-        self.assertIn("Replace the installed rankmiso-mcp 0.1.0", self.run_launcher("connect", env=newer))
+        newer = {"RANKMISO_TEST_ARCHIVE": str(path)}
+        self.assertIn("Upgrade the installed companion (rankmiso-mcp 0.1.0) to v0.5.1", self.run_launcher("connect", env=newer))
         # A failed download or checksum leaves the working install alone.
         self.run_launcher("connect", "--yes", env={**newer, "RANKMISO_TEST_SHA256": "0" * 64}, expected=1)
         self.assertIn("0.1.0", (self.data / "bin/rankmiso-mcp").read_text())
@@ -307,7 +326,7 @@ class LauncherTests(unittest.TestCase):
         # it has already replaced the binaries.
         self.firefox.write_text(json.dumps({"name": HOST_NAME, "description": "other", "path": "/opt/other", "type": "stdio", "allowed_extensions": ["x@y"]}))
         path, digest = self.archive()
-        out = self.run_launcher("connect", "--yes", env={"RANKMISO_TEST_ARCHIVE": str(path), "RANKMISO_TEST_SHA256": digest, "RANKMISO_TEST_PINNED_PATCH": "1"}, expected=1)
+        out = self.run_launcher("connect", "--yes", env={"RANKMISO_TEST_ARCHIVE": str(path), "RANKMISO_TEST_SHA256": digest}, expected=1)
         self.assertIn("previous companion binaries were restored", out)
         self.assertEqual(old, {name: (self.data / "bin" / name).read_bytes() for name in BINARIES})
         self.assertEqual(sorted(p.name for p in (self.data / "bin").iterdir()), sorted(BINARIES))
