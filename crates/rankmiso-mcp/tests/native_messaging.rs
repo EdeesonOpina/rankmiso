@@ -13,7 +13,12 @@ fn frame(value: &Value) -> Vec<u8> {
 }
 
 fn run_native_host(audit_dir: &std::path::Path, request: Value) -> Value {
+    run_native_host_with_args(audit_dir, &[], request)
+}
+
+fn run_native_host_with_args(audit_dir: &std::path::Path, args: &[&str], request: Value) -> Value {
     let mut child = Command::new(env!("CARGO_BIN_EXE_rankmiso-mcp-native-host"))
+        .args(args)
         .env("RANKMISO_MCP_AUDIT_DIR", audit_dir)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -42,6 +47,55 @@ fn run_native_host(audit_dir: &std::path::Path, request: Value) -> Value {
         "stdout is exactly one native frame"
     );
     serde_json::from_slice(&output.stdout[4..]).expect("JSON response frame")
+}
+
+#[test]
+fn accepts_the_arguments_browsers_pass_when_launching_the_host() {
+    let temp = tempfile::tempdir().expect("audit directory");
+    let ping = json!({"protocolVersion":1,"requestId":"p","type":"ping"});
+    for args in [
+        &["chrome-extension://gdklhfalmmahhgimegjlfnhmacimeonl/"][..],
+        &[
+            "chrome-extension://gdklhfalmmahhgimegjlfnhmacimeonl/",
+            "--parent-window=0",
+        ],
+        &[
+            "/home/user/.mozilla/native-messaging-hosts/com.misoecosystem.rankmiso.json",
+            "rankmiso@rankmiso.extension",
+        ],
+    ] {
+        let response = run_native_host_with_args(temp.path(), args, ping.clone());
+        assert_eq!(response["result"]["status"], "ready", "{args:?}");
+    }
+}
+
+#[test]
+fn rejects_arguments_that_are_not_a_browser_launch_without_writing_stdout() {
+    let temp = tempfile::tempdir().expect("audit directory");
+    for args in [
+        &["--audit-dir"][..],
+        &["chrome-extension://not-an-id/"],
+        &["https://example.com/"],
+        &[
+            "chrome-extension://gdklhfalmmahhgimegjlfnhmacimeonl/",
+            "--evil",
+        ],
+        &["/tmp/manifest.txt", "rankmiso@rankmiso.extension"],
+        &["/tmp/manifest.json", "--flag"],
+        &["a", "b", "c"],
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_rankmiso-mcp-native-host"))
+            .args(args)
+            .env("RANKMISO_MCP_AUDIT_DIR", temp.path())
+            .stdin(Stdio::null())
+            .output()
+            .expect("native host runs");
+        assert!(!output.status.success(), "{args:?}");
+        assert!(output.stdout.is_empty(), "{args:?}");
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains("unexpected command-line argument")
+        );
+    }
 }
 
 #[test]

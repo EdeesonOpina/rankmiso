@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "rankmiso": {
+      "command": "sh",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/bin/rankmiso", "mcp"]
+    }
+  }
+}
