@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 — prepared for store submission (2026-11-02)
+
+- Update the built-in MCP guide for the Claude Code and Codex plugin: install from the RankMiso marketplace, ask the assistant to “Connect RankMiso”, then restart the AI client and browser. Manual companion setup moves to an advanced section.
+- The guide now requires companion v0.5.1. The v0.5.0 companion could not be started by browsers, so sharing failed with “Connection Failed”.
+- No permission, data-collection, or audit changes.
+
 ## 0.5.0-rc.1 — release candidate (unpublished)
 
 - Set the extension display name to “RankMiso — Free, Open-Source SEO Analyzer”, with “RankMiso” as its short name.
