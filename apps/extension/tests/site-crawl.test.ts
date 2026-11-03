@@ -2,18 +2,23 @@ import process from "node:process";
 import { describe, expect, it, vi } from "vitest";
 import {
   CRAWL_LIMITS,
+  clearCrawl,
   crawlUrl,
   duplicateMetadata,
+  emptySession,
   filterPages,
   inCrawlScope,
   isPrivateHostname,
   runSiteCrawl,
+  saveCrawl,
+  loadCrawl,
   sessionCsv,
   sortPages,
   type CrawlPage,
   type FetchResult,
 } from "../src/services/site-crawl";
-import { extractCrawlPage } from "../src/services/site-extract";
+import { extractCrawlPage, snapshotFromHtml } from "../src/services/site-extract";
+import { appConfig } from "../src/config/app.config";
 import { fetchCrawlPage, readRobots } from "../src/services/site-crawl-network";
 
 const start = "http://127.0.0.1/index.html";
@@ -55,6 +60,27 @@ describe("site crawl", () => {
     );
     expect(crawlUrl("mailto:ada@example.com", start)).toBeNull();
     expect(crawlUrl("javascript:void(0)", start)).toBeNull();
+  });
+
+  it("preserves source observations needed by site-wide analysis", () => {
+    const html =
+      '<title> </title><meta name="description" content=""><meta name="description" content="second"><link rel="canonical" href="javascript:bad"><link rel="canonical" href="/ok"><a href="/target" rel="nofollow" target="_blank"> Target </a><img src="/a.png"><script type="application/ld+json">{}</script>';
+    const extracted = extractCrawlPage(html, start);
+    expect(extracted.titleState).toBe("empty");
+    expect(extracted.descriptionState).toBe("empty");
+    expect(extracted.canonicalCount).toBe(2);
+    expect(extracted.internalLinkDetails?.[0]).toMatchObject({
+      url: "http://127.0.0.1/target",
+      rel: ["nofollow"],
+      anchorText: "Target",
+      target: "_blank",
+    });
+    expect(extracted.imageCount).toBe(1);
+    const snapshot = snapshotFromHtml(html, start, 200, "text/html");
+    expect(snapshot.titles.elements).toEqual([""]);
+    expect(snapshot.meta.map((item) => item.content)).toEqual(["", "second"]);
+    expect(snapshot.linksRel).toHaveLength(2);
+    expect(snapshot.images).toHaveLength(1);
   });
 
   it("stays on the starting origin and refuses a private hop from a public site", () => {
@@ -159,6 +185,94 @@ describe("site crawl", () => {
     expect(session.robots).toBe("unavailable");
     expect(session.pages[0]?.skipped).toContain("unavailable");
     expect(session.sitemap).toBe("not-read");
+  });
+
+  it("retains structured findings returned by page inspection", async () => {
+    const session = await runSiteCrawl({
+      startUrl: start,
+      signal: new AbortController().signal,
+      readRobots: async () => ({ status: 404, body: "", unavailable: false }),
+      discoverSitemaps: async () => ({ urls: [], unavailable: false, empty: true }),
+      mayFetch: async () => true,
+      fetchPage: async (url) => ok(url),
+      inspect: async (page) => ({
+        page: { ...page, analyzed: true, title: "Page" },
+        findings: [
+          {
+            id: "RULE_H1_MISSING",
+            category: "headings",
+            title: "Missing H1",
+            description: "Add a heading",
+            recommendation: "Add one H1",
+            status: "WARNING",
+            evidence: [{ label: "H1 count", value: "0" }],
+          },
+        ],
+      }),
+    });
+    expect(session.pages[0]?.findings).toEqual([
+      { id: "RULE_H1_MISSING", status: "WARNING", evidence: [{ label: "H1 count", value: "0" }] },
+    ]);
+    expect(session.findingCatalog?.[0]).toMatchObject({
+      id: "RULE_H1_MISSING",
+      category: "headings",
+    });
+  });
+
+  it("reads older origin-scoped crawl records and bounds saved derived detail", () => {
+    clearCrawl();
+    localStorage.setItem(
+      appConfig.siteCrawlKey,
+      JSON.stringify({
+        origin: "http://127.0.0.1",
+        pages: [{ url: start, internalLinks: ["http://127.0.0.1/a"] }],
+      }),
+    );
+    expect(loadCrawl("http://127.0.0.1")?.pages[0]?.internalLinkDetails).toBeUndefined();
+    const saved = emptySession(start);
+    saved.status = "complete";
+    saved.pages = [
+      {
+        url: start,
+        finalUrl: start,
+        status: 200,
+        contentType: "text/html",
+        title: "Page",
+        description: "",
+        canonical: "",
+        robots: "",
+        h1Count: 1,
+        internalLinks: Array.from({ length: 40 }, (_, index) => `http://127.0.0.1/${index}`),
+        internalLinkDetails: Array.from({ length: 40 }, (_, index) => ({
+          url: `http://127.0.0.1/${index}`,
+          rel: [],
+          anchorText: "Anchor".repeat(100),
+          target: "",
+        })),
+        internalLinksTruncated: false,
+        externalLinks: 0,
+        indexability: "unknown",
+        issues: [],
+        findings: [
+          {
+            id: "RULE_H1_MISSING",
+            status: "WARNING",
+            evidence: [{ label: "x".repeat(200), value: "y".repeat(200) }],
+          },
+        ],
+        analyzed: true,
+        error: "",
+        skipped: "",
+        redirectHops: [],
+        fromSitemap: false,
+        depth: 0,
+      },
+    ];
+    expect(saveCrawl(saved)).toBe(true);
+    const restored = loadCrawl("http://127.0.0.1");
+    expect(restored?.pages[0]?.findings?.[0]?.id).toBe("RULE_H1_MISSING");
+    expect(restored?.pages[0]?.internalLinkDetails).toHaveLength(10);
+    clearCrawl();
   });
 
   it("skips a disallowed path and keeps sitemap URLs in scope", async () => {

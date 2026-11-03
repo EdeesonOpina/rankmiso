@@ -95,3 +95,13 @@ The candidate Playwright suite passed and printed one-profile timings: popup 192
 ## R0.4.0-G1 (2026-10-30)
 
 No new benchmark sample was collected for the bounded robots reader, whole-crawl deadline, or literal-IP classification changes. The Playwright one-profile observations above predate G1 and are not presented as measurements of the corrected candidate. Native Chrome/Firefox runtime timing, real crawl duration, memory, and Stop latency remain unmeasured. These small control-flow changes add no polling, dependency, or additional cache.
+
+## M9 Site Explorer aggregation (2026-11-03)
+
+Environment: Linux 6.17.0-41-generic x86_64, Node 22.23.3, Vitest 3.2.7. The opt-in `RANKMISO_RUN_PERF=1 pnpm --filter @rankmiso/extension exec vitest run tests/site-analysis.test.ts -t 'benchmarks aggregation' --reporter=verbose` fixture uses 100 analyzed page records and 20,000 input internal-link observations. It measures the TypeScript summary, issue, duplicate and link aggregation only; it does not include network, Vue rendering or a browser memory sample.
+
+| Operation | Fixture / state | Samples | Median | Min–max |
+| --- | --- | ---: | ---: | ---: |
+| Site analysis aggregation | 100 pages / 20,000 input link observations | 5 | 405.42 ms | 386.60–439.94 ms |
+
+For context, the earlier in-process crawl queue/extraction fixture measured 100 pages at 150 ms median (112–231 ms) in this session; it exercises a different operation and is not a before/after comparison. WXT reports rounded production package totals of 1.63 MB Chrome and 1.62 MB Firefox on the M9 source (about 0.09 MB / 0.12 MB above the previously recorded 1.54 MB / 1.50 MB candidate output). These rounded package totals include environment/build variation and do not establish exact source-only bundle growth. Browser UI responsiveness and total browser memory at 100 pages were not measured.

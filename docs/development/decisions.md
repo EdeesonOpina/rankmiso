@@ -210,6 +210,14 @@ Place local companion status and shared snapshot management in one direct utilit
 
 Keep Claude Code and Codex MCP setup documented outside the UI. The AI Integrations view focuses on the local companion, shared snapshots and privacy; it does not claim client discovery or a client connection. Use neutral RankMiso navigation/iconography and do not suggest sponsorship or partnership.
 
+## M9 — Site Explorer 2.0 aggregation
+
+Site-wide findings are aggregated in the extension's TypeScript service from the existing bounded crawl session and the existing Rust/WASM audit output. Rust remains the source of page-level SEO rules and severity/status. No rules are duplicated in Vue, and no score is calculated for a site. During a live crawl, aggregation refreshes every ten analyzed pages and at completion; searching, filtering, and sorting operate on the prebuilt issue and link observations.
+
+Persisted page results carry bounded finding references (rule ID, status, short evidence) plus one deduplicated rule-definition catalog. Optional fields preserve the existing local-storage record compatibility. The JSON download retains schema version 1 and adds derived site analysis only to the exported document; the MCP companion/protocol and audit reader are unchanged. CSV uses stable typed record rows for pages, findings, duplicate metadata, and observed internal links.
+
+Metadata duplicate normalization uses NFC, trimmed/collapsed Unicode whitespace, and case-insensitive comparison; punctuation is retained. Missing/empty values are not duplicate groups. Internal-link observations use only already extracted same-origin URLs, count unique analyzed source pages, and label targets not requested by the bounded crawl as “not crawled.” Zero or one observed incoming source is presented as a limited crawl observation and never as a site-wide orphan finding.
+
 ## GitHub Sponsors integration (2026-10-31)
 
 Use GitHub Sponsors as the single voluntary funding destination: `https://github.com/sponsors/EdeesonOpina`. The repository funding file contains only `github: EdeesonOpina`; the README and existing Settings information footer may link to the profile. Keep the one-time tier name **Keep Miso Brewing** in sponsorship copy, but do not embed tier names or prices in the application. RankMiso remains MIT-licensed and fully usable without sponsorship; no payment processing, accounts, or telemetry are part of the product. The Miso Ecosystem website is outside this task and requires separate authorization. The local funding file does not activate a public Sponsor button until merged to the protected default branch, and the profile's payment availability remains unconfirmed.
