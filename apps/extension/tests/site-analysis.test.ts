@@ -8,7 +8,7 @@ import {
   siteAnalysisJson,
   sortSiteIssues,
 } from "../src/services/site-analysis";
-import type { CrawlPage, CrawlSession } from "../src/services/site-crawl";
+import { sessionCsv, type CrawlPage, type CrawlSession } from "../src/services/site-crawl";
 
 function page(url: string, overrides: Partial<CrawlPage> = {}): CrawlPage {
   return {
@@ -147,6 +147,7 @@ describe("site-wide analysis", () => {
         { url: "https://example.test/b", rel: ["nofollow"], anchorText: "B", target: "" },
         { url: "https://example.test/b", rel: ["ugc"], anchorText: "B page", target: "_blank" },
         { url: "https://example.test/missing", rel: [], anchorText: "Not fetched", target: "" },
+        { url: "https://outside.test/", rel: [], anchorText: "Outside", target: "" },
       ],
     });
     const b = page("https://example.test/b", { status: 404, analyzed: false });
@@ -232,6 +233,9 @@ describe("site-wide analysis", () => {
     expect(csv).toContain('"duplicate",');
     expect(csv).toContain('"link",');
     expect(csv).toContain("linksTruncated");
+    expect(sessionCsv(current).split("\n", 1)[0]).toBe(
+      '"url","finalUrl","status","title","description","canonical","robots","indexability","issues","skipped","error","internalLinks"',
+    );
     const json = JSON.parse(siteAnalysisJson(current)) as {
       schemaVersion: number;
       siteAnalysis: { summary: { partial: boolean } };
@@ -240,30 +244,76 @@ describe("site-wide analysis", () => {
   });
 
   it.skipIf(process.env.RANKMISO_RUN_PERF !== "1")(
-    "benchmarks aggregation for a 100 page / 20k link fixture",
+    "benchmarks aggregation across crawl sizes and reports cumulative progress cost",
     () => {
-      const pages = Array.from({ length: 100 }, (_, index) =>
-        page(`https://example.test/${index}`, {
-          title: `Section ${index % 10}`,
-          description: `Description ${index % 5}`,
-          internalLinks: Array.from(
-            { length: 200 },
-            (_unused, link) => `https://example.test/${(index + link + 1) % 100}`,
-          ),
-          internalLinkDetails: [],
-        }),
-      );
-      const fixture = session(pages, { discoveredCount: 100, partial: true });
-      const durations: number[] = [];
-      for (let index = 0; index < 5; index += 1) {
-        const start = performance.now();
-        expect(analyzeSite(fixture).summary.analyzed).toBe(100);
-        durations.push(performance.now() - start);
+      const workloads: Array<[number, number, boolean]> = [
+        [1, 10, false],
+        [10, 20, false],
+        [25, 20, false],
+        [50, 20, false],
+        [100, 20, false],
+        [100, 200, false],
+        [100, 200, true],
+      ];
+      for (const [pageCount, linksPerPage, detailedLinks] of workloads) {
+        const pages = Array.from({ length: pageCount }, (_, index) =>
+          page(`https://example.test/${index}`, {
+            title: `Section ${index % 10}`,
+            description: `Description ${index % 5}`,
+            internalLinks: Array.from(
+              { length: linksPerPage },
+              (_unused, link) => `https://example.test/${(index + link + 1) % pageCount}`,
+            ),
+            internalLinkDetails: detailedLinks
+              ? Array.from({ length: linksPerPage }, (_unused, link) => ({
+                  url: `https://example.test/${(index + link + 1) % pageCount}`,
+                  rel: link % 2 ? ["nofollow"] : [],
+                  anchorText: `Link ${link}`,
+                  target: "",
+                }))
+              : [],
+          }),
+        );
+        const fixture = session(pages, { discoveredCount: pageCount, partial: true });
+        const samples: number[] = [];
+        for (let index = 0; index < 6; index += 1) {
+          const start = performance.now();
+          expect(analyzeSite(fixture).summary.analyzed).toBe(pageCount);
+          const duration = performance.now() - start;
+          if (index > 0) samples.push(duration);
+        }
+        samples.sort((a, b) => a - b);
+
+        let progressExecutions = 0;
+        let cumulativeProgressMs = 0;
+        for (let count = 1; count <= pageCount; count += 1) {
+          if (count === 1 || count % 10 === 0) {
+            const started = performance.now();
+            analyzeSite(session(pages.slice(0, count), { discoveredCount: count, partial: true }));
+            cumulativeProgressMs += performance.now() - started;
+            progressExecutions += 1;
+          }
+        }
+        const cumulativeWithFinal = cumulativeProgressMs + samples[2]!;
+        console.info(
+          `Site aggregation pages=${pageCount} links/page=${linksPerPage} details=${detailedLinks} median=${samples[2]?.toFixed(2)}ms max=${samples[3]?.toFixed(2)}ms n=5 progressRuns=${progressExecutions}+final cumulative≈${cumulativeWithFinal.toFixed(2)}ms`,
+        );
+        if (pageCount === 100 && linksPerPage === 200 && detailedLinks) {
+          const gc = Reflect.get(globalThis, "gc");
+          if (typeof gc === "function") {
+            gc();
+            const before = process.memoryUsage().heapUsed;
+            const result = analyzeSite(fixture);
+            gc();
+            console.info(
+              `Retained analysis heap after GC: ${((process.memoryUsage().heapUsed - before) / 1024).toFixed(1)} KiB; emitted JSON: ${(Buffer.byteLength(JSON.stringify(result)) / 1024).toFixed(1)} KiB`,
+            );
+          } else {
+            console.info("Heap delta not measured: the Vitest worker does not expose forced GC.");
+          }
+        }
       }
-      durations.sort((a, b) => a - b);
-      console.info(
-        `Site aggregation 100 pages / 20k links: median=${durations[2]?.toFixed(2)}ms min=${durations[0]?.toFixed(2)}ms max=${durations[4]?.toFixed(2)}ms (n=5)`,
-      );
     },
+    30_000,
   );
 });

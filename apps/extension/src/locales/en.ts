@@ -848,6 +848,7 @@ export const messages = {
   "site.robotsMeta": "Robots meta",
   "site.headings": "H1 count",
   "site.exportCsv": "Export CSV",
+  "site.exportAnalysisCsv": "Export Site Analysis CSV",
   "site.exportJson": "Export JSON",
   "site.lifecycle":
     "Closing this report stops the crawl. It does not continue in the background, and it does not resume by itself.",

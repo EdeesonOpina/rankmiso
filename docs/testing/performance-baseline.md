@@ -105,3 +105,25 @@ Environment: Linux 6.17.0-41-generic x86_64, Node 22.23.3, Vitest 3.2.7. The opt
 | Site analysis aggregation | 100 pages / 20,000 input link observations | 5 | 405.42 ms | 386.60–439.94 ms |
 
 For context, the earlier in-process crawl queue/extraction fixture measured 100 pages at 150 ms median (112–231 ms) in this session; it exercises a different operation and is not a before/after comparison. WXT reports rounded production package totals of 1.63 MB Chrome and 1.62 MB Firefox on the M9 source (about 0.09 MB / 0.12 MB above the previously recorded 1.54 MB / 1.50 MB candidate output). These rounded package totals include environment/build variation and do not establish exact source-only bundle growth. Browser UI responsiveness and total browser memory at 100 pages were not measured.
+
+## M9.6 aggregation and browser heap review (2026-11-03)
+
+The pre-review implementation was measured on the same Linux x86_64 / Node 22 / Vitest 3.2.7 runner with five timed samples per workload after one warm-up. The 100-page / 20,000-link case took 386.48 ms median without link detail records and 719.03 ms median with 20,000 detailed link observations; live progress triggered analysis at page 1 and every tenth page, then again at completion (12 full analyses at 100 pages). Simulated cumulative time was about 2.51 seconds and 4.54 seconds respectively. The detailed-link workload exposed repeated per-target scans.
+
+The service now memoizes per-session origin checks and builds each source page's target and link-attribute index in one pass. The same fixture harness reports:
+
+| Pages | Links/page | Link details | Median / max individual run | Progress runs + final | Simulated cumulative |
+| ---: | ---: | --- | ---: | ---: | ---: |
+| 1 | 10 | no | 0.27 / 0.29 ms | 1 + 1 | 0.52 ms |
+| 10 | 20 | no | 0.55 / 0.58 ms | 2 + 1 | 1.45 ms |
+| 25 | 20 | no | 1.42 / 1.43 ms | 3 + 1 | 6.23 ms |
+| 50 | 20 | no | 2.13 / 2.22 ms | 6 + 1 | 11.01 ms |
+| 100 | 20 | no | 3.83 / 4.18 ms | 11 + 1 | 28.23 ms |
+| 100 | 200 | no | 7.92 / 8.55 ms | 11 + 1 | 48.19 ms |
+| 100 | 200 | yes | 10.08 / 10.68 ms | 11 + 1 | 50.75 ms |
+
+All numbers are local synchronous aggregation timings, not crawl/network time. On the detailed 20,000-link fixture the median fell from 719.03 ms to 10.08 ms (about 98.6%); its measured maximum fell from 725.60 ms to 10.68 ms. The progress schedule remains unchanged, while its summed aggregation time is now about 51 ms. These short tasks leave the event loop responsive between crawl progress callbacks; this is not a formal input-latency benchmark.
+
+The Chromium Playwright Site Explorer test restored a synthetic 100-page, 20,000-link session and sampled `performance.memory.usedJSHeapSize` after rendering and CDP forced garbage collection: median 20,077,262 bytes, range 20,070,910–20,078,950 (five reloads). This is the extension page's retained V8 heap for the whole app and fixture, not a Site Explorer-only allocation, peak, or process RSS measure. The fixture bypasses the product's compact-on-save limit to represent an active crawl; it is not persisted-session size. No comparable v0.5.1 browser-heap sample exists. The Vitest worker did not expose forced GC, so a retained Node heap delta was not reported.
+
+Current output-directory apparent sizes are 1,632,504 bytes for Chrome and 1,618,363 bytes for Firefox; WXT rounds these to 1.63 MB and 1.62 MB. Compared with the previously recorded approximate 1.54 MB and 1.50 MB, growth is about +0.09 MB / +5.8% and +0.12 MB / +8.0%. WXT reports shared workbench code in the `WorkbenchApp` chunk; a reproducible build of the old baseline was not available in this worktree, so exact source-attributed size growth is not claimed.

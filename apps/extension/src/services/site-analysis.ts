@@ -186,27 +186,44 @@ export function analyzeSite(session: CrawlSession): SiteAnalysis {
 
   const pageByUrl = new Map<string, CrawlPage>();
   const aliases = new Map<string, string>();
+  const sameOriginCache = new Map<string, boolean>();
+  const isInternal = (value: string) => {
+    const cached = sameOriginCache.get(value);
+    if (cached !== undefined) return cached;
+    const internal = sameOrigin(value, session.origin);
+    sameOriginCache.set(value, internal);
+    return internal;
+  };
   for (const page of pages) {
-    if (!sameOrigin(page.url, session.origin)) continue;
+    if (!isInternal(page.url)) continue;
     pageByUrl.set(page.url, page);
     aliases.set(page.url, page.url);
     if (page.finalUrl) aliases.set(page.finalUrl, page.url);
   }
-  const incoming = new Map<string, Set<string>>();
+  const incoming = new Map<string, number>();
   const links: LinkObservation[] = [];
   let linksTruncated = false;
-  const seenEdges = new Set<string>();
   for (const source of analyzedPages) {
-    if (!sameOrigin(source.url, session.origin)) continue;
+    if (!isInternal(source.url)) continue;
     const details = source.internalLinkDetails;
-    const targets = [...(details?.map((link) => link.url) ?? []), ...source.internalLinks];
-    const unique = new Set(targets.filter((target) => sameOrigin(target, session.origin)));
-    for (const target of unique) {
-      if (!sameOrigin(target, session.origin)) continue;
-      const canonicalTarget = aliases.get(target) ?? target;
-      const key = `${source.url}\n${canonicalTarget}`;
-      if (seenEdges.has(key)) continue;
-      seenEdges.add(key);
+    const detailByTarget = new Map<string, { rel: Set<string>; anchors: Set<string> }>();
+    const validatedTargets = new Map<string, string>();
+    for (const value of new Set(source.internalLinks)) {
+      if (!isInternal(value)) continue;
+      const target = aliases.get(value) ?? value;
+      validatedTargets.set(value, target);
+      if (!detailByTarget.has(target)) {
+        detailByTarget.set(target, { rel: new Set<string>(), anchors: new Set<string>() });
+      }
+    }
+    for (const link of details ?? []) {
+      const target = validatedTargets.get(link.url);
+      if (!target) continue;
+      const detail = detailByTarget.get(target)!;
+      link.rel.forEach((rel) => detail.rel.add(rel));
+      if (link.anchorText) detail.anchors.add(link.anchorText);
+    }
+    for (const canonicalTarget of detailByTarget.keys()) {
       const targetPage = pageByUrl.get(canonicalTarget);
       const targetState: LinkObservation["targetState"] = targetPage
         ? targetPage.skipped
@@ -217,12 +234,7 @@ export function analyzeSite(session: CrawlSession): SiteAnalysis {
               ? "analyzed"
               : "not-crawled"
         : "not-crawled";
-      const sourceLinks = (details ?? []).filter(
-        (link) => (aliases.get(link.url) ?? link.url) === canonicalTarget,
-      );
-      const sources = incoming.get(canonicalTarget) ?? new Set<string>();
-      sources.add(source.url);
-      incoming.set(canonicalTarget, sources);
+      incoming.set(canonicalTarget, (incoming.get(canonicalTarget) ?? 0) + 1);
       if (links.length < MAX_LINK_OBSERVATIONS)
         links.push({
           source: source.url,
@@ -231,17 +243,14 @@ export function analyzeSite(session: CrawlSession): SiteAnalysis {
           redirectTo:
             targetPage && targetPage.finalUrl !== targetPage.url ? targetPage.finalUrl : null,
           incomingSources: 0,
-          outgoingTargets: unique.size,
-          rel: [...new Set(sourceLinks.flatMap((link) => link.rel))].sort(),
-          anchors: [...new Set(sourceLinks.map((link) => link.anchorText).filter(Boolean))].slice(
-            0,
-            3,
-          ),
+          outgoingTargets: detailByTarget.size,
+          rel: [...(detailByTarget.get(canonicalTarget)?.rel ?? [])].sort(),
+          anchors: [...(detailByTarget.get(canonicalTarget)?.anchors ?? [])].slice(0, 3),
         });
       else linksTruncated = true;
     }
   }
-  for (const link of links) link.incomingSources = incoming.get(link.target)?.size ?? 0;
+  for (const link of links) link.incomingSources = incoming.get(link.target) ?? 0;
 
   return {
     summary: {
@@ -297,8 +306,8 @@ export function analyzeSite(session: CrawlSession): SiteAnalysis {
     issues,
     links,
     lowIncomingPages: analyzedPages
-      .filter((page) => sameOrigin(page.url, session.origin))
-      .map((page) => ({ url: page.url, incomingSources: incoming.get(page.url)?.size ?? 0 }))
+      .filter((page) => isInternal(page.url))
+      .map((page) => ({ url: page.url, incomingSources: incoming.get(page.url) ?? 0 }))
       .filter((item) => item.incomingSources <= 1)
       .sort((a, b) => a.incomingSources - b.incomingSources || a.url.localeCompare(b.url)),
     linksTruncated:

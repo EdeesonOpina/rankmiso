@@ -11,6 +11,7 @@ import {
   loadCrawl,
   runSiteCrawl,
   saveCrawl,
+  sessionCsv,
   sortPages,
   type CrawlPage,
   type CrawlLimitReason,
@@ -295,14 +296,21 @@ function stop() {
   controller?.abort();
 }
 
-function download(kind: "csv" | "json") {
+function download(kind: "csv" | "analysis-csv" | "json") {
   if (!session.value) return;
-  const content = kind === "csv" ? siteAnalysisCsv(session.value) : siteAnalysisJson(session.value);
-  const blob = new Blob([content], { type: kind === "csv" ? "text/csv" : "application/json" });
+  const content =
+    kind === "csv"
+      ? sessionCsv(session.value)
+      : kind === "analysis-csv"
+        ? siteAnalysisCsv(session.value)
+        : siteAnalysisJson(session.value);
+  const isCsv = kind !== "json";
+  const suffix = kind === "analysis-csv" ? "-analysis" : "";
+  const blob = new Blob([content], { type: isCsv ? "text/csv" : "application/json" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = safeFilename(`${origin.value}-site`, kind);
+  anchor.download = safeFilename(`${origin.value}-site${suffix}`, isCsv ? "csv" : "json");
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -878,6 +886,9 @@ function limitLabel(limit: CrawlLimitReason): string {
     <div v-if="report" class="actions-row">
       <button type="button" class="quiet" @click="download('csv')">
         {{ t("site.exportCsv") }}
+      </button>
+      <button type="button" class="quiet" @click="download('analysis-csv')">
+        {{ t("site.exportAnalysisCsv") }}
       </button>
       <button type="button" class="quiet" @click="download('json')">
         {{ t("site.exportJson") }}
