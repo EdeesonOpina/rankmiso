@@ -1,6 +1,6 @@
 # Chrome release
 
-This is the historical v0.4.0 Chrome submission checklist. v0.5.0 is the current public version; see [the v0.5.0 release notes](v0.5.0-rc1.md).
+This file retains the historical v0.4.0 Chrome submission checklist. Chrome v0.5.1 is currently published; see the [integration guide](../integrations/README.md) for current MCP setup and compatibility status.
 
 The product name is already RankMiso. Icons are already generated from the fox sticker.
 
