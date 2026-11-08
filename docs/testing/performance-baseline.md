@@ -143,3 +143,19 @@ Same opt-in command, Linux 6.17.0-41-generic x86_64, Node 22.23.3, Vitest 3.2.7,
 | 100 | 200 | yes | 10.86 / 11.26 ms | 54.07 ms |
 
 Within run-to-run noise of the M9.6 numbers (10.08 ms median for the detailed 20,000-link case). The 405 ms figure in the first M9 table predates the M9.6 optimization and is historical. Browser heap and input latency were not re-measured.
+
+## v0.6.0 release candidate (2026-11-08)
+
+Same opt-in command on `release/extension-v0.6.0` (Site Explorer 2.0 with the design alignment and version 0.6.0). Linux 6.17.0-41-generic x86_64, Node 22.23.3, Vitest 3.2.7, five samples per row after one warm-up.
+
+| Pages | Links/page | Link details | Median / max | Simulated cumulative |
+| ---: | ---: | --- | ---: | ---: |
+| 1 | 10 | no | 0.27 / 0.29 ms | 0.54 ms |
+| 10 | 20 | no | 0.60 / 0.72 ms | 1.69 ms |
+| 25 | 20 | no | 1.66 / 1.67 ms | 7.44 ms |
+| 50 | 20 | no | 2.25 / 2.29 ms | 12.65 ms |
+| 100 | 20 | no | 4.57 / 4.78 ms | 30.21 ms |
+| 100 | 200 | no | 7.96 / 8.43 ms | 61.82 ms |
+| 100 | 200 | yes | 11.88 / 13.17 ms | 57.47 ms |
+
+Compared with the M9-R1 commit (11.62 ms median for the detailed 20,000-link case) this is within run-to-run noise; no regression. Production package totals: Chrome 1.63 MB, Firefox 1.62 MB (WXT rounded), same as M9. Real-browser memory, crawl duration and input latency remain NOT MEASURED.
