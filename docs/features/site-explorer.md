@@ -1,5 +1,7 @@
 # Site Explorer
 
+The M9 aggregation, issue, duplicate-metadata, and link views described below are unreleased development work targeting v0.6.0. Published Chrome and Firefox v0.5.1 packages do not include Site Explorer 2.0.
+
 The report section **Site** crawls one origin after you choose **Start crawl**. The popup **Site** tab only opens that report. It does not start a crawl.
 
 Both Chromium and Firefox ask for the starting origin when you start. A denial shows one message and sends no crawl request. The manifests have no required host permission; optional host eligibility is not a grant. Firefox uses the same report-owned crawl controller and network safety functions as Chromium. Automatic Checks never starts a crawl; Site Explorer remains an explicit action. Firefox's standalone Sitemap Explorer and other remote probes remain disabled.
@@ -14,9 +16,19 @@ Discovery reads `Sitemap` lines and the conventional sitemap paths the sitemap e
 
 Defaults: 100 pages, depth 3, 2 concurrent requests, 10 second timeout, 1 MB body, 5 redirects, 120 seconds, 400 discovered addresses, and one retry after 429, 503, or a timeout. Reaching the page cap marks the session partial. A stopped crawl says it was stopped.
 
-Fetched HTML is parsed as source and scored with the existing page engine. That score stays on the page. The site view has no second score. Duplicate titles and descriptions are comparisons across fetched pages. A shared title is not duplicate content. An orphan candidate is a sitemap URL with no incoming link from the pages this crawl fetched, and only after a finished crawl that did not hit a limit.
+Fetched HTML is parsed as source and scored with the existing Rust/WASM page engine. Site-wide aggregation is a TypeScript layer over those page results and observed crawl links; it does not rerun SEO rules or add a second score. The Site Explorer report provides Overview, Issues, Pages, and Links views. The Overview summary uses the same card as the page Overview: pages analyzed out of the page limit, then analyzed pages grouped by their worst finding (errors, warnings, neither). Pages from sessions saved before Site Explorer 2.0 have no per-page findings and are left out of the "neither" count. There is no site-wide score. Findings retain rule IDs, categories, status and bounded evidence from the existing checks. Missing and empty metadata are counted separately from duplicate groups.
 
-CSV and JSON export the session, not raw HTML. CSV formula characters are prefixed.
+Duplicate title and description normalization applies Unicode NFC, trims and collapses whitespace, and compares case-insensitively. It preserves punctuation and reports the original first observed value. Missing and empty values and unsuccessful pages are excluded. Crawled addresses that redirect to an already analyzed final page are counted once and reported as redirect aliases, so one page is never shown as its own duplicate. A shared title or description is not a claim of duplicate page content.
+
+Internal link analysis uses the URLs already discovered by the crawl; it sends no additional requests. Incoming counts are unique analyzed source pages within this bounded session. “Few incoming links observed” means zero or one such source page. It is not an orphan-page claim. Target states distinguish analyzed, confirmed failed, skipped, and not crawled. Saved older sessions may contain only the first 50 internal targets per page and do not have finding IDs/categories; their page data remains readable, but derived link coverage and issue taxonomy are incomplete.
+
+The original **Export CSV** remains a page-only file with its existing 12-column header and page rows. **Export Site Analysis CSV** is a separate typed export for the summary, issues, duplicate metadata, and observed links. This keeps existing page CSV consumers compatible. JSON retains the Site Explorer schema-version-1 required fields and adds a derived `siteAnalysis` object; the local MCP companion's schema-version-1 reader ignores additive fields. Neither format contains raw HTML. CSV formula characters are prefixed. The existing latest-session local-storage key and origin match are retained; new fields are optional for older saved records. Saved link observations and text are bounded to control storage size.
+
+Every site-wide result describes crawl coverage, not all pages on a website. Failed analyses are excluded from successful-page metrics, and unavailable/not-applicable checks are not passes. Partial results identify their bounded status. Source HTML does not provide rendered image dimensions or prove search-engine indexation. Structured-data validation is limited to the existing local checks.
+
+The 100-page, depth, time, discovery, concurrency, response, redirect, and same-origin boundaries remain unchanged. Firefox uses the shared extraction, aggregation, and view code; browser-specific crawling and permission adapters are unchanged. Native Messaging is outside Site Explorer.
+
+The crawl session persists locally for its origin; no crawl data is uploaded or synchronized.
 
 ## F1-I verification note
 

@@ -1,6 +1,6 @@
 # Firefox release
 
-This is the historical v0.4.0 Firefox submission checklist. v0.5.0 is the current public version. Preserve the existing package id `rankmiso@rankmiso.extension` so Firefox treats v0.5.0 as an update to the existing add-on. See [the v0.5.0 RC1 release notes](v0.5.0-rc1.md) for current verification and privacy status.
+This file retains the historical v0.4.0 Firefox submission checklist. Firefox v0.5.1 is currently published. Preserve the existing package id `rankmiso@rankmiso.extension` for future updates; see the [browser compatibility guide](../browser-support/compatibility.md) for current verification status.
 
 The listing's privacy policy URL must be a public HTTPS page that matches `PRIVACY.md`.
 

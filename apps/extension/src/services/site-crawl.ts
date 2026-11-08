@@ -1,5 +1,6 @@
 import { toCsv } from "@rankmiso/report-formats";
 import { appConfig } from "../config/app.config";
+import type { Category, CheckStatus, Evidence } from "../types/audit";
 
 export const CRAWL_LIMITS = {
   maxPages: 100,
@@ -15,6 +16,29 @@ export const CRAWL_LIMITS = {
 
 export type CrawlStatus = "idle" | "running" | "stopped" | "complete" | "error";
 export type Indexability = "indexable" | "noindex" | "unknown";
+export type CrawlMetadataState = "missing" | "empty" | "present";
+export type CrawlLimitReason = "pages" | "discovered" | "depth" | "time";
+
+export interface CrawlInternalLink {
+  url: string;
+  rel: string[];
+  anchorText: string;
+  target: string;
+}
+
+export interface CrawlFindingReference {
+  id: string;
+  status: Exclude<CheckStatus, "PASS">;
+  evidence: Evidence[];
+}
+
+export interface CrawlFindingDefinition {
+  id: string;
+  category: Category;
+  title: string;
+  description: string;
+  recommendation: string | null;
+}
 
 export interface CrawlPage {
   url: string;
@@ -22,14 +46,25 @@ export interface CrawlPage {
   status: number | null;
   contentType: string;
   title: string;
+  titleState?: CrawlMetadataState;
   description: string;
+  descriptionState?: CrawlMetadataState;
   canonical: string;
+  canonicalCount?: number;
   robots: string;
   h1Count: number;
+  analyzed?: boolean;
   internalLinks: string[];
+  internalLinkDetails?: CrawlInternalLink[];
+  internalLinksTruncated?: boolean;
   externalLinks: number;
+  imageCount?: number;
+  imagesMissingAlt?: number;
+  structuredDataCount?: number;
+  structuredDataTruncated?: boolean;
   indexability: Indexability;
   issues: string[];
+  findings?: CrawlFindingReference[];
   error: string;
   skipped: string;
   redirectHops: string[];
@@ -55,10 +90,20 @@ export interface CrawlSession {
   robots: "read" | "missing" | "unavailable" | "not-read";
   sitemap: "urls" | "empty" | "unavailable" | "not-read";
   sitemapUrls: number;
+  discoveredCount?: number;
+  pageLimit?: number;
+  depthLimit?: number;
+  limitsReached?: CrawlLimitReason[];
+  findingCatalog?: CrawlFindingDefinition[];
   pages: CrawlPage[];
   duplicates: CrawlDuplicate[];
   orphans: string[];
   note: string;
+}
+
+export interface CrawlInspectionResult {
+  page: CrawlPage;
+  findings: Array<CrawlFindingDefinition & { status: CheckStatus; evidence: Evidence[] }>;
 }
 
 export interface FetchResult {
@@ -183,6 +228,11 @@ export function emptySession(startUrl: string): CrawlSession {
     robots: "not-read",
     sitemap: "not-read",
     sitemapUrls: 0,
+    discoveredCount: 0,
+    pageLimit: CRAWL_LIMITS.maxPages,
+    depthLimit: CRAWL_LIMITS.maxDepth,
+    limitsReached: [],
+    findingCatalog: [],
     pages: [],
     duplicates: [],
     orphans: [],
@@ -197,14 +247,25 @@ function blankPage(url: string, depth: number, fromSitemap: boolean): CrawlPage 
     status: null,
     contentType: "",
     title: "",
+    titleState: undefined,
     description: "",
+    descriptionState: undefined,
     canonical: "",
+    canonicalCount: 0,
     robots: "",
     h1Count: 0,
+    analyzed: false,
     internalLinks: [],
+    internalLinkDetails: [],
+    internalLinksTruncated: false,
     externalLinks: 0,
+    imageCount: 0,
+    imagesMissingAlt: 0,
+    structuredDataCount: 0,
+    structuredDataTruncated: false,
     indexability: "unknown",
     issues: [],
+    findings: [],
     error: "",
     skipped: "",
     redirectHops: [],
@@ -227,7 +288,7 @@ export async function runSiteCrawl(options: {
   }>;
   mayFetch: (path: string) => Promise<boolean>;
   fetchPage: (url: string, signal: AbortSignal) => Promise<FetchResult>;
-  inspect: (page: CrawlPage, html: string) => Promise<CrawlPage>;
+  inspect: (page: CrawlPage, html: string) => Promise<CrawlPage | CrawlInspectionResult>;
   onProgress?: (session: CrawlSession) => void;
 }): Promise<CrawlSession> {
   const limits = { ...CRAWL_LIMITS, ...options.limits };
@@ -242,17 +303,27 @@ export async function runSiteCrawl(options: {
   }
   session.startUrl = start;
   session.origin = new URL(start).origin;
+  session.pageLimit = limits.maxPages;
+  session.depthLimit = limits.maxDepth;
+  const markLimit = (reason: CrawlLimitReason) => {
+    const reached = session.limitsReached ?? (session.limitsReached = []);
+    if (!reached.includes(reason)) reached.push(reason);
+  };
   const started = Date.now();
   const deadline = AbortSignal.timeout(limits.maxDurationMs);
   const signal = AbortSignal.any([options.signal, deadline]);
   const robots = await options.readRobots(signal);
   if (signal.aborted) {
-    if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+    if (deadline.aborted) {
+      markLimit("time");
+      session.note = "The crawl reached its time limit; results are partial.";
+    }
     return finish(session, deadline.aborted ? "complete" : "stopped", true);
   }
   if (robots.unavailable) {
     session.robots = "unavailable";
     session.sitemap = "not-read";
+    session.discoveredCount = 1;
     session.note =
       "robots.txt could not be read, so no further addresses were fetched. A missing file is not the same as a failed request.";
     session.pages.push({
@@ -269,16 +340,21 @@ export async function runSiteCrawl(options: {
     if (!url || discovered.has(url) || !inCrawlScope(start, url)) return;
     if (discovered.size >= limits.maxDiscovered) {
       session.partial = true;
+      markLimit("discovered");
       return;
     }
     discovered.add(url);
+    session.discoveredCount = discovered.size;
     queue.push({ url, depth, fromSitemap });
   };
   push(start, 0, false);
   if (robots.status !== 404) {
     const maps = await options.discoverSitemaps(signal);
     if (signal.aborted) {
-      if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+      if (deadline.aborted) {
+        markLimit("time");
+        session.note = "The crawl reached its time limit; results are partial.";
+      }
       return finish(session, deadline.aborted ? "complete" : "stopped", true);
     }
     if (maps.unavailable) session.sitemap = "unavailable";
@@ -289,7 +365,10 @@ export async function runSiteCrawl(options: {
   } else {
     const maps = await options.discoverSitemaps(signal);
     if (signal.aborted) {
-      if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+      if (deadline.aborted) {
+        markLimit("time");
+        session.note = "The crawl reached its time limit; results are partial.";
+      }
       return finish(session, deadline.aborted ? "complete" : "stopped", true);
     }
     session.sitemap = maps.unavailable ? "unavailable" : maps.urls.length ? "urls" : "empty";
@@ -314,6 +393,7 @@ export async function runSiteCrawl(options: {
       if (!item || seenFetch.has(item.url)) continue;
       if (fetched >= limits.maxPages) {
         session.partial = true;
+        markLimit("pages");
         return;
       }
       seenFetch.add(item.url);
@@ -348,7 +428,38 @@ export async function runSiteCrawl(options: {
         }
         if (result.html && !result.error) {
           try {
-            const inspected = await options.inspect(page, result.html);
+            const inspection = await options.inspect(page, result.html);
+            const inspected = "page" in inspection ? inspection.page : inspection;
+            const findingRefs: CrawlFindingReference[] = [];
+            if ("page" in inspection) {
+              for (const finding of inspection.findings) {
+                if (finding.status === "PASS") continue;
+                const catalog = session.findingCatalog ?? (session.findingCatalog = []);
+                if (!catalog.some((item) => item.id === finding.id)) {
+                  catalog.push({
+                    id: finding.id,
+                    category: finding.category,
+                    title: finding.title,
+                    description: finding.description,
+                    recommendation: finding.recommendation,
+                  });
+                }
+                findingRefs.push({
+                  id: finding.id,
+                  status: finding.status,
+                  evidence: finding.evidence.slice(0, 2).map((item) => ({
+                    label: item.label.slice(0, 80),
+                    value: item.value.slice(0, 200),
+                  })),
+                });
+              }
+              page.issues = [
+                ...page.issues,
+                ...inspection.findings
+                  .filter((finding) => finding.status === "ERROR" || finding.status === "WARNING")
+                  .map((finding) => finding.title),
+              ].slice(0, 12);
+            }
             Object.assign(page, inspected, {
               url: item.url,
               fromSitemap: item.fromSitemap,
@@ -356,8 +467,13 @@ export async function runSiteCrawl(options: {
               redirectHops: result.hops,
               status: result.status,
             });
+            if ("page" in inspection) page.findings = findingRefs;
           } catch {
             page.error = page.error || "The page could not be scored.";
+          }
+          if (item.depth >= limits.maxDepth && page.internalLinks.length > 0) {
+            session.partial = true;
+            markLimit("depth");
           }
           if (item.depth < limits.maxDepth) {
             for (const link of page.internalLinks) push(link, item.depth + 1, false);
@@ -374,15 +490,22 @@ export async function runSiteCrawl(options: {
   await Promise.all(Array.from({ length: limits.concurrency }, () => worker()));
   annotateLinks(session);
   session.duplicates = duplicateMetadata(session.pages);
-  session.orphans = session.partial || signal.aborted ? [] : orphanCandidates(session);
+  // Site-wide link coverage is bounded, so do not persist a site-wide orphan claim.
+  session.orphans = [];
   if (signal.aborted) {
-    if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+    if (deadline.aborted) {
+      markLimit("time");
+      session.note = "The crawl reached its time limit; results are partial.";
+    }
     return finish(session, deadline.aborted ? "complete" : "stopped", true);
   }
   if (Date.now() - started >= limits.maxDurationMs || fetched >= limits.maxPages) {
     session.partial = true;
-    if (Date.now() - started >= limits.maxDurationMs)
+    if (Date.now() - started >= limits.maxDurationMs) {
+      markLimit("time");
       session.note = "The crawl reached its time limit; results are partial.";
+    }
+    if (fetched >= limits.maxPages) markLimit("pages");
   }
   return finish(session, "complete", session.partial);
 }
@@ -530,17 +653,61 @@ export function sessionJson(session: CrawlSession): string {
   );
 }
 
-export function saveCrawl(session: CrawlSession) {
-  const copy: CrawlSession = {
+export function saveCrawl(session: CrawlSession): boolean {
+  let copy: CrawlSession = {
     ...session,
     pages: session.pages.map((page) => ({
       ...page,
       internalLinks: page.internalLinks.slice(0, 50),
+      internalLinkDetails: page.internalLinkDetails?.slice(0, 10).map((link) => ({
+        ...link,
+        anchorText: link.anchorText.slice(0, 80),
+        rel: link.rel.slice(0, 8),
+      })),
+      internalLinksTruncated:
+        page.internalLinksTruncated ||
+        page.internalLinks.length > 50 ||
+        (page.internalLinkDetails?.length ?? 0) > 10,
+      title: page.title.slice(0, 500),
+      description: page.description.slice(0, 2_000),
     })),
   };
-  const json = JSON.stringify(copy);
-  if (json.length > 350_000) return;
-  localStorage.setItem(appConfig.siteCrawlKey, json);
+  let json = JSON.stringify(copy);
+  if (json.length > 350_000) {
+    copy = {
+      ...copy,
+      pages: copy.pages.map((page) => ({
+        ...page,
+        internalLinks: page.internalLinks.slice(0, 25),
+        internalLinksTruncated: page.internalLinksTruncated || page.internalLinks.length > 25,
+        internalLinkDetails: [],
+        findings: page.findings?.map((finding) => ({
+          ...finding,
+          evidence: finding.evidence
+            .slice(0, 1)
+            .map((item) => ({ label: item.label.slice(0, 60), value: item.value.slice(0, 100) })),
+        })),
+      })),
+    };
+    json = JSON.stringify(copy);
+  }
+  if (json.length > 350_000) {
+    copy = {
+      ...copy,
+      pages: copy.pages.map((page) => ({
+        ...page,
+        findings: page.findings?.map((finding) => ({ ...finding, evidence: [] })),
+      })),
+    };
+    json = JSON.stringify(copy);
+  }
+  if (json.length > 350_000) return false;
+  try {
+    localStorage.setItem(appConfig.siteCrawlKey, json);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function loadCrawl(origin: string): CrawlSession | null {

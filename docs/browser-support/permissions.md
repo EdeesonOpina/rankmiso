@@ -1,6 +1,6 @@
 # Permissions
 
-The notes below describe the generated manifests in this repository. The published store version is v0.5.0, which also declares `nativeMessaging` as an optional permission for local AI sharing.
+The notes below describe the generated manifests in this repository. Chrome Web Store and Firefox Add-ons publish v0.5.1. The extension declares `nativeMessaging` as an optional permission for local AI sharing.
 
 Required API permissions remain:
 

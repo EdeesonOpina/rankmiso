@@ -16,7 +16,7 @@ The RankMiso plugin connects Claude Code or Codex to SEO audits you share from t
 | `.claude-plugin/marketplace.json` | Claude Code marketplace catalog. |
 | `.agents/plugins/marketplace.json` | Codex marketplace catalog. |
 
-Versions: browser extension v0.5.0 (Chrome Web Store and Firefox Add-ons), MCP companion v0.5.1 (GitHub pre-release), plugin 0.1.1. Each is versioned separately.
+Versions: browser extension v0.5.1 (Chrome Web Store and Firefox Add-ons), MCP companion v0.5.1 (GitHub pre-release), Claude Code and Codex plugins v0.1.1. Each is versioned separately.
 
 Install: in Claude Code, `/plugin marketplace add EdeesonOpina/rankmiso` then `/plugin install rankmiso@rankmiso`. In Codex, `codex plugin marketplace add EdeesonOpina/rankmiso` then `codex plugin add rankmiso@rankmiso`.
 
@@ -67,7 +67,7 @@ To pin a later release, update `RELEASE`, the three SHA-256 values, and `PINNED_
 
 | Platform | Plugin setup | Notes |
 | --- | --- | --- |
-| Linux x86_64 | Verified: clean install and v0.5.0 → v0.5.1 upgrade from the published archives, Claude Code 2.1.316, Codex 0.166.0, and Google Chrome 156 sharing with the Chrome Web Store extension 0.5.0 | Google Chrome and `~/.mozilla` Firefox are registered. Firefox sharing is not yet verified, including Snap Firefox, which isolates native hosts. Chromium, Brave, and Edge are not registered by this release. |
+| Linux x86_64 | Previously verified: clean install and v0.5.0 → v0.5.1 upgrade from the published archives, Claude Code 2.1.316, Codex 0.166.0, and Google Chrome 156 sharing with the Chrome Web Store extension. The currently published extension is v0.5.1. | Google Chrome and `~/.mozilla` Firefox are registered. Firefox sharing is not yet verified. The available Snap launcher could not start because this environment lacks required AppArmor confinement support. Chromium, Brave, and Edge are not registered by this release. |
 | macOS Apple Silicon, macOS Intel | Runtime not verified (not run on a Mac) | Pinned v0.5.1 archives passed native CI. Binaries are not notarized. Files downloaded with `curl` are not quarantined, but this has not been checked on a Mac. |
 | Windows x86_64 | Automatic plugin setup not supported yet | The launcher needs `sh`. Use the Windows package and `docs/mcp/INSTALL.md`. |
 | Linux ARM64, Windows ARM64 | Not supported | No companion build exists. The launcher says so. |
