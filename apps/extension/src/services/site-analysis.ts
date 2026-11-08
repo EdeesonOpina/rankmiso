@@ -38,6 +38,9 @@ export interface SiteAnalysis {
     skipped: number;
     redirectAliases: number;
     unanalyzed: number;
+    pagesWithErrors: number;
+    pagesWithWarnings: number;
+    pagesWithoutFindingData: number;
     partial: boolean;
     complete: boolean;
     pagesLimit: number;
@@ -276,6 +279,17 @@ export function analyzeSite(session: CrawlSession): SiteAnalysis {
         0,
         observed - analyzedPages.length - redirectAliases.size - failed - skipped,
       ),
+      // Worst finding per page, so the two counts never overlap.
+      pagesWithErrors: analyzedPages.filter((page) =>
+        page.findings?.some((finding) => finding.status === "ERROR"),
+      ).length,
+      pagesWithWarnings: analyzedPages.filter(
+        (page) =>
+          !page.findings?.some((finding) => finding.status === "ERROR") &&
+          page.findings?.some((finding) => finding.status === "WARNING"),
+      ).length,
+      // Sessions saved before M9 have no per-page findings; never count them as clean.
+      pagesWithoutFindingData: analyzedPages.filter((page) => page.findings === undefined).length,
       partial: session.partial || session.status === "stopped",
       complete: session.status === "complete" && !session.partial,
       pagesLimit: session.pageLimit ?? 100,
