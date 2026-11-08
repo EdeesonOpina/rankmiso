@@ -193,3 +193,70 @@ The current Chrome E2E passed in Google Chrome 156.0.8078.47 with a temporary pr
 ## M6.3 — packaged companion platform acceptance
 
 Use isolated OS user accounts or temporary profiles. Install from each native-runner artifact and record OS version, archive checksum, browser version and exact extension build. Confirm the installer validates executable launch, creates stable private per-user audit storage, registers Chrome's exact production origin and Firefox's exact add-on ID, and does not require administrator access. Share an audit explicitly, verify the MCP server reads it from the same directory, then remove it through RankMiso. Verify denial/revocation does not permit new native calls. Repeat installation as an upgrade and confirm the snapshot survives. Uninstall and confirm only RankMiso browser registration/binaries are removed while audit/config data remain. Exercise Windows registry registration/removal and macOS manifest paths on those actual systems; cross-compilation is not runtime evidence. Verify Codex and Claude configuration in isolated homes, including that an existing `rankmiso` entry is refused without modifying it and unrelated MCP settings remain intact. Browser companion connection, client configuration, and client connection are separate states. Record any macOS notarization/Gatekeeper or Windows SmartScreen behavior; unsigned artifacts are expected during this preview.
+
+## M9 — Site Explorer 2.0 manual acceptance (Chrome and Firefox)
+
+Status: **PENDING** in both browsers. Automated coverage (Vitest, Chromium Playwright with a local fixture) does not replace this run. Do not call M9 functionally accepted until both columns are filled in.
+
+Use a fresh, temporary browser profile. Crawl only a site you own or the local fixture below. Do not raise the crawl limits.
+
+### Setup
+
+1. Build: `pnpm build:wasm && pnpm --filter @rankmiso/extension build && pnpm --filter @rankmiso/extension build:firefox`.
+2. Chrome: `chrome://extensions` → Developer mode → **Load unpacked** → `apps/extension/.output/chrome-mv3`.
+3. Firefox (a normal desktop Firefox, not the Snap): `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → `apps/extension/.output/firefox-mv3/manifest.json`.
+4. Local fixture with redirects and duplicates. Save as `serve.py` in an empty folder and run `python3 serve.py`:
+
+   ```python
+   from http.server import BaseHTTPRequestHandler, HTTPServer
+   P = {
+     "/": '<title>Home</title><meta name="description" content="Home"><h1>Home</h1>'
+          '<a href="/a">a</a><a href="/old-1">o1</a><a href="/old-2">o2</a>'
+          '<a href="/dup?v=1">d1</a><a href="/dup?v=2">d2</a><a href="/bare">b</a>'
+          '<a href="/missing">m</a><a href="/private/x">p</a>',
+     "/a": '<title>Alpha</title><meta name="description" content="Alpha"><h1>A</h1><a href="/">h</a>',
+     "/final": '<title>Final</title><meta name="description" content="Final"><h1>F</h1>',
+     "/dup?v=1": '<title>Same title</title><meta name="description" content="Same"><h1>D</h1>',
+     "/dup?v=2": '<title>Same title</title><meta name="description" content="Same"><h1>D</h1>',
+     "/bare": '<h1>No title or description</h1>',
+     "/private/x": '<title>Private</title>',
+   }
+   class H(BaseHTTPRequestHandler):
+     def do_GET(self):
+       if self.path == "/robots.txt":
+         body, kind = b"User-agent: *\nDisallow: /private\n", "text/plain"
+       elif self.path in ("/old-1", "/old-2"):
+         self.send_response(301); self.send_header("Location", "/final"); self.end_headers(); return
+       elif self.path in P:
+         body, kind = P[self.path].encode(), "text/html; charset=utf-8"
+       else:
+         self.send_response(404); self.end_headers(); return
+       self.send_response(200); self.send_header("Content-Type", kind); self.end_headers(); self.wfile.write(body)
+   HTTPServer(("127.0.0.1", 8765), H).serve_forever()
+   ```
+
+5. Open `http://127.0.0.1:8765/`, open the RankMiso report, choose **Site**, and keep the browser console open (report page and service worker / background page).
+
+### Checks
+
+| # | Step | Expected | Chrome | Firefox |
+| --- | --- | --- | --- | --- |
+| 1 | Press **Start crawl** and allow access for the origin only | One permission prompt for `127.0.0.1:8765`; crawl starts | | |
+| 2 | Wait for it to finish | Status Complete; no partial callout | | |
+| 3 | Overview counts | Analyzed 6 / 100 (`/`, `/a`, `/final` via `/old-1`, `/dup?v=1`, `/dup?v=2`, `/bare`); failed 1 (`/missing`); skipped 1 (`/private/x`) | | |
+| 4 | Redirect note | "1 crawled addresses redirected to a page that was already analyzed…" is shown (`/old-2`); "Final" is not listed as a duplicate title | | |
+| 5 | Duplicates | Title "Same title" and description "Same" each list `/dup?v=1` and `/dup?v=2` only | | |
+| 6 | Missing metadata | Missing/empty titles and descriptions each count 1 (`/bare`) | | |
+| 7 | Issues view | Groups show affected pages; search, category, severity and sort work; opening an affected page shows its findings | | |
+| 8 | Pages view | All crawled URLs listed; `/private/x` shows "robots.txt disallows this crawler"; `/missing` shows failed | | |
+| 9 | Links view | `/missing` target is Failed, `/private/x` is Skipped, `/old-1` shows a redirect to `/final`; "few incoming links" wording says it is not an orphan claim | | |
+| 10 | Stop | Start again and press **Stop** right away: status Stopped, partial callout shown | | |
+| 11 | Saved session | Reload the report: last session and its overview come back for this origin; another origin shows none | | |
+| 12 | Export CSV | Page CSV opens with the original 12 columns | | |
+| 13 | Export Site Analysis CSV | 22 columns on every row; `recordType` values summary/page/issue/duplicate/link; opens cleanly in a spreadsheet | | |
+| 14 | Export JSON | `schemaVersion: 1`, `pages` array present, plus `siteAnalysis` | | |
+| 15 | Console | No errors or unhandled rejections during steps 1–14 | | |
+| 16 | UI | Layout and styling match the approved workbench; no overflow at the default report width | | |
+| 17 | Small real site you own (optional) | Crawl respects robots.txt and stops at limits; results read as a bounded crawl | | |
+
+Record browser version, OS, extension build commit and any console output next to the result.
