@@ -196,7 +196,7 @@ Use isolated OS user accounts or temporary profiles. Install from each native-ru
 
 ## M9 — Site Explorer 2.0 manual acceptance (Chrome and Firefox)
 
-Status: **PENDING** in both browsers. Automated coverage (Vitest, Chromium Playwright with a local fixture) does not replace this run. Do not call M9 functionally accepted until both columns are filled in.
+Status: **USER-VERIFIED (smoke)** — on 2026-11-08 the owner reported that Site Explorer 2.0 works in Google Chrome and Mozilla Firefox using the design-aligned build. The rows below were not recorded one by one, so individual scenarios remain unconfirmed. Earlier status: pending. Automated coverage (Vitest, Chromium Playwright with a local fixture) does not replace this run. Do not call M9 functionally accepted until both columns are filled in.
 
 Use a fresh, temporary browser profile. Crawl only a site you own or the local fixture below. Do not raise the crawl limits.
 

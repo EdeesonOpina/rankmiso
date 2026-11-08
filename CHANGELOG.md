@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — prepared for store submission (2026-11-08)
+
+- Site Explorer 2.0: Overview, Issues, Pages and Links views across the pages a crawl analyzed. Findings are grouped by rule with affected pages and evidence; duplicate titles and descriptions are grouped; internal links show their source, target, target state and observed incoming sources.
+- New Site Analysis CSV export. The existing page CSV keeps its 12 columns, and JSON stays schema version 1 with an added `siteAnalysis` object.
+- Several crawled addresses that redirect to one final page are counted once, so they no longer inflate page counts or show as duplicate titles. A crawl stopped by its two-minute limit now says so.
+- Faster site aggregation (11.88 ms median for 100 pages and 20,000 links in the local benchmark).
+- No permission, host-permission, data-collection, network or MCP changes. Crawl limits are unchanged (100 pages, depth 3, two minutes, 400 discovered addresses). Saved crawl sessions from v0.5.1 still open.
+
 ## 0.5.1 — prepared for store submission (2026-11-02)
 
 - Update the built-in MCP guide for the Claude Code and Codex plugin: install from the RankMiso marketplace, ask the assistant to “Connect RankMiso”, then restart the AI client and browser. Manual companion setup moves to an advanced section.
