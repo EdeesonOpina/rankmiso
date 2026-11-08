@@ -88,21 +88,23 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     const issueSearch = report.getByLabel("Search issues and affected URLs");
     await issueSearch.fill("/b.html");
     await expect(report.locator(".site-issue").first()).toBeVisible();
-    const allIssueBadges = await report.locator(".site-issue header > .badge").allTextContents();
-    const expectedErrorCount = allIssueBadges.filter((text) => text.includes("ERROR")).length;
+    const allIssueBadges = await report
+      .locator(".site-issue .finding-type > .badge")
+      .allTextContents();
+    const expectedErrorCount = allIssueBadges.filter((text) => text.includes("Error")).length;
     await report.getByLabel("Severity filter").selectOption("error");
-    const errorBadges = await report.locator(".site-issue header > .badge").allTextContents();
+    const errorBadges = await report
+      .locator(".site-issue .finding-type > .badge")
+      .allTextContents();
     expect(errorBadges).toHaveLength(expectedErrorCount);
-    expect(errorBadges.every((text) => text.includes("ERROR"))).toBe(true);
+    expect(errorBadges.every((text) => text.includes("Error"))).toBe(true);
     await report.getByLabel("Severity filter").selectOption("all");
     await report.locator(".site-issues select").nth(2).selectOption("name");
     const issueNames = await report.locator(".site-issue h3").allTextContents();
     expect(issueNames).toEqual([...issueNames].sort((left, right) => left.localeCompare(right)));
-    await report
-      .locator(".site-issue")
-      .first()
-      .getByRole("button", { name: `${origin}/b.html` })
-      .click();
+    const firstIssue = report.locator(".site-issue").first();
+    await firstIssue.locator("summary").click();
+    await firstIssue.getByRole("button", { name: `${origin}/b.html` }).click();
     await expect(report.getByText("Alpha page description")).toBeVisible();
     await siteViews.getByRole("button", { name: "Issues" }).click();
     await issueSearch.fill("/b.html");

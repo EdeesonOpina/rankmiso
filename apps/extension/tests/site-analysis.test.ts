@@ -180,6 +180,30 @@ describe("site-wide analysis", () => {
     });
   });
 
+  it("counts pages by their worst finding without overlap", () => {
+    const error = { id: "E", status: "ERROR" as const, evidence: [] };
+    const warning = { id: "W", status: "WARNING" as const, evidence: [] };
+    const info = { id: "I", status: "INFO" as const, evidence: [] };
+    const result = analyzeSite(
+      session([
+        page("https://example.test/a", { findings: [error, warning] }),
+        page("https://example.test/b", { findings: [warning] }),
+        page("https://example.test/c", { findings: [info] }),
+        page("https://example.test/d"),
+      ]),
+    );
+    expect(result.summary).toMatchObject({
+      analyzed: 4,
+      pagesWithErrors: 1,
+      pagesWithWarnings: 1,
+      pagesWithoutFindingData: 0,
+    });
+    const legacy = analyzeSite(
+      session([page("https://example.test/old", { findings: undefined, issues: ["Old"] })]),
+    );
+    expect(legacy.summary).toMatchObject({ analyzed: 1, pagesWithoutFindingData: 1 });
+  });
+
   it("counts a final page once when several crawled URLs redirect to it", () => {
     const finding = { id: "RULE_X", status: "WARNING" as const, evidence: [] };
     const final = "https://example.test/c";
@@ -208,7 +232,13 @@ describe("site-wide analysis", () => {
         },
       ),
     );
-    expect(result.summary).toMatchObject({ analyzed: 2, redirectAliases: 2, unanalyzed: 0 });
+    expect(result.summary).toMatchObject({
+      analyzed: 2,
+      redirectAliases: 2,
+      unanalyzed: 0,
+      pagesWithErrors: 0,
+      pagesWithWarnings: 1,
+    });
     expect(result.duplicates.filter((group) => group.kind === "title")).toEqual([]);
     expect(result.issues[0]?.affected.map((entry) => entry.url)).toEqual([final]);
     expect(result.lowIncomingPages).not.toContainEqual({ url: final, incomingSources: 0 });

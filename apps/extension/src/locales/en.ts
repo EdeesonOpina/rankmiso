@@ -722,6 +722,13 @@ export const messages = {
   "site.view.pages": "Pages",
   "site.view.links": "Links",
   "site.analyzed": "Pages analyzed",
+  "site.coverage": "Site coverage",
+  "site.coverageTag": "Site coverage · Bounded crawl",
+  "site.issueTypesCount": "{count} issue types",
+  "site.duplicateGroupsCount": "{count} duplicate metadata groups",
+  "site.pagesWithErrors": "Pages with errors",
+  "site.pagesWithWarnings": "Pages with warnings",
+  "site.pagesClean": "Pages without errors or warnings",
   "site.issueGroups": "Issue types",
   "site.partial":
     "Partial crawl: findings cover {count} analyzed pages and may not represent the whole site.",
@@ -786,7 +793,7 @@ export const messages = {
   "site.lowIncoming": "Few incoming links observed",
   "site.lowIncomingScope":
     "These pages have zero or one incoming source page in this crawl. This is a bounded observation, not a site-wide orphan finding.",
-  "site.incomingCount": "{count} incoming source pages observed",
+  "site.incomingCount": "Incoming source pages observed: {count}",
   "site.noLinks": "No internal link relationships were observed.",
   "site.saveFailed":
     "The crawl is available until this report closes, but the browser could not save it on this device.",
