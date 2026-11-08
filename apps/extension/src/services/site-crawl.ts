@@ -305,12 +305,19 @@ export async function runSiteCrawl(options: {
   session.origin = new URL(start).origin;
   session.pageLimit = limits.maxPages;
   session.depthLimit = limits.maxDepth;
+  const markLimit = (reason: CrawlLimitReason) => {
+    const reached = session.limitsReached ?? (session.limitsReached = []);
+    if (!reached.includes(reason)) reached.push(reason);
+  };
   const started = Date.now();
   const deadline = AbortSignal.timeout(limits.maxDurationMs);
   const signal = AbortSignal.any([options.signal, deadline]);
   const robots = await options.readRobots(signal);
   if (signal.aborted) {
-    if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+    if (deadline.aborted) {
+      markLimit("time");
+      session.note = "The crawl reached its time limit; results are partial.";
+    }
     return finish(session, deadline.aborted ? "complete" : "stopped", true);
   }
   if (robots.unavailable) {
@@ -328,10 +335,6 @@ export async function runSiteCrawl(options: {
   session.robots = robots.status === 404 ? "missing" : "read";
   const discovered = new Set<string>();
   const queue: Array<{ url: string; depth: number; fromSitemap: boolean }> = [];
-  const markLimit = (reason: CrawlLimitReason) => {
-    const reached = session.limitsReached ?? (session.limitsReached = []);
-    if (!reached.includes(reason)) reached.push(reason);
-  };
   const push = (value: string, depth: number, fromSitemap: boolean) => {
     const url = crawlUrl(value, start);
     if (!url || discovered.has(url) || !inCrawlScope(start, url)) return;
@@ -348,7 +351,10 @@ export async function runSiteCrawl(options: {
   if (robots.status !== 404) {
     const maps = await options.discoverSitemaps(signal);
     if (signal.aborted) {
-      if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+      if (deadline.aborted) {
+        markLimit("time");
+        session.note = "The crawl reached its time limit; results are partial.";
+      }
       return finish(session, deadline.aborted ? "complete" : "stopped", true);
     }
     if (maps.unavailable) session.sitemap = "unavailable";
@@ -359,7 +365,10 @@ export async function runSiteCrawl(options: {
   } else {
     const maps = await options.discoverSitemaps(signal);
     if (signal.aborted) {
-      if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+      if (deadline.aborted) {
+        markLimit("time");
+        session.note = "The crawl reached its time limit; results are partial.";
+      }
       return finish(session, deadline.aborted ? "complete" : "stopped", true);
     }
     session.sitemap = maps.unavailable ? "unavailable" : maps.urls.length ? "urls" : "empty";
@@ -484,7 +493,10 @@ export async function runSiteCrawl(options: {
   // Site-wide link coverage is bounded, so do not persist a site-wide orphan claim.
   session.orphans = [];
   if (signal.aborted) {
-    if (deadline.aborted) session.note = "The crawl reached its time limit; results are partial.";
+    if (deadline.aborted) {
+      markLimit("time");
+      session.note = "The crawl reached its time limit; results are partial.";
+    }
     return finish(session, deadline.aborted ? "complete" : "stopped", true);
   }
   if (Date.now() - started >= limits.maxDurationMs || fetched >= limits.maxPages) {

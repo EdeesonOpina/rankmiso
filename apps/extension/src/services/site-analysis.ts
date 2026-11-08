@@ -36,6 +36,7 @@ export interface SiteAnalysis {
     analyzed: number;
     failed: number;
     skipped: number;
+    redirectAliases: number;
     unanalyzed: number;
     partial: boolean;
     complete: boolean;
@@ -117,7 +118,17 @@ export function duplicateGroups(pages: CrawlPage[]): DuplicateGroup[] {
 
 export function analyzeSite(session: CrawlSession): SiteAnalysis {
   const pages = session.pages;
-  const analyzedPages = pages.filter(successful);
+  // Several crawled URLs can redirect to one final page. Count that page once,
+  // preferring the record fetched at the final URL itself.
+  const byFinalUrl = new Map<string, CrawlPage>();
+  for (const page of pages.filter(successful)) {
+    const finalUrl = page.finalUrl || page.url;
+    const kept = byFinalUrl.get(finalUrl);
+    if (!kept || (kept.url !== finalUrl && page.url === finalUrl)) byFinalUrl.set(finalUrl, page);
+  }
+  const analyzedPages = [...byFinalUrl.values()];
+  const counted = new Set(analyzedPages);
+  const redirectAliases = new Set(pages.filter((page) => successful(page) && !counted.has(page)));
   const failed = pages.filter(
     (page) => !!page.error || (page.status != null && page.status >= 400),
   ).length;
@@ -134,6 +145,7 @@ export function analyzeSite(session: CrawlSession): SiteAnalysis {
   const catalog = new Map((session.findingCatalog ?? []).map((item) => [item.id, item]));
   const issueMap = new Map<string, SiteIssue>();
   for (const page of pages) {
+    if (redirectAliases.has(page)) continue;
     for (const finding of page.findings ?? []) {
       if (finding.status === "UNAVAILABLE" || finding.status === "NOT_APPLICABLE") continue;
       const definition = catalog.get(finding.id);
@@ -198,8 +210,9 @@ export function analyzeSite(session: CrawlSession): SiteAnalysis {
     if (!isInternal(page.url)) continue;
     pageByUrl.set(page.url, page);
     aliases.set(page.url, page.url);
-    if (page.finalUrl) aliases.set(page.finalUrl, page.url);
+    if (page.finalUrl && !aliases.has(page.finalUrl)) aliases.set(page.finalUrl, page.url);
   }
+  for (const [finalUrl, page] of byFinalUrl) aliases.set(finalUrl, page.url);
   const incoming = new Map<string, number>();
   const links: LinkObservation[] = [];
   let linksTruncated = false;
@@ -258,7 +271,11 @@ export function analyzeSite(session: CrawlSession): SiteAnalysis {
       analyzed: analyzedPages.length,
       failed,
       skipped,
-      unanalyzed: Math.max(0, observed - analyzedPages.length - failed - skipped),
+      redirectAliases: redirectAliases.size,
+      unanalyzed: Math.max(
+        0,
+        observed - analyzedPages.length - redirectAliases.size - failed - skipped,
+      ),
       partial: session.partial || session.status === "stopped",
       complete: session.status === "complete" && !session.partial,
       pagesLimit: session.pageLimit ?? 100,
@@ -302,7 +319,7 @@ export function analyzeSite(session: CrawlSession): SiteAnalysis {
       ).length,
       unavailableFindings,
     },
-    duplicates: duplicateGroups(pages),
+    duplicates: duplicateGroups(analyzedPages),
     issues,
     links,
     lowIncomingPages: analyzedPages

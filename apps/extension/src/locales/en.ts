@@ -744,6 +744,8 @@ export const messages = {
   "site.duplicateDescription": "Duplicate meta description",
   "site.noDuplicates": "No duplicate titles or descriptions were observed.",
   "site.affectedPages": "{count} affected pages",
+  "site.redirectAliases":
+    "{count} crawled addresses redirected to a page that was already analyzed. Each final page is counted once.",
   "site.unavailableCount":
     "{count} findings were unavailable or not applicable; they are not counted as passes.",
   "site.category": "Category",

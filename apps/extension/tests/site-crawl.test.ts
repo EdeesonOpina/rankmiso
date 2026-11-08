@@ -136,7 +136,31 @@ describe("site crawl", () => {
       expect(session.status).toBe("complete");
       expect(session.partial).toBe(true);
       expect(session.note).toContain("time limit");
+      expect(session.limitsReached).toEqual(["time"]);
       expect(sitemapDiscovery).toBe(0);
+    } finally {
+      timeout.mockRestore();
+    }
+  });
+
+  it("records the time limit when the deadline stops page fetching", async () => {
+    const deadline = new AbortController();
+    const timeout = vi.spyOn(AbortSignal, "timeout").mockReturnValue(deadline.signal);
+    try {
+      const session = await runSiteCrawl({
+        startUrl: start,
+        signal: new AbortController().signal,
+        readRobots: async () => ({ status: 404, body: "", unavailable: false }),
+        discoverSitemaps: async () => ({ urls: [], unavailable: false, empty: true }),
+        mayFetch: async () => true,
+        fetchPage: async (url) => {
+          deadline.abort();
+          return ok(url);
+        },
+        inspect: async (page) => page,
+      });
+      expect(session.partial).toBe(true);
+      expect(session.limitsReached).toEqual(["time"]);
     } finally {
       timeout.mockRestore();
     }

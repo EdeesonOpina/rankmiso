@@ -180,6 +180,40 @@ describe("site-wide analysis", () => {
     });
   });
 
+  it("counts a final page once when several crawled URLs redirect to it", () => {
+    const finding = { id: "RULE_X", status: "WARNING" as const, evidence: [] };
+    const final = "https://example.test/c";
+    const result = analyzeSite(
+      session(
+        [
+          page("https://example.test/", {
+            title: "Home",
+            description: "Home description",
+            internalLinks: [final],
+          }),
+          page("https://example.test/a", { finalUrl: final, title: "Final", findings: [finding] }),
+          page(final, { title: "Final", findings: [finding] }),
+          page("https://example.test/b", { finalUrl: final, title: "Final", findings: [finding] }),
+        ],
+        {
+          findingCatalog: [
+            {
+              id: "RULE_X",
+              category: "content",
+              title: "X",
+              description: "",
+              recommendation: null,
+            },
+          ],
+        },
+      ),
+    );
+    expect(result.summary).toMatchObject({ analyzed: 2, redirectAliases: 2, unanalyzed: 0 });
+    expect(result.duplicates.filter((group) => group.kind === "title")).toEqual([]);
+    expect(result.issues[0]?.affected.map((entry) => entry.url)).toEqual([final]);
+    expect(result.lowIncomingPages).not.toContainEqual({ url: final, incomingSources: 0 });
+  });
+
   it("groups findings using rule metadata and supports URL search, category filter, and sorting", () => {
     const pages = [
       page("https://example.test/a", {

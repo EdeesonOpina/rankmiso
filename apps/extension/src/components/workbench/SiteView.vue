@@ -577,6 +577,9 @@ function limitLabel(limit: CrawlLimitReason): string {
         </ul>
       </div>
     </div>
+    <p v-if="siteAnalysis.summary.redirectAliases" class="hint">
+      {{ t("site.redirectAliases", { count: siteAnalysis.summary.redirectAliases }) }}
+    </p>
     <p v-if="siteAnalysis.summary.unavailableFindings" class="hint">
       {{ t("site.unavailableCount", { count: siteAnalysis.summary.unavailableFindings }) }}
     </p>

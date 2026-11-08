@@ -127,3 +127,19 @@ All numbers are local synchronous aggregation timings, not crawl/network time. O
 The Chromium Playwright Site Explorer test restored a synthetic 100-page, 20,000-link session and sampled `performance.memory.usedJSHeapSize` after rendering and CDP forced garbage collection: median 20,077,262 bytes, range 20,070,910–20,078,950 (five reloads). This is the extension page's retained V8 heap for the whole app and fixture, not a Site Explorer-only allocation, peak, or process RSS measure. The fixture bypasses the product's compact-on-save limit to represent an active crawl; it is not persisted-session size. No comparable v0.5.1 browser-heap sample exists. The Vitest worker did not expose forced GC, so a retained Node heap delta was not reported.
 
 Current output-directory apparent sizes are 1,632,504 bytes for Chrome and 1,618,363 bytes for Firefox; WXT rounds these to 1.63 MB and 1.62 MB. Compared with the previously recorded approximate 1.54 MB and 1.50 MB, growth is about +0.09 MB / +5.8% and +0.12 MB / +8.0%. WXT reports shared workbench code in the `WorkbenchApp` chunk; a reproducible build of the old baseline was not available in this worktree, so exact source-attributed size growth is not claimed.
+
+## M9-R1 re-measurement (2026-11-08)
+
+Same opt-in command, Linux 6.17.0-41-generic x86_64, Node 22.23.3, Vitest 3.2.7, after the redirect-alias fix. Five samples per row after one warm-up.
+
+| Pages | Links/page | Link details | Median / max | Simulated cumulative |
+| ---: | ---: | --- | ---: | ---: |
+| 1 | 10 | no | 0.34 / 0.36 ms | 0.74 ms |
+| 10 | 20 | no | 0.59 / 0.67 ms | 1.64 ms |
+| 25 | 20 | no | 1.75 / 2.10 ms | 6.02 ms |
+| 50 | 20 | no | 2.61 / 3.11 ms | 11.23 ms |
+| 100 | 20 | no | 4.84 / 4.98 ms | 31.73 ms |
+| 100 | 200 | no | 6.59 / 8.04 ms | 46.56 ms |
+| 100 | 200 | yes | 10.86 / 11.26 ms | 54.07 ms |
+
+Within run-to-run noise of the M9.6 numbers (10.08 ms median for the detailed 20,000-link case). The 405 ms figure in the first M9 table predates the M9.6 optimization and is historical. Browser heap and input latency were not re-measured.
