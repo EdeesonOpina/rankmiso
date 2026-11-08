@@ -16,7 +16,7 @@ The tools can read existing RankMiso exports. They cannot open a website, start 
 
 ## Requirements and verification status
 
-- RankMiso v0.5.0 or later, the current version in the Chrome Web Store and Firefox Add-ons.
+- RankMiso v0.5.1, the current version in the Chrome Web Store and Firefox Add-ons.
 - The optional RankMiso companion for Windows x86_64, macOS Apple Silicon, macOS Intel, or Linux x86_64.
 - Chrome or Firefox for browser sharing. The companion registers both, but Firefox live Native Messaging has not been verified.
 - Codex CLI or Claude Code for the AI-client connection.
@@ -25,7 +25,7 @@ All four companion targets passed native CI for builds, tests, archives, checksu
 
 ## Install the companion
 
-MCP sharing is included in the RankMiso v0.5.0 browser extension. The companion is installed separately.
+MCP sharing is included in the RankMiso v0.5.1 browser extension. The companion is installed separately.
 
 **Easiest:** install the RankMiso plugin in Claude Code or Codex and ask it to “Connect RankMiso”. It downloads, verifies, and installs the companion after you approve ([Claude Code](../integrations/claude-code.md), [Codex](../integrations/codex.md)).
 

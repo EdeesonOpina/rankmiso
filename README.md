@@ -14,7 +14,7 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-c42a20" />
-  <img alt="In stores: v0.5.0" src="https://img.shields.io/badge/in%20stores-v0.5.0-14161c" />
+  <img alt="In stores: v0.5.1" src="https://img.shields.io/badge/in%20stores-v0.5.1-14161c" />
   <img alt="MCP companion: v0.5.1" src="https://img.shields.io/badge/MCP%20companion-v0.5.1-7a7f8c" />
   <img alt="Chrome, Edge and Firefox" src="https://img.shields.io/badge/browsers-Chrome%20·%20Edge%20·%20Firefox-f2a93b" />
   <img alt="Built with Rust and Vue" src="https://img.shields.io/badge/built%20with-Rust%20%2B%20Vue-5fd39a" />
@@ -35,7 +35,7 @@ It belongs to the Miso ecosystem, where the recipe is simple: powerful tools, le
 RankMiso is on the Chrome Web Store and Firefox Add-ons. Edge runs the Chromium build, sideloaded. Safari is not supported.
 
 > [!NOTE]
-> v0.5.0 is the version in the Chrome Web Store and Firefox Add-ons. It adds optional audit sharing with Claude Code and Codex through a local companion (current companion: v0.5.1). Release notes: [v0.5.0](docs/releases/v0.5.0-rc1.md), [v0.4.0](docs/releases/v0.4.0.md).
+> v0.5.1 is published in the Chrome Web Store and Firefox Add-ons. It includes optional audit sharing with Claude Code and Codex through the local MCP companion (current companion: v0.5.1). Marketplace plugins are versioned separately; see the [integration guide](docs/integrations/README.md). Historical release notes: [v0.5.0](docs/releases/v0.5.0-rc1.md), [v0.4.0](docs/releases/v0.4.0.md).
 
 ## 🍜 What's in the bowl
 
