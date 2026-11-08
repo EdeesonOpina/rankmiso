@@ -12,12 +12,19 @@ import {
   runSiteCrawl,
   saveCrawl,
   sessionCsv,
-  sessionJson,
   sortPages,
   type CrawlPage,
+  type CrawlLimitReason,
   type CrawlSession,
 } from "../../services/site-crawl";
 import { extractCrawlPage, snapshotFromHtml } from "../../services/site-extract";
+import {
+  analyzeSite,
+  filterSiteIssues,
+  siteAnalysisCsv,
+  siteAnalysisJson,
+  sortSiteIssues,
+} from "../../services/site-analysis";
 import { permissionPatternMatchesUrl, sitePermission } from "../../services/page-access";
 import {
   discoverSitemapUrls,
@@ -36,6 +43,7 @@ const { surface, copy, openReport } = useWorkbench();
 const report = surface === "report";
 const pageUrl = computed(() => props.audit.page.url);
 const session = ref<CrawlSession | null>(null);
+const analysisSession = ref<CrawlSession | null>(null);
 const running = ref(false);
 const permissionPending = ref(false);
 const message = ref("");
@@ -44,6 +52,10 @@ const filter = ref("all");
 const sort = ref("url");
 const shown = ref(40);
 const selectedUrl = ref("");
+const activeView = ref<"overview" | "issues" | "pages" | "links">("overview");
+const issueCategory = ref("all");
+const issueSeverity = ref<"all" | "error" | "warning" | "info" | "undefined">("all");
+const issueSort = ref<"affected" | "severity" | "name">("affected");
 let controller: AbortController | null = null;
 let disposed = false;
 
@@ -57,6 +69,34 @@ const origin = computed(() => {
 const visible = computed(() =>
   sortPages(filterPages(session.value?.pages ?? [], query.value, filter.value), sort.value),
 );
+const siteAnalysis = computed(() =>
+  analysisSession.value ? analyzeSite(analysisSession.value) : null,
+);
+const visibleIssues = computed(() =>
+  siteAnalysis.value
+    ? sortSiteIssues(
+        filterSiteIssues(
+          siteAnalysis.value.issues,
+          query.value,
+          issueCategory.value,
+          issueSeverity.value,
+        ),
+        issueSort.value,
+      )
+    : [],
+);
+const matchingLinks = computed(() => {
+  const links = siteAnalysis.value?.links ?? [];
+  const needle = query.value.trim().toLocaleLowerCase("und");
+  return links.filter(
+    (link) =>
+      !needle ||
+      `${link.source} ${link.target} ${link.rel.join(" ")} ${link.anchors.join(" ")}`
+        .toLocaleLowerCase("und")
+        .includes(needle),
+  );
+});
+const visibleLinks = computed(() => matchingLinks.value.slice(0, shown.value));
 const rows = computed(() => visible.value.slice(0, shown.value));
 const selected = computed(
   () => session.value?.pages.find((page) => page.url === selectedUrl.value) ?? null,
@@ -75,7 +115,10 @@ const crawlShare = computed(() => {
 });
 
 onMounted(() => {
-  if (origin.value) session.value = loadCrawl(origin.value);
+  if (origin.value) {
+    session.value = loadCrawl(origin.value);
+    analysisSession.value = session.value;
+  }
 });
 onUnmounted(() => {
   disposed = true;
@@ -184,10 +227,38 @@ async function start() {
               page.contentType,
             ) as never,
           );
+          const findings = audit.checks
+            .filter((check) => check.status !== "PASS")
+            .map((check) => ({
+              id: check.id,
+              category: check.category,
+              title: check.title,
+              description: check.description,
+              recommendation: check.recommendation,
+              status: check.status,
+              evidence: check.evidence,
+            }));
           extracted.issues = audit.checks
             .filter((check) => check.status === "ERROR" || check.status === "WARNING")
             .map((check) => check.title)
             .slice(0, 12);
+          extracted.imageCount = audit.metrics.counts.images;
+          extracted.imagesMissingAlt = audit.metrics.counts.imagesMissingAlt;
+          extracted.structuredDataCount = Math.max(
+            extracted.structuredDataCount ?? 0,
+            audit.details.structuredData.length,
+          );
+          extracted.analyzed = true;
+          return {
+            page: {
+              ...page,
+              ...extracted,
+              url: page.url,
+              fromSitemap: page.fromSitemap,
+              depth: page.depth,
+            },
+            findings,
+          };
         } catch {
           extracted.error = t("site.scoreFailed");
         }
@@ -197,15 +268,20 @@ async function start() {
           url: page.url,
           fromSitemap: page.fromSitemap,
           depth: page.depth,
+          analyzed: false,
         };
       },
       onProgress: (current) => {
         session.value = { ...current, pages: current.pages.slice() };
+        if (current.pages.length === 1 || current.pages.length % 10 === 0) {
+          analysisSession.value = { ...current, pages: current.pages.slice() };
+        }
       },
     });
     if (!disposed) {
       session.value = next;
-      saveCrawl(next);
+      analysisSession.value = next;
+      if (!saveCrawl(next)) message.value = t("site.saveFailed");
     }
   } catch {
     if (!disposed && !permissionRevoked) message.value = t("site.failed");
@@ -220,14 +296,21 @@ function stop() {
   controller?.abort();
 }
 
-function download(kind: "csv" | "json") {
+function download(kind: "csv" | "analysis-csv" | "json") {
   if (!session.value) return;
-  const content = kind === "csv" ? sessionCsv(session.value) : sessionJson(session.value);
-  const blob = new Blob([content], { type: kind === "csv" ? "text/csv" : "application/json" });
+  const content =
+    kind === "csv"
+      ? sessionCsv(session.value)
+      : kind === "analysis-csv"
+        ? siteAnalysisCsv(session.value)
+        : siteAnalysisJson(session.value);
+  const isCsv = kind !== "json";
+  const suffix = kind === "analysis-csv" ? "-analysis" : "";
+  const blob = new Blob([content], { type: isCsv ? "text/csv" : "application/json" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = safeFilename(`${origin.value}-site`, kind);
+  anchor.download = safeFilename(`${origin.value}-site${suffix}`, isCsv ? "csv" : "json");
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -287,6 +370,24 @@ function statusLabel(page: CrawlPage): string {
   if (page.skipped) return t("site.skipped");
   if (page.error && page.status == null) return t("site.failedShort");
   return page.status == null ? "—" : String(page.status);
+}
+
+function showPage(url: string) {
+  selectedUrl.value = url;
+  activeView.value = "pages";
+}
+
+function limitLabel(limit: CrawlLimitReason): string {
+  switch (limit) {
+    case "pages":
+      return t("site.limit.pages");
+    case "discovered":
+      return t("site.limit.discovered");
+    case "depth":
+      return t("site.limit.depth");
+    case "time":
+      return t("site.limit.time");
+  }
 }
 </script>
 
@@ -349,7 +450,292 @@ function statusLabel(page: CrawlPage): string {
     {{ t("site.progress", { count: session?.pages.length ?? 0 }) }}
   </p>
 
-  <div class="section-heading">
+  <nav v-if="report && session?.pages.length" class="site-tabs" :aria-label="t('site.views')">
+    <button
+      v-for="view in ['overview', 'issues', 'pages', 'links'] as const"
+      :key="view"
+      type="button"
+      :aria-current="activeView === view ? 'page' : undefined"
+      @click="activeView = view"
+    >
+      {{ t(`site.view.${view}`) }}
+    </button>
+  </nav>
+
+  <section
+    v-if="report && activeView === 'overview' && siteAnalysis"
+    class="site-overview"
+    aria-live="polite"
+  >
+    <p v-if="siteAnalysis.summary.partial" class="callout" role="status">
+      {{ t("site.partial", { count: siteAnalysis.summary.analyzed }) }}
+      <span v-if="siteAnalysis.summary.limitsReached.length">
+        {{ siteAnalysis.summary.limitsReached.map(limitLabel).join(", ") }}.
+      </span>
+    </p>
+    <div class="crawl-metrics">
+      <div class="kpi">
+        <strong
+          >{{ n(siteAnalysis.summary.analyzed) }} / {{ n(siteAnalysis.summary.pagesLimit) }}</strong
+        ><span>{{ t("site.analyzed") }}</span>
+      </div>
+      <div class="kpi">
+        <strong>{{ n(siteAnalysis.summary.discovered) }}</strong
+        ><span>{{ t("site.discovered") }}</span>
+      </div>
+      <div class="kpi">
+        <strong>{{ n(siteAnalysis.summary.failed) }}</strong
+        ><span>{{ t("site.failedCount") }}</span>
+      </div>
+      <div class="kpi">
+        <strong>{{ n(siteAnalysis.summary.skipped) }}</strong
+        ><span>{{ t("site.skippedCount") }}</span>
+      </div>
+      <div class="kpi">
+        <strong>{{ n(siteAnalysis.issues.length) }}</strong
+        ><span>{{ t("site.issueGroups") }}</span>
+      </div>
+    </div>
+    <div class="site-insight-grid">
+      <WbCard :title="t('site.metadata')">
+        <dl class="site-stats">
+          <div>
+            <dt>{{ t("site.missingTitles") }}</dt>
+            <dd>{{ n(siteAnalysis.summary.missingTitles + siteAnalysis.summary.emptyTitles) }}</dd>
+          </div>
+          <div>
+            <dt>{{ t("site.missingDescriptions") }}</dt>
+            <dd>
+              {{
+                n(siteAnalysis.summary.missingDescriptions + siteAnalysis.summary.emptyDescriptions)
+              }}
+            </dd>
+          </div>
+          <div>
+            <dt>{{ t("site.duplicateTitles") }}</dt>
+            <dd>
+              {{ n(siteAnalysis.duplicates.filter((group) => group.kind === "title").length) }}
+            </dd>
+          </div>
+          <div>
+            <dt>{{ t("site.duplicateDescriptions") }}</dt>
+            <dd>
+              {{
+                n(siteAnalysis.duplicates.filter((group) => group.kind === "description").length)
+              }}
+            </dd>
+          </div>
+        </dl>
+      </WbCard>
+      <WbCard :title="t('site.structure')">
+        <dl class="site-stats">
+          <div>
+            <dt>{{ t("site.missingH1") }}</dt>
+            <dd>{{ n(siteAnalysis.summary.h1Missing) }}</dd>
+          </div>
+          <div>
+            <dt>{{ t("site.multipleH1") }}</dt>
+            <dd>{{ n(siteAnalysis.summary.multipleH1) }}</dd>
+          </div>
+          <div>
+            <dt>{{ t("site.imagesMissingAlt") }}</dt>
+            <dd>{{ n(siteAnalysis.summary.imagesMissingAlt) }}</dd>
+          </div>
+          <div>
+            <dt>{{ t("site.canonicalWarnings") }}</dt>
+            <dd>{{ n(siteAnalysis.summary.canonicalIssues) }}</dd>
+          </div>
+        </dl>
+      </WbCard>
+    </div>
+    <h2>{{ t("site.duplicateMetadata") }}</h2>
+    <p v-if="!siteAnalysis.duplicates.length" class="hint">{{ t("site.noDuplicates") }}</p>
+    <div v-else class="list">
+      <div
+        v-for="group in siteAnalysis.duplicates"
+        :key="`${group.kind}:${group.value}`"
+        class="note-row site-duplicate"
+      >
+        <strong>{{
+          group.kind === "title" ? t("site.duplicateTitle") : t("site.duplicateDescription")
+        }}</strong>
+        <span>{{ group.value }}</span>
+        <button
+          type="button"
+          class="subtle-btn"
+          @click="
+            activeView = 'pages';
+            selectedUrl = group.urls[0] || '';
+          "
+        >
+          {{ t("site.affectedPages", { count: group.urls.length }) }}
+        </button>
+        <ul class="site-url-list">
+          <li v-for="url in group.urls" :key="url">
+            <button type="button" class="site-url-button" @click="showPage(url)">{{ url }}</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <p v-if="siteAnalysis.summary.redirectAliases" class="hint">
+      {{ t("site.redirectAliases", { count: siteAnalysis.summary.redirectAliases }) }}
+    </p>
+    <p v-if="siteAnalysis.summary.unavailableFindings" class="hint">
+      {{ t("site.unavailableCount", { count: siteAnalysis.summary.unavailableFindings }) }}
+    </p>
+  </section>
+
+  <section v-else-if="report && activeView === 'issues' && siteAnalysis" class="site-issues">
+    <div class="filter-tools">
+      <label class="search"
+        ><span class="sr-only">{{ t("site.searchIssues") }}</span
+        ><input
+          v-model="query"
+          type="search"
+          autocomplete="off"
+          :placeholder="t('site.searchIssues')"
+          :aria-label="t('site.searchIssues')"
+      /></label>
+      <label class="select-field"
+        ><span>{{ t("site.category") }}</span
+        ><select v-model="issueCategory">
+          <option value="all">{{ t("site.allCategories") }}</option>
+          <option
+            v-for="category in [...new Set(siteAnalysis.issues.map((issue) => issue.category))]"
+            :key="category"
+            :value="category"
+          >
+            {{ t(`site.category.${category}`) }}
+          </option>
+        </select></label
+      >
+      <label class="select-field"
+        ><span>{{ t("site.severity") }}</span
+        ><select v-model="issueSeverity">
+          <option value="all">{{ t("site.allSeverities") }}</option>
+          <option value="error">{{ t("site.severity.error") }}</option>
+          <option value="warning">{{ t("site.severity.warning") }}</option>
+          <option value="info">{{ t("site.severity.info") }}</option>
+          <option value="undefined">{{ t("site.severity.undefined") }}</option>
+        </select></label
+      >
+      <label class="select-field"
+        ><span>{{ t("site.sort") }}</span
+        ><select v-model="issueSort">
+          <option value="affected">{{ t("site.sortAffected") }}</option>
+          <option value="severity">{{ t("site.sortSeverity") }}</option>
+          <option value="name">{{ t("site.sortName") }}</option>
+        </select></label
+      >
+    </div>
+    <p v-if="!visibleIssues.length" class="callout">{{ t("site.noIssues") }}</p>
+    <div class="list">
+      <article v-for="issue in visibleIssues.slice(0, shown)" :key="issue.id" class="site-issue">
+        <header>
+          <div>
+            <span class="badge gray">{{ t(`site.category.${issue.category}`) }}</span>
+            <h3>{{ issue.title }}</h3>
+          </div>
+          <span
+            class="badge"
+            :class="
+              issue.statuses.includes('ERROR')
+                ? 'err'
+                : issue.statuses.includes('WARNING')
+                  ? 'warn'
+                  : 'gray'
+            "
+            >{{ issue.statuses.join(" / ") || t("site.severityUndefined") }}</span
+          >
+        </header>
+        <p>{{ issue.description }}</p>
+        <p v-if="issue.recommendation" class="hint">{{ issue.recommendation }}</p>
+        <strong>{{ t("site.affectedPages", { count: issue.affected.length }) }}</strong>
+        <ul class="site-url-list">
+          <li v-for="page in issue.affected" :key="page.url">
+            <button type="button" class="site-url-button" @click="showPage(page.url)">
+              {{ page.url }}</button
+            ><small v-if="page.evidence">{{ page.evidence }}</small>
+          </li>
+        </ul>
+      </article>
+    </div>
+    <button
+      v-if="visibleIssues.length > shown"
+      type="button"
+      class="subtle-btn more-btn"
+      @click="shown += 40"
+    >
+      {{ t("site.moreIssues") }} →
+    </button>
+  </section>
+
+  <section v-else-if="report && activeView === 'links' && siteAnalysis" class="site-links">
+    <label class="search"
+      ><span class="sr-only">{{ t("site.search") }}</span
+      ><input
+        v-model="query"
+        type="search"
+        autocomplete="off"
+        :placeholder="t('site.searchLinks')"
+        :aria-label="t('site.searchLinks')"
+    /></label>
+    <p class="hint">
+      {{ t("site.linkScope")
+      }}<span v-if="siteAnalysis.linksTruncated"> {{ t("site.linkTruncated") }}</span>
+    </p>
+    <WbCard :title="t('site.lowIncoming')">
+      <p class="hint">{{ t("site.lowIncomingScope") }}</p>
+      <ul class="site-url-list">
+        <li v-for="item in siteAnalysis.lowIncomingPages" :key="item.url">
+          <button type="button" class="site-url-button" @click="showPage(item.url)">
+            {{ item.url }}</button
+          ><small>{{ t("site.incomingCount", { count: item.incomingSources }) }}</small>
+        </li>
+      </ul>
+    </WbCard>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>{{ t("site.source") }}</th>
+            <th>{{ t("site.target") }}</th>
+            <th>{{ t("site.incomingObserved") }}</th>
+            <th>{{ t("site.targetStatus") }}</th>
+            <th>{{ t("site.linkDetails") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="link in visibleLinks" :key="`${link.source}|${link.target}`">
+            <td class="site-url-cell">{{ link.source }}</td>
+            <td class="site-url-cell">{{ link.target }}</td>
+            <td>{{ n(link.incomingSources) }}</td>
+            <td>{{ t(`site.linkState.${link.targetState}`) }}</td>
+            <td>
+              {{
+                [
+                  ...link.rel,
+                  ...link.anchors,
+                  ...(link.redirectTo ? [t("site.redirectsTo", { url: link.redirectTo })] : []),
+                ].join(" · ") || "—"
+              }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <button
+      v-if="matchingLinks.length > visibleLinks.length"
+      type="button"
+      class="subtle-btn more-btn"
+      @click="shown += 40"
+    >
+      {{ t("site.moreLinks") }} →
+    </button>
+    <p v-if="siteAnalysis.links.length === 0" class="callout">{{ t("site.noLinks") }}</p>
+  </section>
+
+  <div v-if="!report || activeView === 'pages'" class="section-heading">
     <div>
       <h2>{{ t("pm.inspectedPages") }}</h2>
     </div>
@@ -362,17 +748,17 @@ function statusLabel(page: CrawlPage): string {
       {{ t("wb.si.details") }} ↗
     </button>
   </div>
-  <p v-if="!session || !session.pages.length" class="callout">
+  <p
+    v-if="(!session || !session.pages.length) && (!report || activeView === 'pages')"
+    class="callout"
+  >
     {{ report ? t("wb.si.empty") : t("wb.si.emptySidebar") }}
   </p>
-  <template v-else>
+  <template v-if="session?.pages.length && (!report || activeView === 'pages')">
     <div class="site-notes">
       <span class="badge gray">{{ sitemapLine() }}</span>
-      <span v-if="session.duplicates.length" class="badge warn">{{
-        t("site.duplicates", { count: session.duplicates.length })
-      }}</span>
-      <span v-if="session.orphans.length" class="badge warn">{{
-        t("site.orphans", { count: session.orphans.length })
+      <span v-if="siteAnalysis?.duplicates.length" class="badge warn">{{
+        t("site.duplicates", { count: siteAnalysis.duplicates.length })
       }}</span>
     </div>
     <div v-if="report" class="filter-tools">
@@ -503,6 +889,9 @@ function statusLabel(page: CrawlPage): string {
     <div v-if="report" class="actions-row">
       <button type="button" class="quiet" @click="download('csv')">
         {{ t("site.exportCsv") }}
+      </button>
+      <button type="button" class="quiet" @click="download('analysis-csv')">
+        {{ t("site.exportAnalysisCsv") }}
       </button>
       <button type="button" class="quiet" @click="download('json')">
         {{ t("site.exportJson") }}

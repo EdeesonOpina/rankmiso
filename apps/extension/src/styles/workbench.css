@@ -3023,6 +3023,134 @@ textarea.field {
   position: sticky;
   top: 0;
 }
+.site-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  margin: 18px 0;
+}
+.site-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 10px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.site-tabs button[aria-current="page"] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+.site-tabs button:focus-visible,
+.site-url-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.site-insight-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.site-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.site-stats div {
+  min-width: 0;
+}
+.site-stats dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+.site-stats dd {
+  margin: 3px 0 0;
+  font-size: 18px;
+  font-weight: 750;
+}
+.site-duplicate,
+.site-issue {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.site-duplicate span,
+.site-url-list,
+.site-url-list small {
+  overflow-wrap: anywhere;
+}
+.site-issue {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.site-issue header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.site-issue h3 {
+  margin: 5px 0 0;
+}
+.site-issue p {
+  margin: 4px 0;
+}
+.site-url-list {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+.site-url-list li {
+  margin: 6px 0;
+}
+.site-url-list small {
+  display: block;
+  color: var(--muted);
+}
+.site-url-button {
+  border: 0;
+  padding: 0;
+  text-align: left;
+  color: var(--accent);
+  background: transparent;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table-scroll th,
+.table-scroll td {
+  padding: 9px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.site-url-cell {
+  min-width: 180px;
+  max-width: 340px;
+  overflow-wrap: anywhere;
+}
+.site-links .search {
+  display: block;
+  margin-bottom: 10px;
+}
+@media (max-width: 700px) {
+  .site-insight-grid {
+    grid-template-columns: 1fr;
+  }
+  .site-issue header {
+    flex-direction: column;
+  }
+}
 @media (max-width: 1100px) {
   .report .site-split {
     grid-template-columns: 1fr;

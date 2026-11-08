@@ -68,7 +68,7 @@ New in v0.4.0:
 
 ### 🔍 Site Explorer
 
-Point the fox at a website and press **Start crawl**. It stays on that one origin, follows robots.txt, and stops at 100 pages, depth 3, or two minutes. Watch the progress, open any page's findings, press **Stop** whenever you like, and export the results. Nothing crawls until you press Start, and your browsing history is never crawled.
+Point the fox at a website and press **Start crawl**. It stays on that one origin, follows robots.txt, and stops at 100 pages, depth 3, or two minutes. Watch the progress, open any page's findings, press **Stop** whenever you like, and export the results. Nothing crawls until you press Start, and your browsing history is never crawled. Site-wide summaries, duplicate metadata and internal-link observations are being developed for the unreleased v0.6.0 milestone; they are not part of the published v0.5.1 packages.
 
 ### 📈 History
 
