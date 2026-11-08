@@ -1,6 +1,6 @@
 # RankMiso MCP Companion
 
-RankMiso MCP is a local, read-only Rust companion for SEO audit JSON. The MCP executable reads only files in one explicitly configured directory. The extension can optionally share an approved current audit through a separately installed Native Messaging host; the companion remains separate from the published v0.4.0 extension package.
+RankMiso MCP is a local, read-only Rust companion for SEO audit JSON. The MCP executable reads only files in one explicitly configured directory. The v0.5.1 browser extension can optionally share an approved current audit through the separately installed Native Messaging host.
 
 For beginner instructions, see [Using RankMiso with AI Coding Assistants](USER-GUIDE.md). For package commands and installation paths, see [Companion installation](INSTALL.md).
 

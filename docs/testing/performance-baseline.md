@@ -95,3 +95,67 @@ The candidate Playwright suite passed and printed one-profile timings: popup 192
 ## R0.4.0-G1 (2026-10-30)
 
 No new benchmark sample was collected for the bounded robots reader, whole-crawl deadline, or literal-IP classification changes. The Playwright one-profile observations above predate G1 and are not presented as measurements of the corrected candidate. Native Chrome/Firefox runtime timing, real crawl duration, memory, and Stop latency remain unmeasured. These small control-flow changes add no polling, dependency, or additional cache.
+
+## M9 Site Explorer aggregation (2026-11-03)
+
+Environment: Linux 6.17.0-41-generic x86_64, Node 22.23.3, Vitest 3.2.7. The opt-in `RANKMISO_RUN_PERF=1 pnpm --filter @rankmiso/extension exec vitest run tests/site-analysis.test.ts -t 'benchmarks aggregation' --reporter=verbose` fixture uses 100 analyzed page records and 20,000 input internal-link observations. It measures the TypeScript summary, issue, duplicate and link aggregation only; it does not include network, Vue rendering or a browser memory sample.
+
+| Operation | Fixture / state | Samples | Median | Min–max |
+| --- | --- | ---: | ---: | ---: |
+| Site analysis aggregation | 100 pages / 20,000 input link observations | 5 | 405.42 ms | 386.60–439.94 ms |
+
+For context, the earlier in-process crawl queue/extraction fixture measured 100 pages at 150 ms median (112–231 ms) in this session; it exercises a different operation and is not a before/after comparison. WXT reports rounded production package totals of 1.63 MB Chrome and 1.62 MB Firefox on the M9 source (about 0.09 MB / 0.12 MB above the previously recorded 1.54 MB / 1.50 MB candidate output). These rounded package totals include environment/build variation and do not establish exact source-only bundle growth. Browser UI responsiveness and total browser memory at 100 pages were not measured.
+
+## M9.6 aggregation and browser heap review (2026-11-03)
+
+The pre-review implementation was measured on the same Linux x86_64 / Node 22 / Vitest 3.2.7 runner with five timed samples per workload after one warm-up. The 100-page / 20,000-link case took 386.48 ms median without link detail records and 719.03 ms median with 20,000 detailed link observations; live progress triggered analysis at page 1 and every tenth page, then again at completion (12 full analyses at 100 pages). Simulated cumulative time was about 2.51 seconds and 4.54 seconds respectively. The detailed-link workload exposed repeated per-target scans.
+
+The service now memoizes per-session origin checks and builds each source page's target and link-attribute index in one pass. The same fixture harness reports:
+
+| Pages | Links/page | Link details | Median / max individual run | Progress runs + final | Simulated cumulative |
+| ---: | ---: | --- | ---: | ---: | ---: |
+| 1 | 10 | no | 0.27 / 0.29 ms | 1 + 1 | 0.52 ms |
+| 10 | 20 | no | 0.55 / 0.58 ms | 2 + 1 | 1.45 ms |
+| 25 | 20 | no | 1.42 / 1.43 ms | 3 + 1 | 6.23 ms |
+| 50 | 20 | no | 2.13 / 2.22 ms | 6 + 1 | 11.01 ms |
+| 100 | 20 | no | 3.83 / 4.18 ms | 11 + 1 | 28.23 ms |
+| 100 | 200 | no | 7.92 / 8.55 ms | 11 + 1 | 48.19 ms |
+| 100 | 200 | yes | 10.08 / 10.68 ms | 11 + 1 | 50.75 ms |
+
+All numbers are local synchronous aggregation timings, not crawl/network time. On the detailed 20,000-link fixture the median fell from 719.03 ms to 10.08 ms (about 98.6%); its measured maximum fell from 725.60 ms to 10.68 ms. The progress schedule remains unchanged, while its summed aggregation time is now about 51 ms. These short tasks leave the event loop responsive between crawl progress callbacks; this is not a formal input-latency benchmark.
+
+The Chromium Playwright Site Explorer test restored a synthetic 100-page, 20,000-link session and sampled `performance.memory.usedJSHeapSize` after rendering and CDP forced garbage collection: median 20,077,262 bytes, range 20,070,910–20,078,950 (five reloads). This is the extension page's retained V8 heap for the whole app and fixture, not a Site Explorer-only allocation, peak, or process RSS measure. The fixture bypasses the product's compact-on-save limit to represent an active crawl; it is not persisted-session size. No comparable v0.5.1 browser-heap sample exists. The Vitest worker did not expose forced GC, so a retained Node heap delta was not reported.
+
+Current output-directory apparent sizes are 1,632,504 bytes for Chrome and 1,618,363 bytes for Firefox; WXT rounds these to 1.63 MB and 1.62 MB. Compared with the previously recorded approximate 1.54 MB and 1.50 MB, growth is about +0.09 MB / +5.8% and +0.12 MB / +8.0%. WXT reports shared workbench code in the `WorkbenchApp` chunk; a reproducible build of the old baseline was not available in this worktree, so exact source-attributed size growth is not claimed.
+
+## M9-R1 re-measurement (2026-11-08)
+
+Same opt-in command, Linux 6.17.0-41-generic x86_64, Node 22.23.3, Vitest 3.2.7, after the redirect-alias fix. Five samples per row after one warm-up.
+
+| Pages | Links/page | Link details | Median / max | Simulated cumulative |
+| ---: | ---: | --- | ---: | ---: |
+| 1 | 10 | no | 0.34 / 0.36 ms | 0.74 ms |
+| 10 | 20 | no | 0.59 / 0.67 ms | 1.64 ms |
+| 25 | 20 | no | 1.75 / 2.10 ms | 6.02 ms |
+| 50 | 20 | no | 2.61 / 3.11 ms | 11.23 ms |
+| 100 | 20 | no | 4.84 / 4.98 ms | 31.73 ms |
+| 100 | 200 | no | 6.59 / 8.04 ms | 46.56 ms |
+| 100 | 200 | yes | 10.86 / 11.26 ms | 54.07 ms |
+
+Within run-to-run noise of the M9.6 numbers (10.08 ms median for the detailed 20,000-link case). The 405 ms figure in the first M9 table predates the M9.6 optimization and is historical. Browser heap and input latency were not re-measured.
+
+## v0.6.0 release candidate (2026-11-08)
+
+Same opt-in command on `release/extension-v0.6.0` (Site Explorer 2.0 with the design alignment and version 0.6.0). Linux 6.17.0-41-generic x86_64, Node 22.23.3, Vitest 3.2.7, five samples per row after one warm-up.
+
+| Pages | Links/page | Link details | Median / max | Simulated cumulative |
+| ---: | ---: | --- | ---: | ---: |
+| 1 | 10 | no | 0.27 / 0.29 ms | 0.54 ms |
+| 10 | 20 | no | 0.60 / 0.72 ms | 1.69 ms |
+| 25 | 20 | no | 1.66 / 1.67 ms | 7.44 ms |
+| 50 | 20 | no | 2.25 / 2.29 ms | 12.65 ms |
+| 100 | 20 | no | 4.57 / 4.78 ms | 30.21 ms |
+| 100 | 200 | no | 7.96 / 8.43 ms | 61.82 ms |
+| 100 | 200 | yes | 11.88 / 13.17 ms | 57.47 ms |
+
+Compared with the M9-R1 commit (11.62 ms median for the detailed 20,000-link case) this is within run-to-run noise; no regression. Production package totals: Chrome 1.63 MB, Firefox 1.62 MB (WXT rounded), same as M9. Real-browser memory, crawl duration and input latency remain NOT MEASURED.
