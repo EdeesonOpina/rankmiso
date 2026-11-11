@@ -1,5 +1,9 @@
 # Implementation plan
 
+## M10-R4 status note — 2026-11-11
+
+Firefox 158.0.1 ran the Site Explorer comparison flow against a local fixture, including the robots skipped-row text, dark theme, later-crawl stale selection, and snapshot deletion. The headless window did not accept a 390px viewport. The full-page report footer no longer shows Open sidebar. Version stays 0.6.0. A persistent unsigned Firefox install is not available, so browser-restart persistence was not tested. This branch is `feature/v0.7.0`. No push or pull request is authorized.
+
 ## M10-R3 status note — 2026-11-11
 
 The comparison panel is hidden when the selected crawls change, until the user compares again. A limit-finished crawl is labeled "Finished at limit". Version stays 0.6.0. See `docs/features/site-explorer.md`.

@@ -280,3 +280,4 @@ Status: Chromium Playwright covers save, a same-crawl comparison with no confirm
 | 11 | Refresh and reopen | Repeat the same-crawl comparison after refreshing the report, then after closing and reopening the browser. The result stays the same. | | |
 | 12 | Two different crawls | Change a page, crawl again, and compare with the saved crawl. A fixed finding on a page analyzed both times is resolved. A new finding on a page analyzed both times is new. A page the later crawl did not reach is not comparable. | | |
 | 13 | Selection | After a comparison, change the baseline or later crawl. The previous results disappear until you click **Compare crawls** again. | | |
+| 14 | Report footer | The full-page report footer shows the local-analysis note and **Refresh analysis**. It does not show **Open sidebar**. The sidebar and popup still open the other surface. | | |

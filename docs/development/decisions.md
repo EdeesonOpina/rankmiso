@@ -230,6 +230,12 @@ One snapshot remains capped at 350 KB. History is capped at 1.75 MB, which is fi
 
 A link is added or removed only when its source page was analyzed in both crawls and neither link list was truncated. Different rule-set versions are not compared. The comparison CSV and JSON use schema version 1 and the kind `rankmiso.siteComparison`. The 12-column page CSV, the 22-column Site Analysis CSV, and Site Explorer JSON schema version 1 are unchanged. Comparison results are not sent to the MCP companion.
 
+## M10-R4 — Firefox acceptance and report footer
+
+The full-page report footer does not include Open sidebar. The sidebar footer still opens the full report, and the popup still opens the sidebar. Refresh analysis stays on the report footer. The comparison stale message is a status, so a screen reader hears it when the selection changes.
+
+Firefox 158.0.1 can load the extension and run Site Explorer when the test browser is started with Marionette system access. That flag is for the test harness only. Release Firefox does not install an unsigned extension permanently, so a restart of a temporary add-on is not a persistence test.
+
 ## M9 — Site Explorer 2.0 aggregation
 
 Site-wide findings are aggregated in the extension's TypeScript service from the existing bounded crawl session and the existing Rust/WASM audit output. Rust remains the source of page-level SEO rules and severity/status. No rules are duplicated in Vue, and no score is calculated for a site. During a live crawl, aggregation refreshes at page 1, every ten pages, and at completion; searching, filtering, and sorting operate on the prebuilt issue and link observations. Same-origin URL checks are memoized per analysis, and each page's link attributes are collected in one pass to keep this synchronous derived step short.

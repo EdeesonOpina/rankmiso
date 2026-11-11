@@ -32,7 +32,7 @@ The crawl session persists locally for its origin; no crawl data is uploaded or 
 
 ## Comparisons
 
-**Save for comparison** stores the current crawl for that origin. Saving is explicit. The latest-session restore is unchanged and is not a comparison snapshot. Up to five snapshots are kept per origin, inside a 1.5 MB history budget. Delete removes one snapshot. Clear unreadable history removes only the comparison-history key.
+**Save for comparison** stores the current crawl for that origin. Saving is explicit. The latest-session restore is unchanged and is not a comparison snapshot. Up to five snapshots are kept per origin, inside a 1.75 MB history budget. Delete removes one snapshot. Clear unreadable history removes only the comparison-history key.
 
 **Compare** chooses a baseline crawl and a later crawl. One of them can be the crawl currently open. Both must be the same origin and the same ruleset. The summary is grouped into crawl coverage, issue changes, and comparison reliability. Coverage shows baseline pages, later pages, newly observed pages, and pages not observed again. Issue changes show new, resolved, unchanged, and not-comparable counts. A lower issue count is not reported as a ranking or traffic gain.
 
