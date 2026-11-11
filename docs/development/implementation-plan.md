@@ -4,6 +4,8 @@
 
 Firefox 158.0.1 ran the Site Explorer comparison flow against a local fixture, including the robots skipped-row text, dark theme, later-crawl stale selection, and snapshot deletion. The headless window did not accept a 390px viewport. The full-page report footer no longer shows Open sidebar. Version stays 0.6.0. A persistent unsigned Firefox install is not available, so browser-restart persistence was not tested. This branch is `feature/v0.7.0`. No push or pull request is authorized.
 
+The full-page Site Explorer compare view now follows `rankmiso_site_explorer_redesign.html`: dark summary, coverage of pages analyzed in both crawls, four issue-movement counts, issue activity, a link donut from real counts, reliability notes, page changes, and duplicate-metadata changes. Overview, Issues, Pages, and Links use the same report tabs, cards, and canvas. The reference file stays outside the repository. Its sample numbers are not in the product. Version stays 0.6.0.
+
 ## M10-R3 status note — 2026-11-11
 
 The comparison panel is hidden when the selected crawls change, until the user compares again. A limit-finished crawl is labeled "Finished at limit". Version stays 0.6.0. See `docs/features/site-explorer.md`.
