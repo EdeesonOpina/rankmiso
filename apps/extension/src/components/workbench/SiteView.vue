@@ -664,7 +664,7 @@ function limitLabel(limit: CrawlLimitReason): string {
 
   <nav
     v-if="report && (session?.pages.length || originSnapshots.length || history.corruptStore)"
-    class="pill-set"
+    class="pill-set site-views"
     :aria-label="t('site.views')"
   >
     <button
@@ -993,7 +993,7 @@ function limitLabel(limit: CrawlLimitReason): string {
     <p v-else-if="originSnapshots.length < 2 && !session?.pages.length" class="callout">
       {{ t("site.compare.oneCrawl") }}
     </p>
-    <div class="filter-tools">
+    <div class="filter-tools comparison-controls">
       <label class="select-field">
         <span>{{ t("site.compare.baseline") }}</span>
         <select v-model="baselineId">
@@ -1028,11 +1028,12 @@ function limitLabel(limit: CrawlLimitReason): string {
       >
         {{ t("site.compare.delete") }}
       </button>
+      <span class="control-hint">{{ t("pm.sameOrigin") }}</span>
     </div>
     <p v-if="comparing" class="hint" role="status">{{ t("site.compare.working") }}</p>
     <p v-if="comparisonStale" class="callout" role="status">{{ t("site.compare.stale") }}</p>
     <SiteComparePanel v-if="shownComparison?.comparable" :comparison="shownComparison" />
-    <div v-if="shownComparison?.comparable" class="actions-row">
+    <div v-if="shownComparison?.comparable" class="actions-row compare-exports">
       <button type="button" class="quiet" @click="downloadComparison('csv')">
         {{ t("site.compare.exportCsv") }}
       </button>

@@ -318,6 +318,7 @@ provide(workbenchKey, {
         </button>
       </nav>
       <div class="nav-bottom">
+        <p v-if="surface !== 'sidebar'" class="nav-privacy">{{ t("wb.footerNote") }}</p>
         <button
           type="button"
           :aria-label="t('wb.preferences')"

@@ -215,7 +215,9 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     await expect(report.getByLabel("Later crawl")).toHaveValue("live");
     await report.getByRole("button", { name: "Compare crawls" }).click();
     await expect(report.getByText("=HYPERLINK()")).toBeVisible();
-    await expect(report.getByText("Changed", { exact: true }).first()).toBeVisible();
+    await expect(
+      report.getByText("Changed", { exact: true }).filter({ visible: true }).first(),
+    ).toBeVisible();
     const comparisonCsvDownload = report.waitForEvent("download");
     await report.getByRole("button", { name: "Export comparison CSV" }).click();
     const comparisonCsv = await readFile(await (await comparisonCsvDownload).path(), "utf8");
@@ -233,6 +235,12 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
       kind: string;
     };
     expect(comparisonJson).toMatchObject({ schemaVersion: 1, kind: "rankmiso.siteComparison" });
+    await report.locator(".compare-hero").scrollIntoViewIfNeeded();
+    await report.screenshot({ path: "test-results/site-compare-hero.png" });
+    await report.setViewportSize({ width: 390, height: 900 });
+    await report.locator(".compare-hero").scrollIntoViewIfNeeded();
+    await report.screenshot({ path: "test-results/site-compare-narrow.png" });
+    await report.setViewportSize({ width: 1280, height: 800 });
     await report.getByRole("button", { name: "Delete saved crawl" }).click();
     await expect(report.getByText("Saved crawl deleted from this device.")).toBeVisible();
     await expect(baseline.locator("option", { hasText: savedLabel })).toHaveCount(0);
