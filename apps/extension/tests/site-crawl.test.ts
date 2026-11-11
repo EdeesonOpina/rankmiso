@@ -296,6 +296,9 @@ describe("site crawl", () => {
     const restored = loadCrawl("http://127.0.0.1");
     expect(restored?.pages[0]?.findings?.[0]?.id).toBe("RULE_H1_MISSING");
     expect(restored?.pages[0]?.internalLinkDetails).toHaveLength(10);
+    expect(restored?.pages[0]?.internalLinks).toHaveLength(40);
+    expect(restored?.pages[0]?.internalLinksTruncated).not.toBe(true);
+    expect(restored?.pages[0]?.internalLinks[0]).toBe("http://127.0.0.1/0");
     clearCrawl();
   });
 

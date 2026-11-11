@@ -1,5 +1,21 @@
 # Implementation plan
 
+## M10-R3 status note — 2026-11-11
+
+The comparison panel is hidden when the selected crawls change, until the user compares again. A limit-finished crawl is labeled "Finished at limit". Version stays 0.6.0. See `docs/features/site-explorer.md`.
+
+## M10-R2 status note — 2026-11-11
+
+Comparison snapshots stay in localStorage. Link display details are no longer stored in them, and internal URLs are stored relative to the origin, so a normal crawl keeps a complete link list inside the existing 350 KB snapshot cap. History budget is 1.75 MB. IndexedDB was not added. Version stays 0.6.0. No commit, push, or store package is authorized. See `docs/development/decisions.md`.
+
+## M10-R1 status note — 2026-11-09
+
+Comparison correctness for Site Explorer 3.0 is fixed on `feature/m10-site-explorer-3` in `/home/ed/Projects/Rust/rankmiso-m10`. Saving a crawl no longer makes its evidence text look like a different finding. Version stays 0.6.0. No commit, push, or store package is authorized. See `docs/development/decisions.md` and `docs/testing/manual-checklist.md`.
+
+## M10 status note — 2026-11-09
+
+Site Explorer 3.0 comparisons are implemented on `feature/m10-site-explorer-3` in the worktree `/home/ed/Projects/Rust/rankmiso-m10`, based on `origin/develop` at the v0.6.0 tree. The comparison engine, bounded history, Compare view, and comparison CSV/JSON are in the extension. Version stays 0.6.0. No commit, push, or store package is authorized by this note. See `docs/features/site-explorer.md` and `docs/development/decisions.md`.
+
 ## F1-E status note — 2026-10-30
 
 F1 continues from the preceding checkpoint; it is not restarted. The P1 stale-sidebar defect is fixed and automated tests pass. The repeatable local performance baseline remains in `docs/testing/performance-baseline.md`; outstanding native interactions are listed in `docs/testing/manual-checklist.md`. F1-H.1 adds opt-in Automatic website checks and fresh local Smart Refresh; implementation and automated verification pass, while native Chrome/Firefox permission prompts remain pending. F1 technical sign-off remains blocked on the native security and remaining browser acceptance cases. Do not begin M6 until F1 closes and the maintainer authorizes it. v0.3.0 is already published; no versioning or release state changed.

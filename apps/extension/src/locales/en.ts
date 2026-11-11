@@ -721,6 +721,7 @@ export const messages = {
   "site.view.issues": "Issues",
   "site.view.pages": "Pages",
   "site.view.links": "Links",
+  "site.view.compare": "Compare",
   "site.analyzed": "Pages analyzed",
   "site.coverage": "Site coverage",
   "site.coverageTag": "Site coverage · Bounded crawl",
@@ -828,6 +829,7 @@ export const messages = {
   "site.sitemap.unavailable": "A sitemap could not be fetched. That is not an empty sitemap.",
   "site.sitemap.notRead": "Sitemaps were not read.",
   "site.stateComplete": "Complete",
+  "site.statePartial": "Finished at limit",
   "site.stateStopped": "Stopped",
   "site.stateError": "Error",
   "site.duplicates":
@@ -859,6 +861,122 @@ export const messages = {
   "site.exportCsv": "Export CSV",
   "site.exportAnalysisCsv": "Export Site Analysis CSV",
   "site.exportJson": "Export JSON",
+  "site.compare.save": "Save for comparison",
+  "site.compare.saved": "Crawl saved for comparison on this device.",
+  "site.compare.stale": "The crawl selection changed. Compare again to refresh these results.",
+  "site.compare.save.originFull":
+    "This site already has 5 saved crawls. Delete one before saving another.",
+  "site.compare.save.budget":
+    "Saving this crawl would exceed the local storage budget. Delete a saved crawl first.",
+  "site.compare.save.quota":
+    "The browser refused to store more data. Delete a saved crawl and try again.",
+  "site.compare.save.tooLarge": "This crawl is too large to save for comparison.",
+  "site.compare.save.corrupt":
+    "Saved comparison history could not be read. Clear the unreadable history and try again.",
+  "site.compare.save.invalid": "This crawl could not be saved for comparison.",
+  "site.compare.delete": "Delete saved crawl",
+  "site.compare.deleted": "Saved crawl deleted from this device.",
+  "site.compare.deleteFailed": "That saved crawl could not be deleted.",
+  "site.compare.empty": "Save this crawl, run it again later, then compare the two.",
+  "site.compare.oneCrawl": "Save another crawl of this site before comparing.",
+  "site.compare.needTwo": "Choose two different crawls of this site.",
+  "site.compare.baseline": "Baseline crawl",
+  "site.compare.current": "Later crawl",
+  "site.compare.choose": "Choose a crawl",
+  "site.compare.thisCrawl": "This crawl",
+  "site.compare.savedPages": "{count} pages",
+  "site.compare.partialShort": "partial",
+  "site.compare.run": "Compare crawls",
+  "site.compare.working": "Comparing crawls…",
+  "site.compare.results": "Crawl comparison",
+  "site.compare.notAScore":
+    "Issue counts are not a site score, a ranking, or a traffic change. Coverage can differ between crawls.",
+  "site.compare.sameCrawl":
+    "You're comparing a crawl with itself. No confirmed SEO changes were detected.",
+  "site.compare.sameCrawlPartial":
+    "Some stored fields were shortened, so those fields cannot be independently verified.",
+  "site.compare.coverageHeading": "Crawl coverage",
+  "site.compare.reliability": "Comparison reliability",
+  "site.compare.reliabilityFull": "The compared findings were complete enough to verify.",
+  "site.compare.reliabilityPartial":
+    "{count} findings could not be verified because a crawl was partial or stored evidence was shortened.",
+  "site.compare.issueList": "Issue details",
+  "site.compare.partial":
+    "One or both crawls are partial. A page that was not analyzed again is not treated as fixed or removed.",
+  "site.compare.missingFindings":
+    "A saved crawl has no rule-level findings. Those issues are left unverified.",
+  "site.compare.truncatedLinks":
+    "Some link lists were shortened to fit local storage. Those link changes are unverified.",
+  "site.compare.previousPages": "Baseline pages",
+  "site.compare.currentPages": "Later pages",
+  "site.compare.newlyObserved": "Newly observed",
+  "site.compare.notObserved": "Not observed again",
+  "site.compare.summaryLabel":
+    "Baseline {previous} pages, later crawl {current} pages. New issues {fresh}, resolved {resolved}, unchanged {unchanged}, not comparable {unverified}.",
+  "site.compare.new": "New",
+  "site.compare.resolved": "Resolved",
+  "site.compare.unchanged": "Unchanged",
+  "site.compare.changed": "Changed",
+  "site.compare.notComparable": "Not comparable",
+  "site.compare.status": "Change",
+  "site.compare.rule": "Rule",
+  "site.compare.pageFilter": "Filter by page",
+  "site.compare.issues": "Issue changes",
+  "site.compare.pages": "Page changes",
+  "site.compare.pageScope": "Pages",
+  "site.compare.pageChanges": "Changes and coverage",
+  "site.compare.links": "Link changes",
+  "site.compare.linkScope":
+    "A link is reported removed only when its source page was analyzed in both crawls and the link list was complete.",
+  "site.compare.linkSummary": "Internal link comparison",
+  "site.compare.linkVerified": "Verified changes",
+  "site.compare.linkUnchanged": "Unchanged",
+  "site.compare.linkUnable": "Unable to compare",
+  "site.compare.linkIncompleteToggle": "View {count} pages with incomplete link data",
+  "site.compare.linkFilter": "Link changes",
+  "site.compare.duplicates": "Duplicate metadata changes",
+  "site.compare.noIssues": "No issues match these filters.",
+  "site.compare.noPages": "No page changes in this comparison.",
+  "site.compare.noLinks": "No confirmed link changes.",
+  "site.compare.noDuplicates": "No confirmed duplicate-metadata changes.",
+  "site.compare.unreadable":
+    "Unreadable saved records: {count}. Clearing them does not delete the latest crawl.",
+  "site.compare.clearUnreadable": "Clear unreadable history",
+  "site.compare.unreadableCleared": "Unreadable comparison history was removed from this device.",
+  "site.compare.exportCsv": "Export comparison CSV",
+  "site.compare.exportJson": "Export comparison JSON",
+  "site.compare.presence": "Baseline {previous}, later crawl {current}.",
+  "site.compare.coverage.newly-observed": "Newly observed",
+  "site.compare.coverage.not-observed": "Not observed again",
+  "site.compare.reason.pageNotInCurrent":
+    "Not verified. This page was not analyzed in the later crawl.",
+  "site.compare.reason.pageNotInPrevious":
+    "Not verified. This page was not analyzed in the baseline crawl.",
+  "site.compare.reason.missingFindings":
+    "Not verified. One crawl has no rule-level findings for this page.",
+  "site.compare.reason.linksIncomplete":
+    "Link changes on this page were not verified because its link list was truncated.",
+  "site.compare.reason.coverage":
+    "Not verified. The crawl did not analyze every page in this group.",
+  "site.compare.reason.evidenceChanged":
+    "The same issue is still present. The recorded evidence changed.",
+  "site.compare.reason.truncatedEvidence":
+    "Not verified. Stored evidence was shortened, so this count difference is not a confirmed change.",
+  "site.compare.blocked.origin": "These crawls are from different sites and were not compared.",
+  "site.compare.blocked.schema":
+    "These saved crawls use an unsupported format and were not compared.",
+  "site.compare.blocked.ruleset":
+    "These crawls used different rule sets, so issue changes were not compared.",
+  "site.compare.field.title": "Title",
+  "site.compare.field.description": "Meta description",
+  "site.compare.field.canonical": "Canonical",
+  "site.compare.field.robots": "Robots",
+  "site.compare.field.indexability": "Indexability",
+  "site.compare.field.h1Count": "H1 count",
+  "site.compare.field.issueCount": "Issue count",
+  "site.compare.field.duplicateTitle": "Duplicate title",
+  "site.compare.field.duplicateDescription": "Duplicate description",
+  "site.compare.field.incomingSources": "Incoming sources",
   "site.lifecycle":
     "Closing this report stops the crawl. It does not continue in the background, and it does not resume by itself.",
   "pm.localAudit": "Local audit",

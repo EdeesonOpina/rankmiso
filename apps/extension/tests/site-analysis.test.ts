@@ -4,6 +4,7 @@ import {
   analyzeSite,
   duplicateGroups,
   filterSiteIssues,
+  resolvedAnalyzedPages,
   siteAnalysisCsv,
   siteAnalysisJson,
   sortSiteIssues,
@@ -72,6 +73,20 @@ function session(pages: CrawlPage[], overrides: Partial<CrawlSession> = {}): Cra
 }
 
 describe("site-wide analysis", () => {
+  it("counts fetched records separately from analyzed pages", () => {
+    const origin = "https://example.test";
+    const analyzed = Array.from({ length: 75 }, (_, index) => page(`${origin}/p/${index}`));
+    const aliases = Array.from({ length: 6 }, (_, index) =>
+      page(`${origin}/old/${index}`, { finalUrl: `${origin}/p/${index}` }),
+    );
+    const failed = page(`${origin}/missing`, { status: 404, error: "missing", analyzed: false });
+    const crawl = session([...analyzed, ...aliases, failed]);
+    expect(crawl.pages).toHaveLength(82);
+    expect(crawl.pages.filter((item) => item.status != null)).toHaveLength(82);
+    expect(crawl.pages.filter((item) => item.error)).toHaveLength(1);
+    expect(resolvedAnalyzedPages(crawl).pages).toHaveLength(75);
+  });
+
   it("handles empty and partial sessions without claiming full coverage", () => {
     expect(analyzeSite(session([])).summary.analyzed).toBe(0);
     const result = analyzeSite(
