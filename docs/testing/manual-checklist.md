@@ -260,3 +260,23 @@ Use a fresh, temporary browser profile. Crawl only a site you own or the local f
 | 17 | Small real site you own (optional) | Crawl respects robots.txt and stops at limits; results read as a bounded crawl | | |
 
 Record browser version, OS, extension build commit and any console output next to the result.
+
+## M10 — Site Explorer comparisons (Chrome and Firefox)
+
+Status: Chromium Playwright covers save, a same-crawl comparison with no confirmed changes, a full Chromium restart that still lists the saved crawl, a later title change, formula-safe CSV, JSON, and delete against the local Site Explorer fixture. Firefox runtime is not verified in this environment. Use a temporary profile. Do not raise crawl limits. Version under test remains 0.6.0 until a release is authorized. Rows 9–12 are the regression, including a browser restart on a site large enough to exercise link lists. A page with a normal link list should now be comparable. A page that still says its link list was cut should not show those links as removed.
+
+| # | Check | Expected | Chrome | Firefox |
+| --- | --- | --- | --- | --- |
+| 1 | Save for comparison | After a crawl, the crawl is kept and can be selected later. Reload still lists it. | | |
+| 2 | Five-crawl cap | A sixth save for the same site is refused and older saves remain. | | |
+| 3 | Delete | Delete removes one saved crawl and leaves the latest session and other sites alone. | | |
+| 4 | Compare | Two crawls of the same site show new, resolved, unchanged, and not-comparable counts. | | |
+| 5 | Partial crawl | A page missing from the later crawl is not listed as resolved. | | |
+| 6 | Page changes | A changed title shows the previous and later values and is not called an improvement. | | |
+| 7 | Exports | Comparison CSV has the 12 comparison columns. Comparison JSON has `schemaVersion: 1` and `kind: rankmiso.siteComparison`. The old page CSV and Site Analysis CSV are unchanged. | | |
+| 8 | Storage failure | If the browser rejects the save, the message says so and other saved data remains. | | |
+| 9 | Same crawl | Crawl a site, save it, and compare that save with the crawl still open. New and resolved issues are both 0. Newly observed pages and pages not observed again are both 0. Confirmed metadata and link changes are 0. | | |
+| 10 | Incomplete data | If the save shortened evidence or link lists, those rows stay not comparable. They are not listed as new or resolved. The link section summarizes incomplete pages and can expand the page list. | | |
+| 11 | Refresh and reopen | Repeat the same-crawl comparison after refreshing the report, then after closing and reopening the browser. The result stays the same. | | |
+| 12 | Two different crawls | Change a page, crawl again, and compare with the saved crawl. A fixed finding on a page analyzed both times is resolved. A new finding on a page analyzed both times is new. A page the later crawl did not reach is not comparable. | | |
+| 13 | Selection | After a comparison, change the baseline or later crawl. The previous results disappear until you click **Compare crawls** again. | | |
