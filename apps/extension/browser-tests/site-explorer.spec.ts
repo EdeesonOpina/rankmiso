@@ -48,7 +48,7 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
   expect(product.host_permissions).toBeUndefined();
   manifest.host_permissions = ["http://127.0.0.1/*"];
   await writeFile(join(extensionDir, "manifest.json"), JSON.stringify(manifest));
-  const context = await chromium.launchPersistentContext(userDataDir, {
+  let context = await chromium.launchPersistentContext(userDataDir, {
     channel: "chromium",
     headless: true,
     args: [`--disable-extensions-except=${extensionDir}`, `--load-extension=${extensionDir}`],
@@ -59,7 +59,7 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     const page = await context.newPage();
     await page.goto(`${origin}/`);
     const tab = await tabId(worker, `${origin}/`);
-    const report = await context.newPage();
+    let report = await context.newPage();
     await report.setViewportSize({ width: 1280, height: 800 });
     await report.goto(`chrome-extension://${extensionId}/dashboard.html?tabId=${tab}&section=site`);
     await expect(report.getByRole("heading", { name: "Site Explorer" })).toBeVisible();
@@ -127,6 +127,105 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     const analysisDownload = report.waitForEvent("download");
     await report.getByRole("button", { name: "Export Site Analysis CSV" }).click();
     expect((await analysisDownload).suggestedFilename()).toContain("-analysis.csv");
+
+    await report.getByRole("button", { name: "Save for comparison" }).click();
+    await expect(report.getByText("Crawl saved for comparison on this device.")).toBeVisible();
+    const compareNav = report.getByRole("navigation", { name: "Site Explorer views" });
+    await compareNav.getByRole("button", { name: "Compare" }).click();
+    await report.getByRole("button", { name: "Compare crawls" }).click();
+    await expect(
+      report.getByText(
+        "You're comparing a crawl with itself. No confirmed SEO changes were detected.",
+      ),
+    ).toBeVisible();
+    await expect(report.getByText(/pages with incomplete link data/)).toHaveCount(0);
+    await report.getByLabel("Baseline crawl").selectOption("live");
+    await expect(
+      report.getByText("The crawl selection changed. Compare again to refresh these results."),
+    ).toBeVisible();
+    await expect(
+      report.getByText(
+        "You're comparing a crawl with itself. No confirmed SEO changes were detected.",
+      ),
+    ).toHaveCount(0);
+    await context.close();
+    context = await chromium.launchPersistentContext(userDataDir, {
+      channel: "chromium",
+      headless: true,
+      args: [`--disable-extensions-except=${extensionDir}`, `--load-extension=${extensionDir}`],
+    });
+    const restartedWorker =
+      context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
+    const restartedId = new URL(restartedWorker.url()).host;
+    const restartedPage = await context.newPage();
+    await restartedPage.goto(`${origin}/`);
+    const restartedTab = await tabId(restartedWorker, `${origin}/`);
+    report = await context.newPage();
+    await report.setViewportSize({ width: 1280, height: 800 });
+    await report.goto(
+      `chrome-extension://${restartedId}/dashboard.html?tabId=${restartedTab}&section=site`,
+    );
+    await report
+      .getByRole("navigation", { name: "Site Explorer views" })
+      .getByRole("button", { name: "Compare" })
+      .click();
+    const restartedBaseline = report.getByLabel("Baseline crawl");
+    const restartedLabel = (await restartedBaseline.locator("option").allTextContents()).find(
+      (label) => /\d+ pages/.test(label),
+    );
+    if (!restartedLabel)
+      throw new Error("saved crawl was not restored after the browser restarted");
+    await restartedBaseline.selectOption({ label: restartedLabel });
+    await report.getByRole("button", { name: "Compare crawls" }).click();
+    await expect(
+      report.getByText(
+        "You're comparing a crawl with itself. No confirmed SEO changes were detected.",
+      ),
+    ).toBeVisible();
+    await report.evaluate(() => {
+      const key = "rankmiso.siteCrawlHistory";
+      const parsed = JSON.parse(localStorage.getItem(key) || "") as {
+        records: Array<{ session: { pages: Array<{ url: string; title: string }> } }>;
+      };
+      const page = parsed.records[0]?.session.pages.find((item) => item.url.endsWith("/a.html"));
+      if (!page) throw new Error("saved crawl has no /a.html page");
+      page.title = "=HYPERLINK()";
+      localStorage.setItem(key, JSON.stringify(parsed));
+    });
+    await report.reload();
+    const compareNavAfterReload = report.getByRole("navigation", { name: "Site Explorer views" });
+    await compareNavAfterReload.getByRole("button", { name: "Compare" }).click();
+    const baseline = report.getByLabel("Baseline crawl");
+    const savedLabel = (await baseline.locator("option").allTextContents()).find((label) =>
+      /\d+ pages/.test(label),
+    );
+    if (!savedLabel) throw new Error("saved crawl option was not listed");
+    await baseline.selectOption({ label: savedLabel });
+    await expect(report.getByLabel("Later crawl")).toHaveValue("live");
+    await report.getByRole("button", { name: "Compare crawls" }).click();
+    await expect(report.getByText("=HYPERLINK()")).toBeVisible();
+    await expect(report.getByText("Changed", { exact: true }).first()).toBeVisible();
+    const comparisonCsvDownload = report.waitForEvent("download");
+    await report.getByRole("button", { name: "Export comparison CSV" }).click();
+    const comparisonCsv = await readFile(await (await comparisonCsvDownload).path(), "utf8");
+    expect(comparisonCsv.split("\n")[0]).toBe(
+      '"schemaVersion","recordType","change","reason","page","ruleId","category","severity","field","previous","current","detail"',
+    );
+    expect(comparisonCsv).toContain("rankmiso.siteComparison");
+    expect(comparisonCsv).toContain("'=HYPERLINK()");
+    const comparisonJsonDownload = report.waitForEvent("download");
+    await report.getByRole("button", { name: "Export comparison JSON" }).click();
+    const comparisonJson = JSON.parse(
+      await readFile(await (await comparisonJsonDownload).path(), "utf8"),
+    ) as {
+      schemaVersion: number;
+      kind: string;
+    };
+    expect(comparisonJson).toMatchObject({ schemaVersion: 1, kind: "rankmiso.siteComparison" });
+    await report.getByRole("button", { name: "Delete saved crawl" }).click();
+    await expect(report.getByText("Saved crawl deleted from this device.")).toBeVisible();
+    await expect(baseline.locator("option", { hasText: savedLabel })).toHaveCount(0);
+
     await report.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
     await report.screenshot({ path: "test-results/site-explorer.png" });
 
@@ -242,7 +341,6 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     const priorClosedCount = closedSlowResponses.length;
     await report.close();
     await expect.poll(() => closedSlowResponses.length).toBeGreaterThan(priorClosedCount);
-    await page.close();
   } finally {
     await context.close();
     await rm(userDataDir, { recursive: true, force: true });

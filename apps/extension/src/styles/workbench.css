@@ -54,7 +54,8 @@ button:disabled {
 button:focus-visible,
 a:focus-visible,
 summary:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
@@ -3028,6 +3029,18 @@ textarea.field {
 }
 .site-overview .callout {
   margin: 0 0 16px;
+}
+.site-compare-setup .filter-tools,
+.site-compare .filter-tools {
+  flex-wrap: wrap;
+}
+.site-compare .crawl-metrics + .crawl-metrics {
+  margin-top: 8px;
+}
+@media (max-width: 760px) {
+  .site-compare .finding-list {
+    grid-template-columns: 1fr;
+  }
 }
 .site-insight-grid {
   display: grid;

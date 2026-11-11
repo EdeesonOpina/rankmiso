@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from "vue";
 import { Search } from "lucide-vue-next";
 import { browser } from "wxt/browser";
 import { safeFilename } from "@rankmiso/report-formats";
+import { appConfig } from "../../config/app.config";
 import { supportsSiteCrawling } from "../../config/features.config";
 import { useI18n } from "../../composables/useI18n";
 import { analyzeSnapshot } from "../../services/engine";
@@ -22,10 +23,26 @@ import { extractCrawlPage, snapshotFromHtml } from "../../services/site-extract"
 import {
   analyzeSite,
   filterSiteIssues,
+  resolvedAnalyzedPages,
   siteAnalysisCsv,
   siteAnalysisJson,
   sortSiteIssues,
 } from "../../services/site-analysis";
+import {
+  compareSnapshots,
+  comparisonApplies,
+  comparisonCsv,
+  comparisonJson,
+} from "../../services/site-compare";
+import {
+  clearUnreadableHistory,
+  deleteSnapshot,
+  readHistory,
+  saveSnapshot,
+  type CrawlSnapshot,
+  type HistoryRead,
+} from "../../services/site-history";
+import type { SiteComparison } from "../../services/site-compare";
 import { permissionPatternMatchesUrl, sitePermission } from "../../services/page-access";
 import {
   discoverSitemapUrls,
@@ -38,6 +55,7 @@ import type { LinkObservation } from "../../services/site-analysis";
 import { badgeTone, statusKey } from "./checks";
 import { useWorkbench } from "./context";
 import PageHeading from "./PageHeading.vue";
+import SiteComparePanel from "./SiteComparePanel.vue";
 import WbCard from "./WbCard.vue";
 
 const props = defineProps<{ audit: AuditResult }>();
@@ -55,7 +73,33 @@ const filter = ref("all");
 const sort = ref("url");
 const shown = ref(40);
 const selectedUrl = ref("");
-const activeView = ref<"overview" | "issues" | "pages" | "links">("overview");
+const activeView = ref<"overview" | "issues" | "pages" | "links" | "compare">("overview");
+const history = ref<HistoryRead>({ snapshots: [], unreadable: 0, corruptStore: false });
+const baselineId = ref("");
+const comparisonId = ref("live");
+const comparison = ref<SiteComparison | null>(null);
+const comparedSelection = ref<{ baseline: string; later: string; liveStamp: string } | null>(null);
+const comparing = ref(false);
+const liveStamp = computed(() => {
+  const current = session.value;
+  if (!current) return "";
+  return `${current.id}\u0000${current.startedAt}\u0000${current.finishedAt ?? ""}\u0000${current.pages.length}`;
+});
+const shownComparison = computed(() => {
+  const selected = comparedSelection.value;
+  if (!comparison.value || !selected) return null;
+  return comparisonApplies(
+    selected.baseline,
+    selected.later,
+    selected.liveStamp,
+    baselineId.value,
+    comparisonId.value,
+    liveStamp.value,
+  )
+    ? comparison.value
+    : null;
+});
+const comparisonStale = computed(() => comparison.value != null && shownComparison.value == null);
 const issueCategory = ref("all");
 const issueSeverity = ref<"all" | "error" | "warning" | "info" | "undefined">("all");
 const issueSort = ref<"affected" | "severity" | "name">("affected");
@@ -69,6 +113,9 @@ const origin = computed(() => {
     return "";
   }
 });
+const originSnapshots = computed(() =>
+  history.value.snapshots.filter((snapshot) => snapshot.origin === origin.value),
+);
 const visible = computed(() =>
   sortPages(filterPages(session.value?.pages ?? [], query.value, filter.value), sort.value),
 );
@@ -124,11 +171,16 @@ const crawlShare = computed(() => {
   return `${Math.min(100, (listedCount.value / CRAWL_LIMITS.maxPages) * 100)}%`;
 });
 
+function refreshHistory() {
+  history.value = readHistory();
+}
+
 onMounted(() => {
   if (origin.value) {
     session.value = loadCrawl(origin.value);
     analysisSession.value = session.value;
   }
+  refreshHistory();
 });
 onUnmounted(() => {
   disposed = true;
@@ -325,11 +377,135 @@ function download(kind: "csv" | "analysis-csv" | "json") {
   URL.revokeObjectURL(url);
 }
 
+function snapshotLabel(snapshot: CrawlSnapshot): string {
+  const count = resolvedAnalyzedPages(snapshot.session).pages.length;
+  const when = snapshot.savedAt.replace("T", " ").slice(0, 16);
+  const partial =
+    snapshot.session.partial || snapshot.session.status === "stopped"
+      ? ` · ${t("site.compare.partialShort")}`
+      : "";
+  return `${when} · ${t("site.compare.savedPages", { count })}${partial}`;
+}
+
+function saveForComparison() {
+  if (!session.value || running.value) return;
+  const result = saveSnapshot(
+    session.value,
+    browser.runtime.getManifest().version,
+    appConfig.rulesetVersion,
+  );
+  refreshHistory();
+  if (!result.ok) {
+    message.value =
+      result.reason === "origin-full"
+        ? t("site.compare.save.originFull")
+        : result.reason === "budget"
+          ? t("site.compare.save.budget")
+          : result.reason === "quota"
+            ? t("site.compare.save.quota")
+            : result.reason === "too-large"
+              ? t("site.compare.save.tooLarge")
+              : result.reason === "corrupt"
+                ? t("site.compare.save.corrupt")
+                : t("site.compare.save.invalid");
+    return;
+  }
+  baselineId.value = result.snapshot.id;
+  comparisonId.value = "live";
+  message.value = t("site.compare.saved");
+}
+
+function removeSnapshot(id: string) {
+  if (!deleteSnapshot(id)) {
+    message.value = t("site.compare.deleteFailed");
+    return;
+  }
+  if (baselineId.value === id) baselineId.value = "";
+  if (comparisonId.value === id) comparisonId.value = "live";
+  comparison.value = null;
+  comparedSelection.value = null;
+  refreshHistory();
+  message.value = t("site.compare.deleted");
+}
+
+function clearUnreadable() {
+  clearUnreadableHistory();
+  comparison.value = null;
+  comparedSelection.value = null;
+  refreshHistory();
+  message.value = t("site.compare.unreadableCleared");
+}
+
+function selectedSnapshot(id: string): CrawlSnapshot | null {
+  if (id === "live") {
+    if (!session.value || session.value.origin !== origin.value) return null;
+    return {
+      schemaVersion: 1,
+      id: "live",
+      origin: session.value.origin,
+      savedAt: session.value.finishedAt || session.value.startedAt,
+      rankmisoVersion: browser.runtime.getManifest().version,
+      rulesetVersion: appConfig.rulesetVersion,
+      linksBounded: session.value.pages.some((page) => page.internalLinksTruncated),
+      session: session.value,
+    };
+  }
+  return originSnapshots.value.find((snapshot) => snapshot.id === id) ?? null;
+}
+
+async function runCompare() {
+  const baseline = selectedSnapshot(baselineId.value);
+  const current = selectedSnapshot(comparisonId.value);
+  if (!baseline || !current || baseline.id === current.id) {
+    comparison.value = null;
+    comparedSelection.value = null;
+    message.value = t("site.compare.needTwo");
+    return;
+  }
+  comparing.value = true;
+  comparison.value = null;
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  comparison.value = compareSnapshots(baseline, current);
+  comparedSelection.value = {
+    baseline: baselineId.value,
+    later: comparisonId.value,
+    liveStamp: liveStamp.value,
+  };
+  comparing.value = false;
+  const reason = comparison.value.reason;
+  message.value = comparison.value.comparable
+    ? ""
+    : reason === "origin"
+      ? t("site.compare.blocked.origin")
+      : reason === "schema"
+        ? t("site.compare.blocked.schema")
+        : reason === "ruleset"
+          ? t("site.compare.blocked.ruleset")
+          : t("site.compare.needTwo");
+}
+
+function downloadComparison(kind: "csv" | "json") {
+  if (!shownComparison.value?.comparable) return;
+  const isCsv = kind === "csv";
+  const content = isCsv
+    ? comparisonCsv(shownComparison.value)
+    : comparisonJson(shownComparison.value);
+  const blob = new Blob([content], { type: isCsv ? "text/csv" : "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = safeFilename(`${origin.value}-site-comparison`, isCsv ? "csv" : "json");
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 function crawlState(): string {
   if (permissionPending.value) return t("site.authorizing");
   if (running.value) return t("site.running");
   if (!session.value || session.value.status === "idle") return t("site.idle");
-  if (session.value.status === "complete") return t("site.stateComplete");
+  if (session.value.status === "complete") {
+    return session.value.partial ? t("site.statePartial") : t("site.stateComplete");
+  }
   if (session.value.status === "stopped") return t("site.stateStopped");
   if (session.value.status === "error") return t("site.stateError");
   return t("site.running");
@@ -465,6 +641,14 @@ function limitLabel(limit: CrawlLimitReason): string {
       <button type="button" class="secondary" :disabled="!running" @click="stop">
         {{ t("site.stop") }}
       </button>
+      <button
+        type="button"
+        class="secondary"
+        :disabled="running || !session?.pages.length"
+        @click="saveForComparison"
+      >
+        {{ t("site.compare.save") }}
+      </button>
     </div>
     <div v-else-if="!report" class="actions-row">
       <button type="button" class="primary" @click="openReport('site')">
@@ -478,9 +662,13 @@ function limitLabel(limit: CrawlLimitReason): string {
     {{ t("site.progress", { count: session?.pages.length ?? 0 }) }}
   </p>
 
-  <nav v-if="report && session?.pages.length" class="pill-set" :aria-label="t('site.views')">
+  <nav
+    v-if="report && (session?.pages.length || originSnapshots.length || history.corruptStore)"
+    class="pill-set"
+    :aria-label="t('site.views')"
+  >
     <button
-      v-for="view in ['overview', 'issues', 'pages', 'links'] as const"
+      v-for="view in ['overview', 'issues', 'pages', 'links', 'compare'] as const"
       :key="view"
       type="button"
       class="pill"
@@ -792,6 +980,66 @@ function limitLabel(limit: CrawlLimitReason): string {
       {{ t("site.moreLinks") }} →
     </button>
     <p v-if="siteAnalysis.links.length === 0" class="callout">{{ t("site.noLinks") }}</p>
+  </section>
+
+  <section v-else-if="report && activeView === 'compare'" class="site-compare-setup">
+    <p v-if="history.corruptStore || history.unreadable" class="callout">
+      {{ t("site.compare.unreadable", { count: history.unreadable }) }}
+      <button type="button" class="quiet" @click="clearUnreadable">
+        {{ t("site.compare.clearUnreadable") }}
+      </button>
+    </p>
+    <p v-if="!originSnapshots.length" class="callout">{{ t("site.compare.empty") }}</p>
+    <p v-else-if="originSnapshots.length < 2 && !session?.pages.length" class="callout">
+      {{ t("site.compare.oneCrawl") }}
+    </p>
+    <div class="filter-tools">
+      <label class="select-field">
+        <span>{{ t("site.compare.baseline") }}</span>
+        <select v-model="baselineId">
+          <option value="">{{ t("site.compare.choose") }}</option>
+          <option v-if="session?.pages.length" value="live">
+            {{ t("site.compare.thisCrawl") }}
+          </option>
+          <option v-for="snapshot in originSnapshots" :key="snapshot.id" :value="snapshot.id">
+            {{ snapshotLabel(snapshot) }}
+          </option>
+        </select>
+      </label>
+      <label class="select-field">
+        <span>{{ t("site.compare.current") }}</span>
+        <select v-model="comparisonId">
+          <option v-if="session?.pages.length" value="live">
+            {{ t("site.compare.thisCrawl") }}
+          </option>
+          <option v-for="snapshot in originSnapshots" :key="snapshot.id" :value="snapshot.id">
+            {{ snapshotLabel(snapshot) }}
+          </option>
+        </select>
+      </label>
+      <button type="button" class="primary" :disabled="comparing || running" @click="runCompare">
+        {{ comparing ? t("site.compare.working") : t("site.compare.run") }}
+      </button>
+      <button
+        type="button"
+        class="quiet"
+        :disabled="!baselineId || baselineId === 'live'"
+        @click="removeSnapshot(baselineId)"
+      >
+        {{ t("site.compare.delete") }}
+      </button>
+    </div>
+    <p v-if="comparing" class="hint" role="status">{{ t("site.compare.working") }}</p>
+    <p v-if="comparisonStale" class="callout">{{ t("site.compare.stale") }}</p>
+    <SiteComparePanel v-if="shownComparison?.comparable" :comparison="shownComparison" />
+    <div v-if="shownComparison?.comparable" class="actions-row">
+      <button type="button" class="quiet" @click="downloadComparison('csv')">
+        {{ t("site.compare.exportCsv") }}
+      </button>
+      <button type="button" class="quiet" @click="downloadComparison('json')">
+        {{ t("site.compare.exportJson") }}
+      </button>
+    </div>
   </section>
 
   <div v-if="!report || activeView === 'pages'" class="section-heading">

@@ -30,6 +30,8 @@ export interface CrawlFindingReference {
   id: string;
   status: Exclude<CheckStatus, "PASS">;
   evidence: Evidence[];
+  /** Set when saved evidence was shortened. It is not a change in the finding. */
+  evidenceTruncated?: boolean;
 }
 
 export interface CrawlFindingDefinition {
@@ -47,8 +49,10 @@ export interface CrawlPage {
   contentType: string;
   title: string;
   titleState?: CrawlMetadataState;
+  titleTruncated?: boolean;
   description: string;
   descriptionState?: CrawlMetadataState;
+  descriptionTruncated?: boolean;
   canonical: string;
   canonicalCount?: number;
   robots: string;
@@ -653,57 +657,116 @@ export function sessionJson(session: CrawlSession): string {
   );
 }
 
-export function saveCrawl(session: CrawlSession): boolean {
-  let copy: CrawlSession = {
+const SESSION_BYTE_LIMIT = 350_000;
+
+/** Origin-relative form of an internal URL. Query strings stay. Other URLs stay absolute. */
+export function storedLink(href: string, origin: string): string {
+  if (href.startsWith(`${origin}/`)) return href.slice(origin.length);
+  if (href === origin) return "/";
+  return href;
+}
+
+/** Expands links stored as paths. Absolute links from older snapshots are left as written. */
+export function restoreStoredSession(session: CrawlSession): CrawlSession {
+  const origin = session.origin;
+  return {
     ...session,
     pages: session.pages.map((page) => ({
       ...page,
-      internalLinks: page.internalLinks.slice(0, 50),
-      internalLinkDetails: page.internalLinkDetails?.slice(0, 10).map((link) => ({
-        ...link,
-        anchorText: link.anchorText.slice(0, 80),
-        rel: link.rel.slice(0, 8),
-      })),
-      internalLinksTruncated:
-        page.internalLinksTruncated ||
-        page.internalLinks.length > 50 ||
-        (page.internalLinkDetails?.length ?? 0) > 10,
-      title: page.title.slice(0, 500),
-      description: page.description.slice(0, 2_000),
+      internalLinks: Array.isArray(page.internalLinks)
+        ? page.internalLinks.map((href) => (href.startsWith("/") ? `${origin}${href}` : href))
+        : page.internalLinks,
     })),
   };
-  let json = JSON.stringify(copy);
-  if (json.length > 350_000) {
-    copy = {
-      ...copy,
-      pages: copy.pages.map((page) => ({
-        ...page,
-        internalLinks: page.internalLinks.slice(0, 25),
-        internalLinksTruncated: page.internalLinksTruncated || page.internalLinks.length > 25,
-        internalLinkDetails: [],
-        findings: page.findings?.map((finding) => ({
-          ...finding,
-          evidence: finding.evidence
-            .slice(0, 1)
-            .map((item) => ({ label: item.label.slice(0, 60), value: item.value.slice(0, 100) })),
-        })),
-      })),
-    };
-    json = JSON.stringify(copy);
+}
+
+function shortenEvidence(page: CrawlPage, empty: boolean): CrawlPage {
+  if (!page.findings) return page;
+  return {
+    ...page,
+    findings: page.findings.map((finding) => {
+      if (empty) return { ...finding, evidence: [], evidenceTruncated: true };
+      const shortened =
+        finding.evidenceTruncated ||
+        finding.evidence.length > 1 ||
+        finding.evidence.some((item) => item.label.length > 60 || item.value.length > 100);
+      return {
+        ...finding,
+        evidenceTruncated: shortened,
+        evidence: finding.evidence
+          .slice(0, 1)
+          .map((item) => ({ label: item.label.slice(0, 60), value: item.value.slice(0, 100) })),
+      };
+    }),
+  };
+}
+
+/**
+ * Bounded copy for the latest-session key and comparison history.
+ * Link display details are not part of link identity. They are sampled for the latest
+ * session and omitted from comparison snapshots. A page is truncated only when its
+ * unique URL list was actually cut. Null when the copy still exceeds the byte limit.
+ */
+export function boundSession(
+  session: CrawlSession,
+  purpose: "latest" | "comparison" = "latest",
+): CrawlSession | null {
+  const detailLimit = purpose === "comparison" ? 0 : 10;
+  let pages: CrawlPage[] = session.pages.map((page) => ({
+    ...page,
+    internalLinks: page.internalLinks.map((href) => storedLink(href, session.origin)),
+    internalLinkDetails:
+      detailLimit === 0
+        ? undefined
+        : page.internalLinkDetails?.slice(0, detailLimit).map((link) => ({
+            ...link,
+            anchorText: link.anchorText.slice(0, 80),
+            rel: link.rel.slice(0, 8),
+          })),
+    title: page.title.slice(0, 500),
+    titleTruncated: page.titleTruncated || page.title.length > 500,
+    description: page.description.slice(0, 2_000),
+    descriptionTruncated: page.descriptionTruncated || page.description.length > 2_000,
+  }));
+  const pack = (next: CrawlPage[]) => ({ ...session, pages: next });
+  const fits = (next: CrawlPage[]) => JSON.stringify(pack(next)).length <= SESSION_BYTE_LIMIT;
+  if (!fits(pages) && detailLimit > 0) {
+    pages = pages.map((page) => ({ ...page, internalLinkDetails: undefined }));
   }
-  if (json.length > 350_000) {
-    copy = {
-      ...copy,
-      pages: copy.pages.map((page) => ({
-        ...page,
-        findings: page.findings?.map((finding) => ({ ...finding, evidence: [] })),
-      })),
-    };
-    json = JSON.stringify(copy);
+  if (!fits(pages)) pages = pages.map((page) => shortenEvidence(page, false));
+  if (!fits(pages)) pages = pages.map((page) => shortenEvidence(page, true));
+  if (!fits(pages)) {
+    const longest = pages.reduce((max, page) => Math.max(max, page.internalLinks.length), 0);
+    let low = 0;
+    let high = longest;
+    let best: CrawlPage[] | null = null;
+    while (low <= high) {
+      const cap = Math.floor((low + high) / 2);
+      const capped = pages.map((page) =>
+        page.internalLinks.length <= cap
+          ? page
+          : {
+              ...page,
+              internalLinks: page.internalLinks.slice(0, cap),
+              internalLinksTruncated: true,
+            },
+      );
+      if (fits(capped)) {
+        best = capped;
+        low = cap + 1;
+      } else high = cap - 1;
+    }
+    if (!best) return null;
+    pages = best;
   }
-  if (json.length > 350_000) return false;
+  return pack(pages);
+}
+
+export function saveCrawl(session: CrawlSession): boolean {
+  const copy = boundSession(session);
+  if (!copy) return false;
   try {
-    localStorage.setItem(appConfig.siteCrawlKey, json);
+    localStorage.setItem(appConfig.siteCrawlKey, JSON.stringify(copy));
     return true;
   } catch {
     return false;
@@ -714,7 +777,7 @@ export function loadCrawl(origin: string): CrawlSession | null {
   try {
     const parsed = JSON.parse(localStorage.getItem(appConfig.siteCrawlKey) || "") as CrawlSession;
     if (!parsed || parsed.origin !== origin || !Array.isArray(parsed.pages)) return null;
-    return parsed;
+    return restoreStoredSession(parsed);
   } catch {
     return null;
   }
