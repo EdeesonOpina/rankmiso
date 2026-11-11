@@ -63,6 +63,17 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     await report.setViewportSize({ width: 1280, height: 800 });
     await report.goto(`chrome-extension://${extensionId}/dashboard.html?tabId=${tab}&section=site`);
     await expect(report.getByRole("heading", { name: "Site Explorer" })).toBeVisible();
+    const footer = report.locator("footer");
+    await expect(footer.getByRole("button", { name: "Open sidebar" })).toHaveCount(0);
+    await expect(footer.getByRole("button", { name: "Refresh analysis" })).toBeVisible();
+    await expect(footer.getByText("Local analysis · No account · No telemetry")).toBeVisible();
+    await report.setViewportSize({ width: 390, height: 800 });
+    await expect(footer.getByRole("button", { name: "Refresh analysis" })).toBeVisible();
+    await expect(footer.getByRole("button", { name: "Open sidebar" })).toHaveCount(0);
+    await report.setViewportSize({ width: 1280, height: 800 });
+    await report.getByRole("button", { name: "Use dark theme" }).click();
+    await expect(footer.getByRole("button", { name: "Refresh analysis" })).toBeVisible();
+    await report.getByRole("button", { name: "Use light theme" }).click();
     await report.getByRole("button", { name: "Start crawl" }).click();
     const siteViews = report.getByRole("navigation", { name: "Site Explorer views" });
     await siteViews.getByRole("button", { name: "Overview" }).focus();

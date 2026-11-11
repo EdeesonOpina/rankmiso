@@ -1030,7 +1030,7 @@ function limitLabel(limit: CrawlLimitReason): string {
       </button>
     </div>
     <p v-if="comparing" class="hint" role="status">{{ t("site.compare.working") }}</p>
-    <p v-if="comparisonStale" class="callout">{{ t("site.compare.stale") }}</p>
+    <p v-if="comparisonStale" class="callout" role="status">{{ t("site.compare.stale") }}</p>
     <SiteComparePanel v-if="shownComparison?.comparable" :comparison="shownComparison" />
     <div v-if="shownComparison?.comparable" class="actions-row">
       <button type="button" class="quiet" @click="downloadComparison('csv')">

@@ -27,7 +27,6 @@ import {
   Link,
   Moon,
   Network,
-  PanelLeft,
   PanelsTopLeft,
   PersonStanding,
   RotateCw,
@@ -45,7 +44,7 @@ import { useI18n } from "../../composables/useI18n";
 import { useTheme } from "../../composables/useTheme";
 import { useAudit } from "../../composables/useAudit";
 import { clearHighlights, highlightElements } from "../../services/inspect";
-import { openReportFromSidebar, openSidebar, sidebarAvailable } from "../../services/sidebar";
+import { openReportFromSidebar } from "../../services/sidebar";
 import type { MessageKey } from "../../locales/en";
 import { hostOf, workbenchKey, type IssueFocus, type Surface } from "./context";
 import OverviewView from "./OverviewView.vue";
@@ -164,7 +163,6 @@ const toastDescription = ref("");
 const toastTone = ref<"default" | "success">("default");
 const toastShown = ref(false);
 let toastTimer = 0;
-const canOpenSidebar = sidebarAvailable();
 const tabId = computed(() => tab.value?.id ?? props.tabId);
 const ready = computed(() => status.value === "ready");
 const showSiteAccess = computed(() => props.surface === "sidebar" && siteAccessState.value);
@@ -233,10 +231,6 @@ async function openReport(target = section.value) {
   } catch {
     toast(t("action.openReportFailed"));
   }
-}
-
-async function openSidePanel() {
-  if (tabId.value) await openSidebar(tabId.value);
 }
 
 function toggleTheme() {
@@ -513,9 +507,6 @@ provide(workbenchKey, {
         </template>
         <template v-else>
           <span class="footer-note">{{ t("wb.footerNote") }}</span>
-          <button v-if="canOpenSidebar" type="button" class="secondary" @click="openSidePanel">
-            <PanelLeft class="ic" aria-hidden="true" /> {{ t("action.openSidebar") }}
-          </button>
           <button
             type="button"
             class="primary"
