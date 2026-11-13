@@ -32,6 +32,7 @@ import {
   RotateCw,
   Settings,
   Share2,
+  ShieldCheck,
   SlidersHorizontal,
   Sun,
   TextAlignStart,
@@ -156,6 +157,8 @@ const currentLabel = computed(
   () => destinations.value.find((item) => item.id === section.value)?.label ?? "",
 );
 const issueFocus = ref<IssueFocus | null>(null);
+const crumb = ref("");
+const brandName = brandConfig.identity.name.match(/^(.*?)(Miso)?$/) ?? [];
 const nav = ref<HTMLElement | null>(null);
 const workspace = ref<HTMLElement | null>(null);
 const toastText = ref("");
@@ -169,6 +172,7 @@ const showSiteAccess = computed(() => props.surface === "sidebar" && siteAccessS
 const chooseAutomatic = computed(() => inspectionMode.value !== "individual");
 
 watch(section, async (value) => {
+  crumb.value = "";
   workspace.value?.scrollTo({ top: 0 });
   const url = new URL(window.location.href);
   if (url.searchParams.get("section") !== value) {
@@ -271,6 +275,7 @@ provide(workbenchKey, {
   inspectionMode,
   automaticAccessGranted,
   issueFocus,
+  crumb,
   go,
   toast,
   copy,
@@ -294,31 +299,48 @@ provide(workbenchKey, {
         <span><img :src="brandConfig.assets.icon" alt="" /></span>
       </div>
       <div v-else class="brand-wide">
-        <img :src="brandConfig.assets.icon" alt="" />
+        <span class="brand-symbol"><img :src="brandConfig.assets.icon" alt="" /></span>
         <div>
-          <strong>{{ brandConfig.identity.name }}</strong>
+          <strong
+            >{{ brandName[1] }}<em v-if="brandName[2]">{{ brandName[2] }}</em></strong
+          >
           <small>{{ brandConfig.identity.tagline }}</small>
         </div>
       </div>
       <nav ref="nav" class="nav-links" :aria-label="t('wb.tools')" @keydown="onNavKeys">
-        <button
-          v-for="item in destinations"
-          :key="item.id"
-          type="button"
-          class="nav-button"
-          :data-nav="item.id"
-          :title="item.accessibleLabel"
-          :aria-label="item.accessibleLabel"
-          :aria-current="section === item.id ? 'page' : undefined"
-          :tabindex="section === item.id ? 0 : -1"
-          @click="go(item.id)"
-        >
-          <component :is="icons[item.id]" class="ic" aria-hidden="true" />
-          <span>{{ item.short }}</span>
-        </button>
+        <template v-for="item in destinations" :key="item.id">
+          <p v-if="surface !== 'sidebar' && item.id === 'overview'" class="side-label">
+            {{ t("wb.workspace") }}
+          </p>
+          <p v-if="surface !== 'sidebar' && item.id === 'site'" class="side-label sep">
+            {{ t("wb.siteGroup") }}
+          </p>
+          <button
+            type="button"
+            class="nav-button"
+            :data-nav="item.id"
+            :title="item.accessibleLabel"
+            :aria-label="item.accessibleLabel"
+            :aria-current="section === item.id ? 'page' : undefined"
+            :tabindex="section === item.id ? 0 : -1"
+            @click="go(item.id)"
+          >
+            <component :is="icons[item.id]" class="ic" aria-hidden="true" />
+            <span>{{ surface === "sidebar" ? item.short : item.label }}</span>
+            <span v-if="surface !== 'sidebar' && item.id === 'site'" class="nav-badge">{{
+              t("wb.siteBadge")
+            }}</span>
+          </button>
+        </template>
       </nav>
       <div class="nav-bottom">
-        <p v-if="surface !== 'sidebar'" class="nav-privacy">{{ t("wb.footerNote") }}</p>
+        <div v-if="surface !== 'sidebar'" class="privacy-tile">
+          <ShieldCheck class="ic" aria-hidden="true" />
+          <div>
+            <strong>{{ t("wb.privacyTitle") }}</strong>
+            <p>{{ t("wb.privacyText") }}</p>
+          </div>
+        </div>
         <button
           type="button"
           :aria-label="t('wb.preferences')"
@@ -333,9 +355,9 @@ provide(workbenchKey, {
 
     <div class="main-pane">
       <header class="main-topbar">
-        <div style="min-width: 0">
+        <div v-if="surface === 'sidebar'" style="min-width: 0">
           <div class="overline">
-            {{ surface === "sidebar" ? t("wb.sidebarEyebrow") : t("wb.reportEyebrow") }} ·
+            {{ t("wb.sidebarEyebrow") }} ·
             <span>{{ currentLabel }}</span>
           </div>
           <div class="top-title" :title="audit?.page.title || undefined">
@@ -349,9 +371,28 @@ provide(workbenchKey, {
             <template v-else>{{ t("wb.noAudit") }}</template>
           </div>
         </div>
+        <div v-else class="report-crumbs" style="min-width: 0">
+          <div class="sx-crumbs">
+            <span>{{ t("wb.workbench") }}</span>
+            <span class="slash" aria-hidden="true">/</span>
+            <b>{{ currentLabel }}</b>
+            <template v-if="crumb">
+              <span class="slash" aria-hidden="true">/</span>
+              <b>{{ crumb }}</b>
+            </template>
+          </div>
+          <div class="topbar-sub" :title="audit?.page.title || audit?.page.url">
+            <template v-if="audit">
+              {{ audit.page.title || t("metadata.untitled") }} · {{ hostOf(audit.page.url) }} ·
+              {{ t("wb.localAudit") }}
+            </template>
+            <template v-else>{{ t("wb.noAudit") }}</template>
+          </div>
+        </div>
         <div class="top-actions">
-          <span class="top-pill" role="status">
-            <Check v-if="ready" class="ic" aria-hidden="true" />
+          <span class="top-pill" :class="{ ok: ready }" role="status">
+            <ShieldCheck v-if="ready && surface !== 'sidebar'" class="ic" aria-hidden="true" />
+            <Check v-else-if="ready" class="ic" aria-hidden="true" />
             {{
               status === "loading"
                 ? t("state.loading")
@@ -510,7 +551,7 @@ provide(workbenchKey, {
           <span class="footer-note">{{ t("wb.footerNote") }}</span>
           <button
             type="button"
-            class="primary"
+            class="secondary"
             :disabled="status === 'loading'"
             :aria-busy="status === 'loading'"
             @click="refresh()"
