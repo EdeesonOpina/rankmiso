@@ -1,10 +1,17 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { chromium } from "@playwright/test";
 import sharp from "sharp";
 import { capturesDir, foxPath, marketingRoot, outputDir } from "./paths.ts";
-import { canvas, chromePromo, sets, type FrameSize } from "./platforms.ts";
-import { sampleNote, shots } from "./shots.ts";
+import {
+  canvas,
+  chromePromo,
+  seoShare,
+  sets,
+  type FrameSize,
+  youtubeThumbnail,
+} from "./platforms.ts";
+import { sampleNote, shots, shotsFor } from "./shots.ts";
 
 const promoThemes = [
   { name: "dark", suffix: "", bg: "#14161c" },
@@ -17,8 +24,8 @@ export async function compose(): Promise<void> {
   const promoTemplate = await readFile(join(marketingRoot, "templates/promo.html"), "utf8");
   const fox = dataUri(await readFile(foxPath), "image/png");
   const captures = new Map<string, string>();
-  for (const shot of shots) {
-    captures.set(shot.capture, dataUri(await readFile(join(capturesDir, `${shot.capture}.png`)), "image/png"));
+  for (const name of [...shots.map((shot) => shot.capture), "web-page"]) {
+    captures.set(name, dataUri(await readFile(join(capturesDir, `${name}.png`)), "image/png"));
   }
   const overview = captures.get("popup-overview");
   if (!overview) throw new Error("Missing popup overview capture.");
@@ -28,9 +35,15 @@ export async function compose(): Promise<void> {
     for (const set of sets) {
       const dir = join(outputDir, set.dir);
       await mkdir(dir, { recursive: true });
-      for (const shot of shots) {
+      for (const shot of shotsFor(set.id)) {
         const product = captures.get(shot.capture);
         if (!product) throw new Error(`Missing capture ${shot.capture}`);
+        // The sidebar shot docks the real sidebar beside the sample page in a plain browser window.
+        const stage =
+          shot.layout === "sidebar"
+            ? `<div class="browser"><div class="bar"><i></i><i></i><i></i><span>127.0.0.1/page.html</span></div>` +
+              `<div class="panes"><img src="${captures.get("web-page")}" alt="The sample page" /><img src="${product}" alt="RankMiso sidebar" /></div></div>`
+            : `<img src="${product}" alt="RankMiso showing the sample page" />`;
         const html = shotTemplate
           .replace("/* __CSS__ */", css)
           .replace("__LAYOUT__", shot.layout)
@@ -38,7 +51,7 @@ export async function compose(): Promise<void> {
           .replace("__HEADLINE__", escapeHtml(shot.headline))
           .replace("__SUB__", escapeHtml(shot.sub))
           .replace("__NOTE__", escapeHtml(sampleNote))
-          .replace("__PRODUCT__", product);
+          .replace("__STAGE__", stage);
         await render(browser, html, set.size, join(dir, shot.file), canvas);
       }
       await writeFile(
@@ -51,7 +64,10 @@ export async function compose(): Promise<void> {
     const report = dataUri(await readFile(join(capturesDir, "report-overview.png")), "image/png");
     const fonts = join(marketingRoot, "assets/fonts");
     const fontInter = dataUri(await readFile(join(fonts, "Inter-latin-var.woff2")), "font/woff2");
-    const fontSerif = dataUri(await readFile(join(fonts, "InstrumentSerif-Italic-latin.woff2")), "font/woff2");
+    const fontSerif = dataUri(
+      await readFile(join(fonts, "InstrumentSerif-Italic-latin.woff2")),
+      "font/woff2",
+    );
     const promo = (theme: string, body: string) =>
       promoTemplate
         .replace("__THEME__", theme)
@@ -69,14 +85,45 @@ export async function compose(): Promise<void> {
       `<div class="scene"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="${report}" alt="" /></div>` +
       `<div class="pop"><img src="${overview}" alt="RankMiso popup" /></div><span class="dot"></span></div></main>`;
     // Dark is the default file name; the light pair gets a -light suffix.
+    const file = (name: string, suffix: string) =>
+      join(chromeDir, suffix ? name.replace(".png", `${suffix}.png`) : name);
     for (const theme of promoThemes) {
-      const file = (name: string) => join(chromeDir, theme.suffix ? name.replace(".png", `${theme.suffix}.png`) : name);
-      await render(browser, promo(theme.name, smallBody), chromePromo.small, file(chromePromo.small.file), theme.bg);
-      await render(browser, promo(theme.name, marqueeBody), chromePromo.marquee, file(chromePromo.marquee.file), theme.bg);
+      await render(
+        browser,
+        promo(theme.name, smallBody),
+        chromePromo.small,
+        file(chromePromo.small.file, theme.suffix),
+        theme.bg,
+      );
+      await render(
+        browser,
+        promo(theme.name, marqueeBody),
+        chromePromo.marquee,
+        file(chromePromo.marquee.file, theme.suffix),
+        theme.bg,
+      );
+    }
+
+    // SEO share image: the marquee laid out on a 1.91:1 canvas, rendered at 1400×735 and scaled to 1200×630.
+    const seoDir = join(outputDir, seoShare.dir);
+    await mkdir(seoDir, { recursive: true });
+    const shareBody = marqueeBody.replace('<main class="marquee">', '<main class="marquee share">');
+    const shareCanvas = {
+      width: 1400,
+      height: Math.round((1400 * seoShare.height) / seoShare.width),
+    };
+    for (const theme of promoThemes) {
+      const png = join(seoDir, `share-${theme.name}.png`);
+      await render(browser, promo(theme.name, shareBody), shareCanvas, png, theme.bg);
+      await sharp(png)
+        .resize(seoShare.width, seoShare.height)
+        .jpeg({ quality: 86, progressive: true, mozjpeg: true })
+        .toFile(join(seoDir, `share-${theme.name}.jpg`));
+      await rm(png);
     }
 
     // YouTube thumbnail: 1280×720, under 2 MB. Keep text clear of the bottom-right duration badge.
-    const youtubeDir = join(outputDir, "youtube");
+    const youtubeDir = join(outputDir, youtubeThumbnail.dir);
     await mkdir(youtubeDir, { recursive: true });
     const thumbBody =
       `<main class="thumb"><div class="bg-dots"></div><div class="bg-glow a"></div>` +
@@ -85,8 +132,16 @@ export async function compose(): Promise<void> {
       `<div class="name">RankMiso</div></section>` +
       `<div class="scene"><div class="pop"><img src="${overview}" alt="" /></div><img class="fox" src="${fox}" alt="" /><span class="dot"></span></div></main>`;
     const thumbPng = join(youtubeDir, "thumbnail.png");
-    await render(browser, promo("dark", thumbBody), { width: 1280, height: 720 }, thumbPng, promoThemes[0].bg);
-    await sharp(thumbPng).jpeg({ quality: 90, mozjpeg: true }).toFile(join(youtubeDir, "thumbnail.jpg"));
+    await render(
+      browser,
+      promo("dark", thumbBody),
+      { width: youtubeThumbnail.width, height: youtubeThumbnail.height },
+      thumbPng,
+      promoThemes[0].bg,
+    );
+    await sharp(thumbPng)
+      .jpeg({ quality: 90, mozjpeg: true })
+      .toFile(join(youtubeDir, "thumbnail.jpg"));
   } finally {
     await browser.close();
   }

@@ -3,8 +3,8 @@ import { readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import sharp from "sharp";
 import { outputDir } from "./paths.ts";
-import { chromePromo, iosTargets, sets } from "./platforms.ts";
-import { shots } from "./shots.ts";
+import { chromePromo, iosTargets, seoShare, sets, youtubeThumbnail } from "./platforms.ts";
+import { shotsFor } from "./shots.ts";
 
 interface Issue {
   file: string;
@@ -18,7 +18,7 @@ export async function validate(): Promise<number> {
   for (const set of sets) {
     const dir = join(outputDir, set.dir);
     const fingerprints: Array<{ file: string; pixels: string }> = [];
-    for (const shot of shots) {
+    for (const shot of shotsFor(set.id)) {
       const file = join(dir, shot.file);
       const result = await inspect(file, set.size.width, set.size.height);
       if (result.issue) issues.push({ file, problem: result.issue });
@@ -38,10 +38,34 @@ export async function validate(): Promise<number> {
 
   const chromeDir = join(outputDir, "chrome");
   for (const promo of [chromePromo.small, chromePromo.marquee]) {
-    const file = join(chromeDir, promo.file);
-    const result = await inspect(file, promo.width, promo.height);
+    for (const suffix of ["", "-light"]) {
+      const name = promo.file.replace(".png", `${suffix}.png`);
+      const file = join(chromeDir, name);
+      const result = await inspect(file, promo.width, promo.height);
+      if (result.issue) issues.push({ file, problem: result.issue });
+      report.push({ file: join("chrome", name), ...result.meta, submissionReady: true });
+    }
+  }
+
+  for (const name of ["share-light.jpg", "share-dark.jpg"]) {
+    const file = join(outputDir, seoShare.dir, name);
+    const result = await inspect(file, seoShare.width, seoShare.height, "jpeg");
     if (result.issue) issues.push({ file, problem: result.issue });
-    report.push({ file: join("chrome", promo.file), ...result.meta, submissionReady: true });
+    report.push({ file: join(seoShare.dir, name), ...result.meta });
+  }
+
+  for (const [name, format] of [
+    ["thumbnail.png", "png"],
+    ["thumbnail.jpg", "jpeg"],
+  ] as const) {
+    const file = join(outputDir, youtubeThumbnail.dir, name);
+    const result = await inspect(file, youtubeThumbnail.width, youtubeThumbnail.height, format);
+    if (result.issue) issues.push({ file, problem: result.issue });
+    const bytes = result.meta.bytes;
+    if (typeof bytes === "number" && bytes > youtubeThumbnail.maxBytes) {
+      issues.push({ file, problem: "file is larger than 2 MB" });
+    }
+    report.push({ file: join(youtubeThumbnail.dir, name), ...result.meta });
   }
 
   const preview = join(outputDir, "preview.html");
@@ -51,18 +75,23 @@ export async function validate(): Promise<number> {
     issues.push({ file: preview, problem: "Preview gallery is missing." });
   }
 
-  await writeFile(join(outputDir, "validation.json"), JSON.stringify({ iosTargets, report, issues }, null, 2));
+  await writeFile(
+    join(outputDir, "validation.json"),
+    JSON.stringify({ iosTargets, report, issues }, null, 2),
+  );
 
   if (issues.length) {
     for (const issue of issues) console.error(`${issue.file}: ${issue.problem}`);
     console.error(`${issues.length} marketing file(s) failed validation.`);
     return 1;
   }
-  console.log(`Validated ${report.length} images. iOS and iPadOS exports were skipped: ${iosTargets.reason}`);
+  console.log(
+    `Validated ${report.length} images. iOS and iPadOS exports were skipped: ${iosTargets.reason}`,
+  );
   return 0;
 }
 
-async function inspect(file: string, width: number, height: number) {
+async function inspect(file: string, width: number, height: number, format = "png") {
   const meta: Record<string, unknown> = {};
   try {
     const info = await stat(file);
@@ -75,7 +104,7 @@ async function inspect(file: string, width: number, height: number) {
     meta.hasAlpha = decoded.hasAlpha === true;
     meta.bytes = info.size;
     const problems: string[] = [];
-    if (decoded.format !== "png") problems.push(`format is ${decoded.format}, expected png`);
+    if (decoded.format !== format) problems.push(`format is ${decoded.format}, expected ${format}`);
     if (decoded.width !== width || decoded.height !== height) {
       problems.push(`size is ${decoded.width}×${decoded.height}, expected ${width}×${height}`);
     }
@@ -112,7 +141,7 @@ function duplicates(items: Array<{ file: string; pixels: string }>) {
 export async function writePreview(): Promise<void> {
   const cards: string[] = [];
   for (const set of sets) {
-    const files = shots.map((shot) => shot.file);
+    const files = shotsFor(set.id).map((shot) => shot.file);
     cards.push(section(set.dir, files, `${set.size.width}×${set.size.height}`, set.note));
   }
   cards.push(
@@ -121,6 +150,22 @@ export async function writePreview(): Promise<void> {
       [chromePromo.small.file, chromePromo.marquee.file],
       "promotional",
       `Small tile ${chromePromo.small.width}×${chromePromo.small.height}. Marquee ${chromePromo.marquee.width}×${chromePromo.marquee.height}.`,
+    ),
+  );
+  cards.push(
+    section(
+      seoShare.dir,
+      ["share-light.jpg", "share-dark.jpg"],
+      `${seoShare.width}×${seoShare.height}`,
+      "Open Graph and X share image for web pages, built from the marquee.",
+    ),
+  );
+  cards.push(
+    section(
+      youtubeThumbnail.dir,
+      ["thumbnail.png", "thumbnail.jpg"],
+      `${youtubeThumbnail.width}×${youtubeThumbnail.height}`,
+      "YouTube thumbnail exports. Each format must stay under 2 MB.",
     ),
   );
   const html = `<!doctype html>
