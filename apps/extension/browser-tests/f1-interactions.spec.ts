@@ -42,7 +42,7 @@ test("page highlights are reversible and copy actions write the displayed values
     const report = await context.newPage();
     report.setDefaultTimeout(5_000);
     await report.goto(`chrome-extension://${extensionId}/dashboard.html?tabId=${pageId}`);
-    await expect(report.locator(".top-title")).toContainText("F1 Interaction Fixture");
+    await expect(report.locator(".topbar-sub")).toContainText("F1 Interaction Fixture");
 
     const originalStyle = await page.locator("h1[data-page-owner]").getAttribute("style");
     for (let cycle = 0; cycle < 2; cycle += 1) {

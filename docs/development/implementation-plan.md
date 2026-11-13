@@ -203,3 +203,7 @@ Implementation is frozen for candidate preparation. Chrome/Firefox production pa
 ## R0.4.0-G1 (2026-10-30)
 
 Targeted fixes only: shared robots timeout/redirect limits, total crawl deadline, no retry after cancellation, and stronger literal IPv6/private-address classification. Rebuild artifacts from the corrected isolated source, rerun source reproduction and checksums. Native browser security scenarios and DNS connection enforcement remain unresolved; do not submit or begin MCP.
+
+## R7 — v0.7.0 final stabilization (2026-11-13)
+
+Site Explorer 3.0 remains on the approved workbench design. Focused correctness and browser-test selector updates are verified; no feature milestone or M11 work was started. Fresh Rust, extension, marketing, WASM, Chrome/Firefox build, and Chromium Playwright checks pass. See the current `docs/development/handoff.md` for exact counts and the root-filesystem/logging observation. Firefox persistent-install/restart and native permission lifecycle are manual acceptance gates; release remains owner-controlled and version stays 0.6.0.

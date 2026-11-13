@@ -57,7 +57,7 @@ describe("full-page report footer", () => {
     const footer = report.get("footer");
     expect(footer.text()).toContain("Local analysis · No account · No telemetry");
     expect(footer.text()).not.toContain("Open sidebar");
-    expect(report.find(".footer .secondary").exists()).toBe(false);
+    expect(footer.findAll("button")).toHaveLength(1);
     refresh.mockClear();
     await footer.get("button").trigger("click");
     expect(footer.get("button").text()).toContain("Refresh analysis");

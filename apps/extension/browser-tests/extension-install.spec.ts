@@ -64,7 +64,7 @@ test("built extension loads and renders its popup", async () => {
     await expect(report.getByRole("button", { name: "Metadata", exact: true })).toBeVisible();
     await expect(report.getByRole("button", { name: "Schema", exact: true })).toBeVisible();
     await expect(report.getByRole("button", { name: "History" })).toBeVisible();
-    await expect(report.getByRole("button", { name: "Site", exact: true })).toBeVisible();
+    await expect(report.getByRole("button", { name: "Site Explorer", exact: true })).toBeVisible();
     for (const [width, height, name] of [
       [360, 640, "dashboard-360"],
       [768, 1024, "dashboard-768"],
