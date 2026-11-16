@@ -703,7 +703,7 @@ describe("crawl comparison", () => {
       "You're comparing a crawl with itself. No confirmed SEO changes were detected.",
     );
     expect(wrapper.text()).toContain("Crawl coverage");
-    expect(wrapper.text()).toContain("Issue changes");
+    expect(wrapper.text()).toContain("SEO issue movement");
     expect(wrapper.text()).toContain("Comparison reliability");
     expect(wrapper.text()).toContain("View 1 pages with incomplete link data");
     const details = wrapper.get("details");

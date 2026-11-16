@@ -72,10 +72,22 @@ afterEach(() => {
 describe("comparison history", () => {
   it("saves an explicit snapshot and leaves the latest crawl session in place", () => {
     saveCrawl(session());
-    const saved = saveSnapshot(session(), "0.6.0", "1.0.0", "2026-11-09T00:00:00.000Z");
+    const nonHtml = {
+      ...page(`${origin}/document.pdf`),
+      contentType: "application/pdf",
+      nonHtml: true,
+      analyzed: false,
+    };
+    const saved = saveSnapshot(
+      session([page(`${origin}/`), nonHtml]),
+      "0.6.0",
+      "1.0.0",
+      "2026-11-09T00:00:00.000Z",
+    );
     expect(saved.ok).toBe(true);
     expect(loadCrawl(origin)?.origin).toBe(origin);
     expect(snapshotsForOrigin(origin)).toHaveLength(1);
+    expect(snapshotsForOrigin(origin)[0]?.session.pages[1]?.nonHtml).toBe(true);
     expect(JSON.stringify(snapshotsForOrigin(origin)[0])).not.toContain("<html");
   });
 

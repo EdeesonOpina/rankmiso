@@ -184,7 +184,7 @@ test("scored fixtures render in the popup and the report", async () => {
       ["Performance", "performance"],
       ["International", "international"],
       ["Accessibility", "accessibility"],
-      ["Site", "site"],
+      ["Site Explorer", "site"],
       ["Sitemaps", "sitemaps"],
       ["History", "history"],
       ["Export", "export"],
@@ -217,7 +217,9 @@ test("scored fixtures render in the popup and the report", async () => {
     await popup.getByRole("button", { name: "Overview", exact: true }).click();
     await popup.screenshot({ path: `${review}/overview.png` });
 
-    const darkDir = resolve("../../docs/design/reviews/ux9r2-fidelity/production-dark");
+    const darkDir = process.env.RANKMISO_REVIEW_SCREENSHOT_DIR
+      ? join(resolve(process.env.RANKMISO_REVIEW_SCREENSHOT_DIR), "production-dark")
+      : resolve("../../docs/design/reviews/ux9r2-fidelity/production-dark");
     await popup.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
     const darkShots: Array<[string, string]> = [
       ["Overview", "overview"],
@@ -233,7 +235,7 @@ test("scored fixtures render in the popup and the report", async () => {
       ["Performance", "performance"],
       ["International", "international"],
       ["Accessibility", "accessibility"],
-      ["Site", "site"],
+      ["Site Explorer", "site"],
       ["Sitemaps", "sitemaps"],
       ["History", "history"],
       ["Export", "export"],
@@ -462,7 +464,7 @@ test("scored fixtures render in the popup and the report", async () => {
     await sparseReport.goto(
       `chrome-extension://${extensionId}/dashboard.html?tabId=${sparseId}&section=overview`,
     );
-    await expect(sparseReport.locator(".top-title")).toContainText("Sparse page");
+    await expect(sparseReport.locator(".topbar-sub")).toContainText("Sparse page");
     const performance = sparseReport.locator(".category-item").filter({ hasText: "Performance" });
     await expect(performance).toContainText("Not measured");
     await expect(performance).not.toContainText("100");

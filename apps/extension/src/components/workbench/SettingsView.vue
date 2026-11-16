@@ -172,4 +172,12 @@ function revokeAccess() {
       <strong>{{ t("settings.ecosystem", { ecosystem: brandConfig.identity.ecosystem }) }}</strong>
     </div>
   </div>
+  <a
+    v-if="brandConfig.links.support"
+    class="support-link"
+    :href="brandConfig.links.support"
+    target="_blank"
+    rel="noopener noreferrer"
+    >{{ t("settings.supportDevelopment") }}</a
+  >
 </template>

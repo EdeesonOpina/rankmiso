@@ -57,6 +57,7 @@ export interface CrawlPage {
   canonicalCount?: number;
   robots: string;
   h1Count: number;
+  nonHtml?: boolean;
   analyzed?: boolean;
   internalLinks: string[];
   internalLinkDetails?: CrawlInternalLink[];
@@ -427,8 +428,8 @@ export async function runSiteCrawl(options: {
         page.redirectHops = result.hops;
         page.error = result.error;
         if (result.truncated) page.issues.push("The response was cut off before analysis.");
-        if (!result.html && result.status && result.status < 400 && !result.error) {
-          page.issues.push("This response is not HTML.");
+        if (!result.html && result.status != null && result.status < 400 && !result.error) {
+          page.nonHtml = true;
         }
         if (result.html && !result.error) {
           try {
@@ -627,7 +628,7 @@ export function sessionCsv(session: CrawlSession): string {
       page.robots,
       page.indexability,
       page.issues.join("; "),
-      page.skipped,
+      page.nonHtml ? "Non-HTML resource; HTML-specific checks were not run." : page.skipped,
       page.error,
       page.internalLinks.length,
     ]),

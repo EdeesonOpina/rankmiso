@@ -112,6 +112,7 @@ function copyPage(value: unknown): CrawlPage | null {
     robots: shortText(page.robots, 500) || "",
     h1Count: typeof page.h1Count === "number" ? page.h1Count : 0,
     analyzed: typeof page.analyzed === "boolean" ? page.analyzed : undefined,
+    nonHtml: page.nonHtml === true ? true : undefined,
     internalLinks: Array.isArray(page.internalLinks)
       ? page.internalLinks.flatMap((item) => {
           const link = shortText(item, 2_000);

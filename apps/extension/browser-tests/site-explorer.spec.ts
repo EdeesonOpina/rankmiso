@@ -1,13 +1,17 @@
 import { createServer, type ServerResponse } from "node:http";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test, chromium, type Worker } from "@playwright/test";
 
-const productExtension = resolve(".output/chrome-mv3");
+const productExtension = resolve(process.env.RANKMISO_CHROME_BUILD_DIR ?? ".output/chrome-mv3");
 
-test("site explorer crawls one host, skips robots, and stops", async () => {
+test("site explorer crawls one host, skips robots, and stops", async ({
+  browserName,
+}, testInfo) => {
+  expect(browserName).toBe("chromium");
   test.setTimeout(120_000);
+  await mkdir(testInfo.outputDir, { recursive: true });
   const requests: string[] = [];
   const closedSlowResponses: string[] = [];
   const server = createServer((request, response) => {
@@ -24,11 +28,13 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
       response.end("<!doctype html><title>Missing</title><h1>Missing</h1>");
       return;
     }
-    const type = url.pathname.endsWith(".txt")
-      ? "text/plain"
-      : url.pathname.endsWith(".xml")
-        ? "application/xml"
-        : "text/html";
+    const type = url.pathname.endsWith(".pdf")
+      ? "application/pdf"
+      : url.pathname.endsWith(".txt")
+        ? "text/plain"
+        : url.pathname.endsWith(".xml")
+          ? "application/xml"
+          : "text/html";
     response.writeHead(200, { "content-type": type });
     response.end(body);
   });
@@ -62,7 +68,25 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     let report = await context.newPage();
     await report.setViewportSize({ width: 1280, height: 800 });
     await report.goto(`chrome-extension://${extensionId}/dashboard.html?tabId=${tab}&section=site`);
-    await expect(report.getByRole("heading", { name: "Site Explorer" })).toBeVisible();
+    await expect(report.getByRole("button", { name: "Start crawl" })).toBeVisible();
+    const footer = report.locator("footer");
+    await expect(footer.getByRole("button", { name: "Open sidebar" })).toHaveCount(0);
+    await expect(footer.getByRole("button", { name: "Refresh analysis" })).toBeVisible();
+    await expect(footer.getByText("Local analysis · No account · No telemetry")).toBeVisible();
+    for (const width of [390, 768, 1024, 1440]) {
+      await report.setViewportSize({ width, height: 900 });
+      await expect(footer.getByRole("button", { name: "Refresh analysis" })).toBeVisible();
+      await expect(footer.getByRole("button", { name: "Open sidebar" })).toHaveCount(0);
+      expect(
+        await report.evaluate(
+          () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+        ),
+      ).toBe(true);
+    }
+    await report.setViewportSize({ width: 1280, height: 800 });
+    await report.getByRole("button", { name: "Use dark theme" }).click();
+    await expect(footer.getByRole("button", { name: "Refresh analysis" })).toBeVisible();
+    await report.getByRole("button", { name: "Use light theme" }).click();
     await report.getByRole("button", { name: "Start crawl" }).click();
     const siteViews = report.getByRole("navigation", { name: "Site Explorer views" });
     await siteViews.getByRole("button", { name: "Overview" }).focus();
@@ -71,7 +95,15 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     await siteViews.getByRole("button", { name: "Pages" }).click();
     const secret = report.getByRole("button", { name: `${origin}/secret` });
     await expect(secret).toBeVisible({ timeout: 20_000 });
-    await report.locator(".crawl-hero").screenshot({ path: "test-results/site-board.png" });
+    const pdf = report.getByRole("button", { name: `${origin}/document.pdf` });
+    await expect(pdf).toContainText("Not analyzed");
+    await expect(pdf).toContainText("Non-HTML · 200");
+    await pdf.click();
+    await expect(
+      report.getByText("This resource is application/pdf; HTML-specific checks were not run."),
+    ).toBeVisible();
+    await pdf.click();
+    await report.locator(".sx-console").screenshot({ path: testInfo.outputPath("site-board.png") });
     await secret.click();
     await expect(report.getByText("robots.txt disallows this crawler")).toBeVisible();
     await expect(report.getByText("Alpha page").first()).toBeVisible();
@@ -82,7 +114,15 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     await siteViews.getByRole("button", { name: "Overview" }).click();
     await expect(report.getByText("Duplicate page title").first()).toBeVisible();
     await expect(report.getByText(/Partial crawl:/)).toBeVisible();
-    await report.screenshot({ path: "test-results/site-overview.png" });
+    await expect(siteViews.getByRole("button", { name: "Overview" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(siteViews.getByRole("button", { name: "Pages" })).not.toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await report.screenshot({ path: testInfo.outputPath("site-overview.png") });
     await siteViews.getByRole("button", { name: "Issues" }).click();
     await expect(report.getByText(/affected pages/).first()).toBeVisible();
     const issueSearch = report.getByLabel("Search issues and affected URLs");
@@ -129,7 +169,9 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     expect((await analysisDownload).suggestedFilename()).toContain("-analysis.csv");
 
     await report.getByRole("button", { name: "Save for comparison" }).click();
-    await expect(report.getByText("Crawl saved for comparison on this device.")).toBeVisible();
+    await expect(report.locator(".sx-console-last")).toContainText(
+      "Crawl saved for comparison on this device.",
+    );
     const compareNav = report.getByRole("navigation", { name: "Site Explorer views" });
     await compareNav.getByRole("button", { name: "Compare" }).click();
     await report.getByRole("button", { name: "Compare crawls" }).click();
@@ -139,6 +181,24 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
       ),
     ).toBeVisible();
     await expect(report.getByText(/pages with incomplete link data/)).toHaveCount(0);
+    for (const view of ["Overview", "Issues", "Pages", "Links", "Compare"]) {
+      await siteViews.getByRole("button", { name: view }).click();
+      for (const width of [390, 768, 1024, 1440]) {
+        await report.setViewportSize({ width, height: 900 });
+        expect(
+          await report.evaluate(
+            () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+          ),
+        ).toBe(true);
+      }
+    }
+    await report.setViewportSize({ width: 1280, height: 800 });
+    await siteViews.getByRole("button", { name: "Compare" }).click();
+    await expect(
+      report.getByText(
+        "You're comparing a crawl with itself. No confirmed SEO changes were detected.",
+      ),
+    ).toBeVisible();
     await report.getByLabel("Baseline crawl").selectOption("live");
     await expect(
       report.getByText("The crawl selection changed. Compare again to refresh these results."),
@@ -204,7 +264,9 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
     await expect(report.getByLabel("Later crawl")).toHaveValue("live");
     await report.getByRole("button", { name: "Compare crawls" }).click();
     await expect(report.getByText("=HYPERLINK()")).toBeVisible();
-    await expect(report.getByText("Changed", { exact: true }).first()).toBeVisible();
+    await expect(
+      report.getByText("Changed", { exact: true }).filter({ visible: true }).first(),
+    ).toBeVisible();
     const comparisonCsvDownload = report.waitForEvent("download");
     await report.getByRole("button", { name: "Export comparison CSV" }).click();
     const comparisonCsv = await readFile(await (await comparisonCsvDownload).path(), "utf8");
@@ -222,12 +284,20 @@ test("site explorer crawls one host, skips robots, and stops", async () => {
       kind: string;
     };
     expect(comparisonJson).toMatchObject({ schemaVersion: 1, kind: "rankmiso.siteComparison" });
+    await report.locator(".compare-hero").scrollIntoViewIfNeeded();
+    await report.screenshot({ path: testInfo.outputPath("site-compare-hero.png") });
+    await report.setViewportSize({ width: 390, height: 900 });
+    await report.locator(".compare-hero").scrollIntoViewIfNeeded();
+    await report.screenshot({ path: testInfo.outputPath("site-compare-narrow.png") });
+    await report.setViewportSize({ width: 1280, height: 800 });
     await report.getByRole("button", { name: "Delete saved crawl" }).click();
-    await expect(report.getByText("Saved crawl deleted from this device.")).toBeVisible();
+    await expect(report.locator(".sx-console-last")).toContainText(
+      "Saved crawl deleted from this device.",
+    );
     await expect(baseline.locator("option", { hasText: savedLabel })).toHaveCount(0);
 
     await report.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
-    await report.screenshot({ path: "test-results/site-explorer.png" });
+    await report.screenshot({ path: testInfo.outputPath("site-explorer.png") });
 
     await report.evaluate((siteOrigin) => {
       const pages = Array.from({ length: 100 }, (_, pageIndex) => {
@@ -359,10 +429,11 @@ function files(origin: string): Record<string, string> {
     "/sitemap.xml": `<urlset><url><loc>${origin}/</loc></url><url><loc>${origin}/a.html</loc></url><url><loc>${origin}/secret</loc></url></urlset>`,
     "/": page(
       "Home",
-      `<a href="/a.html">Alpha</a><a href="/b.html">Beta</a><a href="/gone">Gone</a><a href="/secret">Secret</a><a href="/hold">Hold</a><a href="https://example.com/out">Out</a>`,
+      `<a href="/a.html">Alpha</a><a href="/b.html">Beta</a><a href="/document.pdf">PDF document</a><a href="/gone">Gone</a><a href="/secret">Secret</a><a href="/hold">Hold</a><a href="https://example.com/out">Out</a>`,
     ),
     "/a.html": page("Alpha page", `<a href="/b.html">Beta</a>`),
     "/b.html": page("Alpha page", ""),
+    "/document.pdf": "%PDF-1.4\nlocal fixture\n%%EOF",
     "/secret": page("Secret", ""),
   };
 }

@@ -1,5 +1,11 @@
 # Implementation plan
 
+## M10-R4 status note — 2026-11-11
+
+Firefox 158.0.1 ran the Site Explorer comparison flow against a local fixture, including the robots skipped-row text, dark theme, later-crawl stale selection, and snapshot deletion. The headless window did not accept a 390px viewport. The full-page report footer no longer shows Open sidebar. Version stays 0.6.0. A persistent unsigned Firefox install is not available, so browser-restart persistence was not tested. This branch is `feature/v0.7.0`. No push or pull request is authorized.
+
+The full-page Site Explorer compare view now follows `rankmiso_site_explorer_redesign.html`: dark summary, coverage of pages analyzed in both crawls, four issue-movement counts, issue activity, a link donut from real counts, reliability notes, page changes, and duplicate-metadata changes. Overview, Issues, Pages, and Links use the same report tabs, cards, and canvas. The reference file stays outside the repository. Its sample numbers are not in the product. Version stays 0.6.0.
+
 ## M10-R3 status note — 2026-11-11
 
 The comparison panel is hidden when the selected crawls change, until the user compares again. A limit-finished crawl is labeled "Finished at limit". Version stays 0.6.0. See `docs/features/site-explorer.md`.
@@ -197,3 +203,7 @@ Implementation is frozen for candidate preparation. Chrome/Firefox production pa
 ## R0.4.0-G1 (2026-10-30)
 
 Targeted fixes only: shared robots timeout/redirect limits, total crawl deadline, no retry after cancellation, and stronger literal IPv6/private-address classification. Rebuild artifacts from the corrected isolated source, rerun source reproduction and checksums. Native browser security scenarios and DNS connection enforcement remain unresolved; do not submit or begin MCP.
+
+## R7 — v0.7.0 final stabilization (2026-11-13)
+
+Site Explorer 3.0 remains on the approved workbench design. Focused correctness and browser-test selector updates are verified; no feature milestone or M11 work was started. Fresh Rust, extension, marketing, WASM, Chrome/Firefox build, and Chromium Playwright checks pass. See the current `docs/development/handoff.md` for exact counts and the root-filesystem/logging observation. Firefox persistent-install/restart and native permission lifecycle are manual acceptance gates; release remains owner-controlled and version stays 0.6.0.

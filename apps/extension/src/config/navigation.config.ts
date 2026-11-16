@@ -19,7 +19,7 @@ export const flatNav: readonly {
   { id: "performance", labelKey: "nav.performance", shortLabelKey: "nav.performanceShort" },
   { id: "international", labelKey: "nav.international", shortLabelKey: "nav.internationalShort" },
   { id: "accessibility", labelKey: "nav.accessibility", shortLabelKey: "nav.accessibilityShort" },
-  { id: "site", labelKey: "nav.site" },
+  { id: "site", labelKey: "site.title", shortLabelKey: "nav.site" },
   { id: "sitemaps", labelKey: "nav.sitemaps" },
   { id: "reports", labelKey: "nav.history", utility: true },
   { id: "export", labelKey: "nav.export", utility: true },

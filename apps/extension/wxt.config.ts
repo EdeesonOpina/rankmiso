@@ -11,6 +11,7 @@ const icons = {
 };
 
 export default defineConfig({
+  outDir: process.env.RANKMISO_EXTENSION_OUT_DIR,
   modules: ["@wxt-dev/module-vue"],
   vite: () => ({
     plugins: [tailwindcss()],

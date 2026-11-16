@@ -230,6 +230,12 @@ One snapshot remains capped at 350 KB. History is capped at 1.75 MB, which is fi
 
 A link is added or removed only when its source page was analyzed in both crawls and neither link list was truncated. Different rule-set versions are not compared. The comparison CSV and JSON use schema version 1 and the kind `rankmiso.siteComparison`. The 12-column page CSV, the 22-column Site Analysis CSV, and Site Explorer JSON schema version 1 are unchanged. Comparison results are not sent to the MCP companion.
 
+## M10-R4 — Firefox acceptance and report footer
+
+The full-page report footer does not include Open sidebar. The sidebar footer still opens the full report, and the popup still opens the sidebar. Refresh analysis stays on the report footer. The comparison stale message is a status, so a screen reader hears it when the selection changes.
+
+Firefox 158.0.1 can load the extension and run Site Explorer when the test browser is started with Marionette system access. That flag is for the test harness only. Release Firefox does not install an unsigned extension permanently, so a restart of a temporary add-on is not a persistence test.
+
 ## M9 — Site Explorer 2.0 aggregation
 
 Site-wide findings are aggregated in the extension's TypeScript service from the existing bounded crawl session and the existing Rust/WASM audit output. Rust remains the source of page-level SEO rules and severity/status. No rules are duplicated in Vue, and no score is calculated for a site. During a live crawl, aggregation refreshes at page 1, every ten pages, and at completion; searching, filtering, and sorting operate on the prebuilt issue and link observations. Same-origin URL checks are memoized per analysis, and each page's link attributes are collected in one pass to keep this synchronous derived step short.
@@ -252,3 +258,7 @@ Use GitHub Sponsors as the single voluntary funding destination: `https://github
 - Compatibility is any `rankmiso-mcp 0.1.x`. MCP tools and Native Messaging protocol 1 are unchanged across 0.1.x. A different version is reported and left alone.
 - The v0.5.0 native host rejected every argument, but browsers always pass launch arguments, so real Chrome could not start it (reproduced with the Chrome 156 Native Messaging E2E; it passes after the fix). The host now accepts exactly the browser launch shapes (Chrome: a `chrome-extension://<32 a–p>/` origin, optionally with `--parent-window=<digits>`; Firefox: a `.json` manifest path and a non-empty add-on ID) and rejects anything else on stderr only, so stdout stays protocol-only. The arguments are never treated as authorization: the browser has already enforced the manifest allowlist. The crate is now 0.1.1 so the launcher can detect a 0.1.0 host and report browser sharing as blocked. Publishing a fixed companion release needs owner approval.
 - Companion v0.5.1 (2026-11-02) is the first release with the fixed host. It was built by the existing MCP companion workflow (run 41382210579) from 44f9584 and published as a pre-release tagged at that commit, after a real Chrome share through the plugin-installed companion. The plugin pins its SHA-256 values. Any 0.1.x older than the pin, including a 0.1.0 host next to a newer MCP binary, is offered the upgrade.
+
+## v0.7.0 report presentation
+
+The full-page report follows the Site Explorer reference layout. Sample crawl numbers from that HTML are not product data. Report colors are set on `.wb.report`, so the sidebar and popup keep their existing tokens. Compare still reads the existing `SiteComparison`: shared pages divided by the larger of the two analyzed-page counts, the four issue counts, and link-page counts. The link donut is omitted when those counts are all zero. Changing a crawl selector still hides the previous result. The comparison engine, storage limits, and export columns are unchanged.

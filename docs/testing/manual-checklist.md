@@ -280,3 +280,8 @@ Status: Chromium Playwright covers save, a same-crawl comparison with no confirm
 | 11 | Refresh and reopen | Repeat the same-crawl comparison after refreshing the report, then after closing and reopening the browser. The result stays the same. | | |
 | 12 | Two different crawls | Change a page, crawl again, and compare with the saved crawl. A fixed finding on a page analyzed both times is resolved. A new finding on a page analyzed both times is new. A page the later crawl did not reach is not comparable. | | |
 | 13 | Selection | After a comparison, change the baseline or later crawl. The previous results disappear until you click **Compare crawls** again. | | |
+| 14 | Report footer | The full-page report footer shows the local-analysis note and **Refresh analysis**. It does not show **Open sidebar**. The sidebar and popup still open the other surface. | | |
+
+## R7 automated evidence (2026-11-13)
+
+Fresh Chrome Playwright qualification passed 10/10 tests against the current `.output/chrome-mv3`: local audit and exports; crawl start/stop, non-HTML PDF classification, bounded counts, responsive views, theme switch, save/restore/delete and same-crawl comparison, changed-title comparison, formula-safe CSV and comparison JSON, stale-result invalidation, plus 100-page/20,000-link heap sampling. Firefox production manifest/build inspection passed, but no persistent signed Firefox installation or restart test was performed. Continue the manual permission grant/deny/revoke and Firefox runtime checks above using isolated profiles; do not treat automated Chromium coverage as native Firefox acceptance.
