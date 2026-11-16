@@ -5,8 +5,10 @@
   "scripts": {
     "capture": "node --experimental-strip-types src/capture.ts",
     "build": "node --experimental-strip-types src/compose.ts",
+    "preview": "node --experimental-strip-types src/preview.ts",
     "generate": "node --experimental-strip-types src/generate.ts",
-    "validate": "node --experimental-strip-types src/validate.ts"
+    "validate": "node --experimental-strip-types src/validate.ts",
+    "test": "node --test --experimental-strip-types src/*.test.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

@@ -38,7 +38,7 @@ export const brandConfig: BrandConfig = {
     website: null,
     github: null,
     documentation: null,
-    support: null,
+    support: "https://github.com/sponsors/EdeesonOpina",
   },
   assets: {
     logoLight: "/brand/logo-light.png",

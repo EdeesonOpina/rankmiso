@@ -1,6 +1,6 @@
 # Site Explorer
 
-The M9 aggregation, issue, duplicate-metadata, and link views described below are unreleased development work targeting v0.6.0. Published Chrome and Firefox v0.5.1 packages do not include Site Explorer 2.0.
+Site Explorer 2.0 is in the v0.6.0 packages submitted to the stores. Store approval is a separate step and is not assumed here. The comparison behavior below is Site Explorer 3.0 and is not in those submitted packages. Published v0.5.1 packages do not include Site Explorer 2.0.
 
 The report section **Site** crawls one origin after you choose **Start crawl**. The popup **Site** tab only opens that report. It does not start a crawl.
 
@@ -16,7 +16,9 @@ Discovery reads `Sitemap` lines and the conventional sitemap paths the sitemap e
 
 Defaults: 100 pages, depth 3, 2 concurrent requests, 10 second timeout, 1 MB body, 5 redirects, 120 seconds, 400 discovered addresses, and one retry after 429, 503, or a timeout. Reaching the page cap marks the session partial. A stopped crawl says it was stopped.
 
-Fetched HTML is parsed as source and scored with the existing Rust/WASM page engine. Site-wide aggregation is a TypeScript layer over those page results and observed crawl links; it does not rerun SEO rules or add a second score. The Site Explorer report provides Overview, Issues, Pages, and Links views. The Overview summary uses the same card as the page Overview: pages analyzed out of the page limit, then analyzed pages grouped by their worst finding (errors, warnings, neither). Pages from sessions saved before Site Explorer 2.0 have no per-page findings and are left out of the "neither" count. There is no site-wide score. Findings retain rule IDs, categories, status and bounded evidence from the existing checks. Missing and empty metadata are counted separately from duplicate groups.
+Fetched HTML is parsed as source and scored with the existing Rust/WASM page engine. Discovered non-HTML resources such as PDFs remain in the crawl record, show their response status, and are labeled not analyzed; HTML-specific checks do not run on them. A failed request with no HTTP response has no fabricated status code. Site-wide aggregation is a TypeScript layer over analyzed page results and observed crawl links; it does not rerun SEO rules or add a second score. The Site Explorer report provides Overview, Issues, Pages, Links, and Compare views. The Overview summary uses the same card as the page Overview: pages analyzed out of the page limit, then analyzed pages grouped by their worst finding (errors, warnings, neither). Pages from sessions saved before Site Explorer 2.0 have no per-page findings and are left out of the "neither" count. There is no site-wide score. Findings retain rule IDs, categories, status and bounded evidence from the existing checks. Missing and empty metadata are counted separately from duplicate groups.
+
+The crawl console distinguishes listed records, HTML pages analyzed, HTTP responses, redirect aliases, failed requests, and skipped URLs. An HTTP error response contributes to both the HTTP-response and failed counts. Progress is measured against the configured crawl page limit, not the total size of a website. Reaching a limit describes a bounded crawl and is not full-site coverage.
 
 Duplicate title and description normalization applies Unicode NFC, trims and collapses whitespace, and compares case-insensitively. It preserves punctuation and reports the original first observed value. Missing and empty values and unsuccessful pages are excluded. Crawled addresses that redirect to an already analyzed final page are counted once and reported as redirect aliases, so one page is never shown as its own duplicate. A shared title or description is not a claim of duplicate page content.
 
@@ -29,6 +31,20 @@ Every site-wide result describes crawl coverage, not all pages on a website. Fai
 The 100-page, depth, time, discovery, concurrency, response, redirect, and same-origin boundaries remain unchanged. Firefox uses the shared extraction, aggregation, and view code; browser-specific crawling and permission adapters are unchanged. Native Messaging is outside Site Explorer.
 
 The crawl session persists locally for its origin; no crawl data is uploaded or synchronized.
+
+## Comparisons
+
+**Save for comparison** stores the current crawl for that origin. Saving is explicit. The latest-session restore is unchanged and is not a comparison snapshot. Up to five snapshots are kept per origin, inside a 1.75 MB history budget. Delete removes one snapshot. Clear unreadable history removes only the comparison-history key.
+
+**Compare** chooses a baseline crawl and a later crawl. One of them can be the crawl currently open. Both must be the same origin and the same ruleset. The summary is grouped into crawl coverage, issue changes, and comparison reliability. Coverage shows baseline pages, later pages, newly observed pages, and pages not observed again. The coverage bar is shared pages divided by the larger analyzed-page count, not a claim that the whole website was crawled. Issue changes show new, resolved, unchanged, and not-comparable counts. A lower issue count is not reported as a ranking or traffic gain. The link diagram uses the unchanged, verified-change, and unable-to-compare page counts.
+
+The comparison counts analyzed pages. Fetched and listed counts include every crawl record. A failed page is not analyzed. Several records that redirect to the same final URL count as one analyzed page. A crawl that finishes because it hit a limit is marked **Finished at limit**, and the note says the crawl stopped at that limit.
+
+Changing either crawl selector, or replacing the open crawl, hides the previous comparison until **Compare crawls** is clicked again. Evidence text is not the issue identity. The same page and rule with different complete evidence stays one unchanged issue, with a note that the evidence changed. Shortened evidence cannot create a new or resolved issue. A page the later crawl skipped, failed, or never reached stays not comparable. A link is removed only when the source page was analyzed both times and the stored link list was complete. Pages whose link lists were actually cut, including pages that hit the crawl's 200-anchor cap, stay in the unable-to-compare count and can be expanded. Anchor text is not stored in a comparison snapshot. The saved URL list is what comparison uses.
+
+Comparison snapshots stay in `localStorage` under `rankmiso.siteCrawlHistory`. Internal URLs are stored relative to the origin. Each snapshot stays within 350 KB. The history key stays within 1.75 MB, and each origin still keeps at most five snapshots. A normal 75-page crawl keeps its link lists. A list that still cannot fit is marked incomplete rather than treated as a removed link.
+
+Comparison CSV and JSON are separate files. Their schema version is 1 and the JSON kind is `rankmiso.siteComparison`. Columns are `schemaVersion`, `recordType`, `change`, `reason`, `page`, `ruleId`, `category`, `severity`, `field`, `previous`, `current`, and `detail`. Record types are `schema`, `summary`, `issue`, `page`, `page-field`, `link`, and `duplicate`. Formula characters are prefixed. These files do not replace the 12-column page CSV, the 22-column Site Analysis CSV, or Site Explorer JSON schema version 1. Comparison data is not shared with the MCP companion.
 
 ## F1-I verification note
 

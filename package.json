@@ -21,6 +21,7 @@
     "dev": "pnpm --filter @rankmiso/extension dev",
     "marketing:capture": "pnpm --filter @rankmiso/marketing capture",
     "marketing:build": "pnpm --filter @rankmiso/marketing build",
+    "marketing:preview": "pnpm --filter @rankmiso/marketing preview",
     "marketing:generate": "pnpm --filter @rankmiso/marketing generate",
     "marketing:validate": "pnpm --filter @rankmiso/marketing validate"
   }

@@ -181,6 +181,19 @@ describe("MCP permission waiting state", () => {
     wrapper.unmount();
   });
 
+  it("shows the optional Sponsors profile as a safe external link", async () => {
+    const wrapper = mount(SettingsView, {
+      props: { audit: null },
+      global: { provide: workbench() },
+    });
+    await flushPromises();
+    const link = wrapper.get("a.support-link");
+    expect(link.attributes("href")).toBe("https://github.com/sponsors/EdeesonOpina");
+    expect(link.attributes("target")).toBe("_blank");
+    expect(link.attributes("rel")).toBe("noopener noreferrer");
+    wrapper.unmount();
+  });
+
   it("navigates to AI Integrations from Settings", async () => {
     const go = vi.fn();
     const wrapper = mount(SettingsView, {
