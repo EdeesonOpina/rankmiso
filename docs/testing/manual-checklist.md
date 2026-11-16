@@ -263,7 +263,7 @@ Record browser version, OS, extension build commit and any console output next t
 
 ## M10 — Site Explorer comparisons (Chrome and Firefox)
 
-Status: Chromium Playwright covers save, a same-crawl comparison with no confirmed changes, a full Chromium restart that still lists the saved crawl, a later title change, formula-safe CSV, JSON, and delete against the local Site Explorer fixture. Firefox runtime is not verified in this environment. Use a temporary profile. Do not raise crawl limits. Version under test remains 0.6.0 until a release is authorized. Rows 9–12 are the regression, including a browser restart on a site large enough to exercise link lists. A page with a normal link list should now be comparable. A page that still says its link list was cut should not show those links as removed.
+Status: Chromium Playwright covers save, a same-crawl comparison with no confirmed changes, a full Chromium restart that still lists the saved crawl, a later title change, formula-safe CSV, JSON, and delete against the local Site Explorer fixture. Firefox runtime is not verified in this environment. Use a temporary profile. Do not raise crawl limits. The version-alignment correction is proposed on `fix/v0.7.0-version-alignment`; local builds and manifest assertions report 0.7.0, but it has not reached staging. Staging CI and browser acceptance remain required. Rows 9–12 are the regression, including a browser restart on a site large enough to exercise link lists. A page with a normal link list should now be comparable. A page that still says its link list was cut should not show those links as removed.
 
 | # | Check | Expected | Chrome | Firefox |
 | --- | --- | --- | --- | --- |
