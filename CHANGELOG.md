@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0 — release candidate (unpublished)
+
+- Site Explorer 3.0 adds local crawl history, SEO issue and metadata comparisons, internal-link comparisons, partial-crawl safeguards, and a full-page workbench.
+- Clarify non-HTML resources and HTTP status, crawl progress, and the scope of measured link counts.
+- Add optional ecosystem support link and v0.7.0 marketing capture, composition, preview, and validation tooling.
+- The current staging candidate still generates 0.6.0 manifests. A focused version-alignment correction is proposed for develop; it must reach staging and be requalified. Firefox signed-install persistence and browser permission lifecycle remain release gates.
+
 ## 0.6.0 — prepared for store submission (2026-11-08)
 
 - Site Explorer 2.0: Overview, Issues, Pages and Links views across the pages a crawl analyzed. Findings are grouped by rule with affected pages and evidence; duplicate titles and descriptions are grouped; internal links show their source, target, target state and observed incoming sources.

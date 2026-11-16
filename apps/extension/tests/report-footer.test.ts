@@ -8,7 +8,7 @@ vi.mock("wxt/browser", () => ({
   browser: {
     runtime: {
       getURL: (path: string) => path,
-      getManifest: () => ({ version: "0.6.0" }),
+      getManifest: () => ({ version: "0.7.0" }),
     },
     storage: { local: { get: async () => ({}), set: async () => undefined } },
     tabs: { create: async () => ({}) },
