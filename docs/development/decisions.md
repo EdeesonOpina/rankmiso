@@ -210,6 +210,32 @@ Place local companion status and shared snapshot management in one direct utilit
 
 Keep Claude Code and Codex MCP setup documented outside the UI. The AI Integrations view focuses on the local companion, shared snapshots and privacy; it does not claim client discovery or a client connection. Use neutral RankMiso navigation/iconography and do not suggest sponsorship or partnership.
 
+## M10 — Site Explorer crawl comparisons
+
+Comparison stays in TypeScript, beside the existing site aggregation. The inputs are crawl sessions the browser already holds, and the work is indexed matching of those results. Rust remains the only SEO rules engine. Vue only renders the comparison.
+
+A comparison snapshot is an explicit save. It is not written for every crawl. Snapshots live in `localStorage` under `rankmiso.siteCrawlHistory`, separate from the latest-session key `rankmiso.siteCrawl`. Each origin keeps at most five snapshots. The whole history key stays under 1.5 MB. One snapshot uses the same 350 KB bound as the latest session. A quota error, a full origin, or a budget miss refuses the save and does not delete other keys. A record that fails validation is skipped. A file that cannot be parsed blocks new saves until the user clears that history key. Page HTML is not stored.
+
+Issue identity is the resolved final URL plus the existing rule id. Evidence text is not part of the identity. A save that shortens evidence used to mint a new finding and a resolved finding for the same rule. Findings of one rule on one page are paired by evidence text when it still matches. Leftover findings of that rule stay the same issue. When both copies still have complete evidence and the text differs, the issue stays unchanged and is marked evidence-changed. When either copy was shortened, a count difference is not comparable. A genuinely new or resolved finding is reported only when both copies are complete and the page was analyzed both times. Translated titles and timestamps are not identifiers. A page the later crawl did not analyze is never reported as resolved or deleted. Query strings stay part of the address. Redirect aliases collapse with the same final-URL rule as site aggregation.
+
+Shortened titles, descriptions, and evidence are flagged (`titleTruncated`, `descriptionTruncated`, `evidenceTruncated`). A flagged field is not a confirmed metadata change. Older snapshots that lack those flags still load. Missing finding arrays stay not comparable.
+
+## M10-R2 — comparison snapshot storage
+
+localStorage stays. IndexedDB was not added. The 75-page failure was not the 350 KB ceiling. `boundSession` cut every page to 50 links and treated more than 10 link-detail records as an incomplete link list, so a normal navigation block made every page not comparable before size was considered. Link details (anchor text, rel, target) are display data. Comparison identity is the unique internal URL.
+
+Comparison snapshots omit those details and store internal URLs as origin-relative paths. Query strings stay. A page is marked truncated only when that URL list is actually cut, or when the crawl already stopped at its 200-anchor extraction cap. Titles, descriptions, and evidence are shortened before any URL is dropped. The latest-session key still keeps up to 10 detail records for the links view, and drops them before it drops URLs.
+
+One snapshot remains capped at 350 KB. History is capped at 1.75 MB, which is five snapshots at that cap. A 100-page crawl with 200 links per page stores in 213,021 bytes and keeps all 20,000 links. A 75-page crawl with 80 links per page stores in 185,816 bytes and keeps all 6,000. Lists that still do not fit are cut and stay not comparable. They are not reported as removed. Older snapshots keep their existing truncation flags. Rewriting history does not invent links that were already discarded. A displayed comparison is tied to the two selected crawl ids and the open crawl's id, start time, finish time, and page count. Changing a selector or replacing the open crawl hides that result until the user compares again. The crawl summary's fetched and listed counts include every record. The comparison count includes successful pages once per final URL, so failed pages and redirect aliases are not extra compared pages. A finished crawl that hit a limit is labeled "Finished at limit" rather than "Complete".
+
+A link is added or removed only when its source page was analyzed in both crawls and neither link list was truncated. Different rule-set versions are not compared. The comparison CSV and JSON use schema version 1 and the kind `rankmiso.siteComparison`. The 12-column page CSV, the 22-column Site Analysis CSV, and Site Explorer JSON schema version 1 are unchanged. Comparison results are not sent to the MCP companion.
+
+## M10-R4 — Firefox acceptance and report footer
+
+The full-page report footer does not include Open sidebar. The sidebar footer still opens the full report, and the popup still opens the sidebar. Refresh analysis stays on the report footer. The comparison stale message is a status, so a screen reader hears it when the selection changes.
+
+Firefox 158.0.1 can load the extension and run Site Explorer when the test browser is started with Marionette system access. That flag is for the test harness only. Release Firefox does not install an unsigned extension permanently, so a restart of a temporary add-on is not a persistence test.
+
 ## M9 — Site Explorer 2.0 aggregation
 
 Site-wide findings are aggregated in the extension's TypeScript service from the existing bounded crawl session and the existing Rust/WASM audit output. Rust remains the source of page-level SEO rules and severity/status. No rules are duplicated in Vue, and no score is calculated for a site. During a live crawl, aggregation refreshes at page 1, every ten pages, and at completion; searching, filtering, and sorting operate on the prebuilt issue and link observations. Same-origin URL checks are memoized per analysis, and each page's link attributes are collected in one pass to keep this synchronous derived step short.
@@ -232,3 +258,7 @@ Use GitHub Sponsors as the single voluntary funding destination: `https://github
 - Compatibility is any `rankmiso-mcp 0.1.x`. MCP tools and Native Messaging protocol 1 are unchanged across 0.1.x. A different version is reported and left alone.
 - The v0.5.0 native host rejected every argument, but browsers always pass launch arguments, so real Chrome could not start it (reproduced with the Chrome 156 Native Messaging E2E; it passes after the fix). The host now accepts exactly the browser launch shapes (Chrome: a `chrome-extension://<32 a–p>/` origin, optionally with `--parent-window=<digits>`; Firefox: a `.json` manifest path and a non-empty add-on ID) and rejects anything else on stderr only, so stdout stays protocol-only. The arguments are never treated as authorization: the browser has already enforced the manifest allowlist. The crate is now 0.1.1 so the launcher can detect a 0.1.0 host and report browser sharing as blocked. Publishing a fixed companion release needs owner approval.
 - Companion v0.5.1 (2026-11-02) is the first release with the fixed host. It was built by the existing MCP companion workflow (run 41382210579) from 44f9584 and published as a pre-release tagged at that commit, after a real Chrome share through the plugin-installed companion. The plugin pins its SHA-256 values. Any 0.1.x older than the pin, including a 0.1.0 host next to a newer MCP binary, is offered the upgrade.
+
+## v0.7.0 report presentation
+
+The full-page report follows the Site Explorer reference layout. Sample crawl numbers from that HTML are not product data. Report colors are set on `.wb.report`, so the sidebar and popup keep their existing tokens. Compare still reads the existing `SiteComparison`: shared pages divided by the larger of the two analyzed-page counts, the four issue counts, and link-page counts. The link donut is omitted when those counts are all zero. Changing a crawl selector still hides the previous result. The comparison engine, storage limits, and export columns are unchanged.

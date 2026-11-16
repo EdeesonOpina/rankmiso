@@ -36,38 +36,48 @@ export const chromeScreenshots: ScreenshotSet = {
   id: "chrome",
   dir: "chrome",
   size: { width: 1280, height: 800 },
-  count: 9,
+  count: 26,
   uploadMax: 5,
   nativeRuntime: true,
   submissionReady: true,
-  note: "Captured from the Chromium extension build. The Chrome Web Store accepts 5 screenshots. Use 01–05, or swap in 06–09.",
+  note: "Captured from the Chromium extension build. The Chrome Web Store accepts 5 screenshots. Use 01–05, or swap in any of 06–26. Screens 11 and 22–26 cover current Site Explorer views and crawl controls; 21 shows its dark theme. Screens 13 (sidebar) and 14 (website access) show those features.",
 };
 
 export const firefoxScreenshots: ScreenshotSet = {
   id: "firefox",
   dir: "firefox",
   size: { width: 1280, height: 800 },
-  count: 9,
-  uploadMax: 9,
+  count: 23,
+  uploadMax: 18,
   nativeRuntime: false,
   submissionReady: false,
-  note: "Same RankMiso interface as the Chromium capture. Playwright in this repository does not load the Firefox add-on, so these are not Firefox runtime screenshots. No Chrome window is drawn. Firefox can list more than five screenshots.",
+  note: "Same RankMiso interface as the Chromium capture. Shots of Chromium-only features (technical HTML comparison, sitemap discovery, PageSpeed) are left out. Playwright in this repository does not load the Firefox add-on, so these are not Firefox runtime screenshots. No Chrome window is drawn. Firefox can list more than five screenshots.",
 };
 
 export const safariScreenshots: ScreenshotSet = {
   id: "safari-macos",
   dir: "safari/macos",
   size: { width: 2880, height: 1800 },
-  count: 9,
+  count: 23,
   uploadMax: 10,
   nativeRuntime: false,
   submissionReady: false,
-  note: "Provisional Mac composition. RankMiso has no Safari extension in this repository. Rendered at 2880×1800, not upscaled from the Chrome file. Native Safari verification is required before submission. The Mac App Store accepts up to 10 screenshots.",
+  note: "Provisional Mac composition. RankMiso has no Safari extension in this repository. Rendered at 2880×1800, not upscaled from the Chrome file. Native Safari verification is required before submission. The Mac App Store accepts up to 10 screenshots; pick 10 of the 23.",
 };
 
 export const chromePromo = {
   small: { width: 440, height: 280, file: "promo-small.png" },
   marquee: { width: 1400, height: 560, file: "promo-marquee.png" },
+} as const;
+
+/** Open Graph / X share image. 1200×630 (1.91:1), JPEG for the widest support across networks. */
+export const seoShare = { width: 1200, height: 630, dir: "seo" } as const;
+
+export const youtubeThumbnail = {
+  width: 1280,
+  height: 720,
+  maxBytes: 2_000_000,
+  dir: "youtube",
 } as const;
 
 export const iosTargets = {

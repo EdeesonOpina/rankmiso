@@ -97,7 +97,7 @@ export async function fetchCrawlPage(
       if (response.type === "opaqueredirect" || response.status === 0) {
         await response.body?.cancel();
         return {
-          status: 0,
+          status: null,
           finalUrl: current,
           contentType: "",
           html: "",

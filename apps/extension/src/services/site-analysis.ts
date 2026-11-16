@@ -89,7 +89,7 @@ function successful(page: CrawlPage): boolean {
   );
 }
 
-function normalizeMetadata(value: string): string {
+export function normalizeMetadata(value: string): string {
   return value.normalize("NFC").trim().replace(/\s+/gu, " ").toLocaleLowerCase("und");
 }
 
@@ -119,19 +119,48 @@ export function duplicateGroups(pages: CrawlPage[]): DuplicateGroup[] {
   );
 }
 
-export function analyzeSite(session: CrawlSession): SiteAnalysis {
-  const pages = session.pages;
-  // Several crawled URLs can redirect to one final page. Count that page once,
-  // preferring the record fetched at the final URL itself.
+/** Final URL of the page Site Explorer counts. Query strings stay. Redirect aliases share this value. */
+export function pageIdentity(page: CrawlPage): string {
+  return page.finalUrl || page.url;
+}
+
+/**
+ * Successful pages keyed by final URL. When several crawled URLs redirect to one
+ * page, the record fetched at the final URL is kept. Same rule as analyzeSite.
+ */
+export function resolvedAnalyzedPages(session: CrawlSession): {
+  pages: CrawlPage[];
+  aliases: Set<CrawlPage>;
+  identityByUrl: Map<string, string>;
+} {
+  const pages = session.pages ?? [];
   const byFinalUrl = new Map<string, CrawlPage>();
   for (const page of pages.filter(successful)) {
-    const finalUrl = page.finalUrl || page.url;
+    const finalUrl = pageIdentity(page);
     const kept = byFinalUrl.get(finalUrl);
     if (!kept || (kept.url !== finalUrl && page.url === finalUrl)) byFinalUrl.set(finalUrl, page);
   }
-  const analyzedPages = [...byFinalUrl.values()];
-  const counted = new Set(analyzedPages);
-  const redirectAliases = new Set(pages.filter((page) => successful(page) && !counted.has(page)));
+  const analyzed = [...byFinalUrl.values()];
+  const counted = new Set(analyzed);
+  const aliases = new Set(pages.filter((page) => successful(page) && !counted.has(page)));
+  const identityByUrl = new Map<string, string>();
+  for (const page of pages) {
+    if (!successful(page)) continue;
+    identityByUrl.set(page.url, pageIdentity(page));
+    identityByUrl.set(pageIdentity(page), pageIdentity(page));
+  }
+  for (const [finalUrl, page] of byFinalUrl) {
+    identityByUrl.set(finalUrl, finalUrl);
+    identityByUrl.set(page.url, finalUrl);
+  }
+  return { pages: analyzed, aliases, identityByUrl };
+}
+
+export function analyzeSite(session: CrawlSession): SiteAnalysis {
+  const pages = session.pages;
+  const resolved = resolvedAnalyzedPages(session);
+  const analyzedPages = resolved.pages;
+  const redirectAliases = resolved.aliases;
   const failed = pages.filter(
     (page) => !!page.error || (page.status != null && page.status >= 400),
   ).length;
@@ -215,7 +244,7 @@ export function analyzeSite(session: CrawlSession): SiteAnalysis {
     aliases.set(page.url, page.url);
     if (page.finalUrl && !aliases.has(page.finalUrl)) aliases.set(page.finalUrl, page.url);
   }
-  for (const [finalUrl, page] of byFinalUrl) aliases.set(finalUrl, page.url);
+  for (const page of analyzedPages) aliases.set(pageIdentity(page), page.url);
   const incoming = new Map<string, number>();
   const links: LinkObservation[] = [];
   let linksTruncated = false;

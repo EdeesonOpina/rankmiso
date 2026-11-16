@@ -9,5 +9,7 @@ export const appConfig = {
   inspectionModeKey: "rankmiso.inspectionMode",
   mcpIntegrationKey: "rankmiso.mcpIntegrationEnabled",
   siteCrawlKey: "rankmiso.siteCrawl",
+  siteCrawlHistoryKey: "rankmiso.siteCrawlHistory",
+  maxCrawlSnapshotsPerOrigin: 5,
   maxStoredReports: 20,
 } as const;

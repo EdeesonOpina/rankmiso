@@ -1,7 +1,7 @@
 {
   "name": "rankmiso",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "packageManager": "pnpm@10.27.0",
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild", "sharp"]
@@ -21,6 +21,7 @@
     "dev": "pnpm --filter @rankmiso/extension dev",
     "marketing:capture": "pnpm --filter @rankmiso/marketing capture",
     "marketing:build": "pnpm --filter @rankmiso/marketing build",
+    "marketing:preview": "pnpm --filter @rankmiso/marketing preview",
     "marketing:generate": "pnpm --filter @rankmiso/marketing generate",
     "marketing:validate": "pnpm --filter @rankmiso/marketing validate"
   }

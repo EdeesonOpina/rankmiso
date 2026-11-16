@@ -1,5 +1,27 @@
 # Implementation plan
 
+## M10-R4 status note — 2026-11-11
+
+Firefox 158.0.1 ran the Site Explorer comparison flow against a local fixture, including the robots skipped-row text, dark theme, later-crawl stale selection, and snapshot deletion. The headless window did not accept a 390px viewport. The full-page report footer no longer shows Open sidebar. Version stays 0.6.0. A persistent unsigned Firefox install is not available, so browser-restart persistence was not tested. This branch is `feature/v0.7.0`. No push or pull request is authorized.
+
+The full-page Site Explorer compare view now follows `rankmiso_site_explorer_redesign.html`: dark summary, coverage of pages analyzed in both crawls, four issue-movement counts, issue activity, a link donut from real counts, reliability notes, page changes, and duplicate-metadata changes. Overview, Issues, Pages, and Links use the same report tabs, cards, and canvas. The reference file stays outside the repository. Its sample numbers are not in the product. Version stays 0.6.0.
+
+## M10-R3 status note — 2026-11-11
+
+The comparison panel is hidden when the selected crawls change, until the user compares again. A limit-finished crawl is labeled "Finished at limit". Version stays 0.6.0. See `docs/features/site-explorer.md`.
+
+## M10-R2 status note — 2026-11-11
+
+Comparison snapshots stay in localStorage. Link display details are no longer stored in them, and internal URLs are stored relative to the origin, so a normal crawl keeps a complete link list inside the existing 350 KB snapshot cap. History budget is 1.75 MB. IndexedDB was not added. Version stays 0.6.0. No commit, push, or store package is authorized. See `docs/development/decisions.md`.
+
+## M10-R1 status note — 2026-11-09
+
+Comparison correctness for Site Explorer 3.0 is fixed on `feature/m10-site-explorer-3` in `/home/ed/Projects/Rust/rankmiso-m10`. Saving a crawl no longer makes its evidence text look like a different finding. Version stays 0.6.0. No commit, push, or store package is authorized. See `docs/development/decisions.md` and `docs/testing/manual-checklist.md`.
+
+## M10 status note — 2026-11-09
+
+Site Explorer 3.0 comparisons are implemented on `feature/m10-site-explorer-3` in the worktree `/home/ed/Projects/Rust/rankmiso-m10`, based on `origin/develop` at the v0.6.0 tree. The comparison engine, bounded history, Compare view, and comparison CSV/JSON are in the extension. Version stays 0.6.0. No commit, push, or store package is authorized by this note. See `docs/features/site-explorer.md` and `docs/development/decisions.md`.
+
 ## F1-E status note — 2026-10-30
 
 F1 continues from the preceding checkpoint; it is not restarted. The P1 stale-sidebar defect is fixed and automated tests pass. The repeatable local performance baseline remains in `docs/testing/performance-baseline.md`; outstanding native interactions are listed in `docs/testing/manual-checklist.md`. F1-H.1 adds opt-in Automatic website checks and fresh local Smart Refresh; implementation and automated verification pass, while native Chrome/Firefox permission prompts remain pending. F1 technical sign-off remains blocked on the native security and remaining browser acceptance cases. Do not begin M6 until F1 closes and the maintainer authorizes it. v0.3.0 is already published; no versioning or release state changed.
@@ -181,3 +203,15 @@ Implementation is frozen for candidate preparation. Chrome/Firefox production pa
 ## R0.4.0-G1 (2026-10-30)
 
 Targeted fixes only: shared robots timeout/redirect limits, total crawl deadline, no retry after cancellation, and stronger literal IPv6/private-address classification. Rebuild artifacts from the corrected isolated source, rerun source reproduction and checksums. Native browser security scenarios and DNS connection enforcement remain unresolved; do not submit or begin MCP.
+
+## R7 — v0.7.0 final stabilization (2026-11-13)
+
+Site Explorer 3.0 remains on the approved workbench design. Focused correctness and browser-test selector updates are verified; no feature milestone or M11 work was started. Fresh Rust, extension, marketing, WASM, Chrome/Firefox build, and Chromium Playwright checks pass. See the current `docs/development/handoff.md` for exact counts and the root-filesystem/logging observation. Firefox persistent-install/restart and native permission lifecycle are manual acceptance gates; release remains owner-controlled and version stays 0.6.0.
+
+## R10 — v0.7.0 staging qualification (2026-11-16)
+
+PR #60 was merged to staging as `f090b3e4787c9e5474ac260fd1288bb7acca0943`; its tree matches `develop` at `1aa3a7c`. Staging CI passed. Fresh exact-staging Chrome and Firefox MV3 builds and Chromium Playwright (10/10) passed, but both manifests report 0.6.0. This blocks v0.7.0 release qualification. A minimal uncommitted correction is prepared on isolated branch `fix/v0.7.0-version-alignment-r10`: root and extension package metadata become 0.7.0, generated-manifest assertions are updated, and release-facing docs identify the candidate as unpublished. On that correction, WASM, Chrome/Firefox builds, extension typecheck, ESLint, and Vitest (220 passed, 4 skipped) pass; both generated manifests report 0.7.0. Prettier was unavailable in the isolated checkout. The correction is not committed or pushed and must follow feature → develop → staging with owner-controlled merges before another exact-staging verification. Chrome isolated runtime acceptance passed; Firefox runtime, signed persistence, native permission lifecycle, and final marketing image review remain incomplete. The recorded 80-image review directory is missing. Do not promote to master, tag, publish, or begin M11.
+
+## R11 — v0.7.0 extension version alignment (2026-11-16)
+
+The isolated correction branch `fix/v0.7.0-version-alignment` is based on current `origin/develop` `1aa3a7c70e7c3e5ebfdd5225e3b23df5f9c2b429`. It sets only the root and extension package versions to 0.7.0, updates generated-manifest test expectations and release-facing documentation, and preserves independently versioned Rust/MCP components. Existing lockfile/workspace metadata needs no version edit; WXT sources the manifest version from the extension package. Vitest (220 passed, 4 skipped), TypeScript, ESLint, Prettier, Chrome/Firefox builds, and the three extension-install Playwright assertions pass. Both generated manifests are 0.7.0. The correction is submitted for develop review; CI and owner approval are required before merge, followed by a separate staging promotion and fresh qualification.

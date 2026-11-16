@@ -22,6 +22,8 @@ export interface WorkbenchContext {
   inspectionMode: Ref<InspectionMode | null>;
   automaticAccessGranted: Ref<boolean>;
   issueFocus: Ref<IssueFocus | null>;
+  /** Name of the open sub-view, shown as the last breadcrumb in the report header. */
+  crumb: Ref<string>;
   go: (section: string, focus?: IssueFocus) => void;
   toast: (message: string, description?: string, tone?: "default" | "success") => void;
   copy: (value: string) => Promise<void>;

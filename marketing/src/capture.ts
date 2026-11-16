@@ -117,6 +117,146 @@ export async function capture(): Promise<void> {
         .map((image) => image.alt || image.src),
     );
     if (broken.length) throw new Error(`Broken images in the report: ${broken.join(", ")}`);
+
+    // More popup destinations.
+    const popupViews: Array<[string, string]> = [
+      ["issues", "Findings"],
+      ["performance", "Browser observations"],
+      ["accessibility", "Accessible foundations"],
+      ["export", "Your report, your data"],
+    ];
+    for (const [nav, ready] of popupViews) {
+      await popup.locator(`[data-nav="${nav}"]`).click();
+      await popup.getByText(ready, { exact: true }).first().waitFor();
+      framed[`popup-${nav}`] = await savePopup(popup, `popup-${nav}.png`);
+    }
+
+    // Settings: keep the top of the screen so the website-access choice stays legible.
+    await popup.locator('[data-nav="settings"]').click();
+    await popup.getByText("Website inspection", { exact: true }).waitFor();
+    await popup.setViewportSize({ width: 480, height: 720 });
+    const settingsFrame = await popup.locator(".work").evaluate((work) => {
+      const bounds = work.getBoundingClientRect();
+      const nextSection = [...work.querySelectorAll("h2")].find(
+        (heading) => heading.textContent?.trim() === "Extension behavior",
+      );
+      const bottom = nextSection?.getBoundingClientRect().top ?? bounds.bottom;
+      return {
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: Math.max(1, Math.floor(bottom - bounds.y)),
+      };
+    });
+    await popup.screenshot({
+      path: join(capturesDir, "popup-settings.png"),
+      clip: settingsFrame,
+      type: "png",
+      animations: "disabled",
+    });
+    framed["popup-settings"] = { height: settingsFrame.height, complete: false };
+
+    // Language targeting reads the visit page, which declares hreflang alternates.
+    await fixture.goto(`${served.origin}/visit.html`, { waitUntil: "load" });
+    const visitId = await tabId(worker, "/visit.html");
+    const visitPopup = await context.newPage();
+    await visitPopup.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
+    await visitPopup.goto(`chrome-extension://${extensionId}/popup.html?tabId=${visitId}`);
+    await visitPopup.locator(".hero-score").waitFor({ timeout: 45_000 });
+    await hideScrollbars(visitPopup);
+    await visitPopup.locator('[data-nav="international"]').click();
+    await visitPopup.getByText("Alternate pages", { exact: true }).waitFor();
+    framed["popup-international"] = await savePopup(visitPopup, "popup-international.png");
+    await visitPopup.close();
+    await fixture.goto(`${served.origin}/page.html`, { waitUntil: "load" });
+
+    // Report sections at desktop width.
+    const saveReport = async (name: string) => {
+      await hideScrollbars(report);
+      await report.screenshot({
+        path: join(capturesDir, `${name}.png`),
+        type: "png",
+        animations: "disabled",
+      });
+      framed[name] = { height: 900, complete: true };
+    };
+    const openSection = async (section: string, heading: string) => {
+      await report.goto(
+        `chrome-extension://${extensionId}/dashboard.html?tabId=${id}&section=${section}`,
+      );
+      await report.getByRole("heading", { name: heading }).first().waitFor({ timeout: 45_000 });
+    };
+
+    await openSection("technical", "Diagnostic workspace");
+    await saveReport("report-technical");
+
+    await openSection("overview", "Your SEO snapshot");
+    await report.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    await saveReport("report-dark");
+    await report.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
+
+    await openSection("sitemaps", "Sitemap Explorer");
+    await report.getByRole("button", { name: "Discover sitemaps" }).click();
+    await report.getByText(`${served.origin}/schedule.html`).first().waitFor({ timeout: 30_000 });
+    await saveReport("report-sitemaps");
+
+    await openSection("site", "Site Explorer");
+    await report.getByRole("button", { name: "Start crawl" }).click();
+    await report.getByText("Complete", { exact: true }).first().waitFor({ timeout: 90_000 });
+    await saveReport("report-site");
+
+    // The sidebar docked beside the sample page, as the browser shows it.
+    await fixture.setViewportSize({ width: 740, height: 900 });
+    await fixture.bringToFront();
+    // Screenshot-only styling so the sample page reads like a real site. The audit already ran.
+    await fixture.addStyleTag({ content: pageStyle });
+    await fixture.screenshot({ path: join(capturesDir, "web-page.png"), type: "png" });
+    const sidebar = await context.newPage();
+    await sidebar.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
+    await sidebar.setViewportSize({ width: 400, height: 900 });
+    await sidebar.goto(`chrome-extension://${extensionId}/sidepanel.html?tabId=${id}`);
+    await sidebar.locator(".score-svg").first().waitFor({ timeout: 45_000 });
+    await hideScrollbars(sidebar);
+    await sidebar.screenshot({
+      path: join(capturesDir, "sidebar.png"),
+      type: "png",
+      animations: "disabled",
+    });
+    framed["sidebar"] = { height: 900, complete: true };
+    await sidebar.close();
+
+    // History: save three real measurements while earlier versions of the page are served.
+    // Each version keeps the same measured checks so the saves stay comparable.
+    const noAlt = (html: string) => html.replace(/ alt="[^"]*"/, "");
+    const versions: Array<((html: string) => string) | undefined> = [
+      (html) => noAlt(html).replace(/<title>[^<]*<\/title>/, "<title>Notes</title>"),
+      noAlt,
+      undefined,
+    ];
+    await openSection("reports", "SEO history");
+    for (const [index, edit] of versions.entries()) {
+      served.state.edit = edit;
+      await fixture.reload({ waitUntil: "load" });
+      if (index === 0) {
+        await report.reload();
+        await report.getByRole("heading", { name: "SEO history" }).waitFor({ timeout: 45_000 });
+      } else {
+        await report
+          .getByText("This result is from an earlier page.")
+          .first()
+          .waitFor({ timeout: 20_000 });
+        await report.getByRole("button", { name: "Refresh analysis" }).click();
+        await report
+          .getByText("This result is from an earlier page.")
+          .first()
+          .waitFor({ state: "detached" });
+      }
+      await report.getByRole("button", { name: "Save current comparison" }).click();
+      await report.getByText("Comparison saved on this device.").first().waitFor();
+    }
+    await report.reload();
+    await report.getByRole("heading", { name: "Score history" }).waitFor({ timeout: 45_000 });
+    await saveReport("report-history");
   } finally {
     await context.close();
     await rm(userDataDir, { recursive: true, force: true });
@@ -155,7 +295,7 @@ async function framePopup(page: Page) {
     const viewNeed = (view?.scrollHeight ?? 0) + head + foot + 4;
     return Math.ceil(Math.max(viewNeed, 640));
   });
-  const height = Math.min(needed, 1040);
+  const height = Math.min(needed, 1080);
   await page.setViewportSize({ width: 480, height });
   const extra = await page.evaluate(() => {
     const view = document.querySelector(".view");
@@ -163,10 +303,10 @@ async function framePopup(page: Page) {
     view.scrollTop = 0;
     return Math.max(0, view.scrollHeight - view.clientHeight);
   });
-  if (extra > 1 && height < 1040) {
-    await page.setViewportSize({ width: 480, height: Math.min(1040, height + extra + 4) });
+  if (extra > 1 && height < 1080) {
+    await page.setViewportSize({ width: 480, height: Math.min(1080, height + extra + 4) });
   }
-  return { height: Math.min(1040, height + (extra > 1 ? extra : 0)), complete: needed <= 1040 };
+  return { height: Math.min(1080, height + (extra > 1 ? extra : 0)), complete: needed <= 1080 };
 }
 
 async function rejectEmpty(page: Page) {
@@ -203,24 +343,66 @@ async function tabId(worker: Worker, part: string) {
   throw new Error(`Could not find the sample tab (${part}).`);
 }
 
+const pageStyle = `
+  body { margin: 0; background: #fbfaf7; color: #1d2026; font: 17px/1.6 Georgia, "DejaVu Serif", serif; }
+  article { max-width: 640px; margin: 0 auto; padding: 56px 32px; }
+  h1 { font: 700 40px/1.1 "Liberation Sans", Arial, sans-serif; letter-spacing: -0.02em; margin: 0 0 18px; }
+  h2 { font: 700 24px/1.2 "Liberation Sans", Arial, sans-serif; margin: 36px 0 8px; }
+  h3 { font: 700 13px/1.3 "Liberation Sans", Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: #c42a20; margin: 22px 0 4px; }
+  img { width: 100%; height: auto; border-radius: 6px; }
+  a { color: #c42a20; }
+`;
+
+const contentTypes: Record<string, string> = {
+  svg: "image/svg+xml",
+  xml: "application/xml",
+  txt: "text/plain; charset=utf-8",
+  html: "text/html; charset=utf-8",
+};
+
+/** Serves marketing/fixture. `edit` lets the History shot serve earlier versions of page.html. */
 async function serveFixture() {
+  const state: { edit?: (html: string) => string } = {};
   const server = createServer(async (request, response) => {
-    const name = new URL(request.url || "/", "http://127.0.0.1").pathname.replace(/^\//, "");
-    const file = name || "page.html";
+    const pathname = new URL(request.url || "/", "http://127.0.0.1").pathname;
+    const file = fixtureFileName(pathname);
+    if (!file) {
+      response.writeHead(404, { "content-type": contentTypes.html });
+      response.end("<!doctype html><title>Not found</title><h1>Not found</h1>");
+      return;
+    }
     try {
-      const body = await readFile(join(fixtureDir, file));
-      const type = file.endsWith(".svg") ? "image/svg+xml" : "text/html; charset=utf-8";
+      let body = (await readFile(join(fixtureDir, file), "utf8")).replaceAll("__ORIGIN__", origin);
+      if (file === "page.html" && state.edit) body = state.edit(body);
+      const type = contentTypes[file.split(".").pop() ?? ""] ?? contentTypes.html;
       response.writeHead(200, { "content-type": type });
-      response.end(body);
+      response.end(file.endsWith(".svg") ? await readFile(join(fixtureDir, file)) : body);
     } catch {
-      response.writeHead(404);
-      response.end("missing");
+      response.writeHead(404, { "content-type": contentTypes.html });
+      response.end("<!doctype html><title>Not found</title><h1>Not found</h1>");
     }
   });
   await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("Fixture server did not start.");
-  return { server, origin: `http://127.0.0.1:${address.port}` };
+  const origin = `http://127.0.0.1:${address.port}`;
+  return { server, origin, state };
+}
+
+const fixtureFiles = new Set([
+  "page.html",
+  "gallery.html",
+  "schedule.html",
+  "tools.html",
+  "visit.html",
+  "robots.txt",
+  "sitemap.xml",
+  "harbor.svg",
+]);
+
+export function fixtureFileName(pathname: string): string | undefined {
+  const name = pathname === "/" ? "page.html" : pathname.slice(1);
+  return !name.includes("/") && !name.includes("\\") && fixtureFiles.has(name) ? name : undefined;
 }
 
 async function extensionForFixture() {

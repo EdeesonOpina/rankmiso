@@ -211,6 +211,42 @@ describe("site crawl", () => {
     expect(session.sitemap).toBe("not-read");
   });
 
+  it("keeps fetched non-HTML resources without running HTML checks", async () => {
+    let inspections = 0;
+    const session = await runSiteCrawl({
+      startUrl: start,
+      signal: new AbortController().signal,
+      readRobots: async () => ({ status: 404, body: "", unavailable: false }),
+      discoverSitemaps: async () => ({ urls: [], unavailable: false, empty: true }),
+      mayFetch: async () => true,
+      fetchPage: async (url) => ({
+        status: 200,
+        finalUrl: url,
+        contentType: "application/pdf",
+        html: "",
+        hops: [],
+        error: "",
+        truncated: false,
+        retryable: false,
+      }),
+      inspect: async (page) => {
+        inspections += 1;
+        return page;
+      },
+    });
+
+    expect(inspections).toBe(0);
+    expect(sessionCsv(session)).toContain("Non-HTML resource; HTML-specific checks were not run.");
+    expect(session.pages[0]).toMatchObject({
+      status: 200,
+      contentType: "application/pdf",
+      nonHtml: true,
+      analyzed: false,
+      issues: [],
+      findings: [],
+    });
+  });
+
   it("retains structured findings returned by page inspection", async () => {
     const session = await runSiteCrawl({
       startUrl: start,
@@ -296,6 +332,9 @@ describe("site crawl", () => {
     const restored = loadCrawl("http://127.0.0.1");
     expect(restored?.pages[0]?.findings?.[0]?.id).toBe("RULE_H1_MISSING");
     expect(restored?.pages[0]?.internalLinkDetails).toHaveLength(10);
+    expect(restored?.pages[0]?.internalLinks).toHaveLength(40);
+    expect(restored?.pages[0]?.internalLinksTruncated).not.toBe(true);
+    expect(restored?.pages[0]?.internalLinks[0]).toBe("http://127.0.0.1/0");
     clearCrawl();
   });
 
@@ -444,6 +483,24 @@ describe("site crawl", () => {
 
     expect(requests).toBe(0);
     expect(result.error).toBe("Stopped");
+  });
+
+  it("does not expose an opaque redirect as HTTP status zero", async () => {
+    const result = await fetchCrawlPage(
+      start,
+      start,
+      new AbortController().signal,
+      async () =>
+        ({
+          type: "opaqueredirect",
+          status: 0,
+          body: null,
+          headers: new Headers(),
+        }) as Response,
+    );
+
+    expect(result.status).toBeNull();
+    expect(result.error).toContain("redirect could not be checked");
   });
 
   it("omits credentials and referrers while manually validating redirects", async () => {
