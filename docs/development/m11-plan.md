@@ -14,7 +14,7 @@ M11.0 and M11.1 are done in this checkpoint. M11.2–M11.8 are plans only and ne
 | M11.5 | AIO/GEO content analysis                   | Implemented locally on `feature/m11.5-aio-geo-readiness` (stacked on M11.6). See `docs/features/content-readiness.md`. |
 | M11.6 | AI and search crawler accessibility        | Implemented locally on `feature/m11.6-crawler-accessibility`; not pushed. See `docs/features/crawler-access.md`.       |
 | M11.7 | AI platform visibility and citations       | Implemented on `feature/v0.7.1-m11-integration`. See `docs/features/ai-visibility.md`.                                 |
-| M11.8 | Platform branding and UI integration       | Plan, with licence findings                                                                                            |
+| M11.8 | Platform branding and UI integration       | UI review done on `feature/v0.7.1-m11-integration` (`m11-ui-review.spec.ts`).                                          |
 
 ## M11.0 — baseline record
 
@@ -91,6 +91,18 @@ Done: `seo-rules::sd_entities` (one entity list for JSON-LD, Microdata, RDFa); r
 ### M11.7 checkpoint
 
 Done: `seo-rules::visibility`, bounded store `services/visibility.ts`, Visibility tab (`VisibilityPanel.vue`) with questions, recorded samples, change from the previous sample, deletion, JSON/CSV export. No network requests (asserted in `visibility.spec.ts`). Tests: Rust visibility 7; Vitest `visibility.test.ts` 8; Playwright `visibility.spec.ts` passes (record, reload, export, delete). Next: M11.8, then version 0.7.1 and the test package.
+
+### M11.8 and release candidate
+
+UI review: every M11 view in light and dark at 1440, 1024, 768, 390 px and the 350 px sidebar; no horizontal overflow; keyboard use of the AI & Search tabs. Found and fixed: the third AI & Search tab scrolled out of view on narrow widths (tabs now wrap). Shipped WASM drops the debug name section (1,367,330 → 1,138,839 bytes). Version aligned to 0.7.1 (packages, manifests, tests, CHANGELOG, `docs/releases/v0.7.1-draft.md`).
+
+Final verification (2026-11-25, Chromium 156): Rust fmt and Clippy clean, 140 passed / 1 ignored; WASM build; vue-tsc, ESLint, Prettier clean; Vitest 264 passed / 4 skipped; report-formats and marketing tests pass; Chrome 2.07 MB, Firefox 2.06 MB, Edge 2.07 MB, manifests 0.7.1; Playwright 17 / 17. Site Explorer heap median 20,426,093 bytes (develop + M11.6 baseline 20,238,441). Content readiness large page 28 ms median.
+
+Security review: one new optional permission (`webRequest`, owner approved), no new required or host permission; every network action is user-initiated, same-origin, cookie-free, time-limited, and validated hop by hop (no private hosts or non-web schemes); page HTML is parsed, never rendered or run; all evidence is rendered as text; stored data (visibility) is bounded, validated on load, and deletable; CSV exports go through the shared formula-safe formatter. Remaining risk: crawler readings use RankMiso's own requests, which bot management may treat differently from real crawlers.
+
+Test package: `~/Downloads/BUILDS/rankmiso-v0.7.1-final-test/` (chrome, firefox, edge, verification, screenshots, MANUAL-TESTING.md, MANUAL-FIXTURES, BUILD-INFO.txt, SHA256SUMS). Owner acceptance pending. Not done by automation: Firefox and Edge runtime, real permission prompts, signed-install restart, real websites.
+
+Next (owner): run `MANUAL-TESTING.md`. After explicit approval only: push `feature/v0.7.1-m11-integration` and open one PR into `develop` titled `feat: complete RankMiso v0.7.1 technical SEO and AI search intelligence`. The separate `feature/m11.6-crawler-accessibility` and `feature/m11.5-aio-geo-readiness` branches are contained in it and need no PRs of their own.
 
 ## M11.2 — redirect intelligence (plan)
 
