@@ -2946,6 +2946,60 @@ textarea.field {
   font-weight: 600;
 }
 /* Technical */
+.render-findings {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.render-findings h3 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.render-findings > .list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+/* Each row is alone in its li, so restore the divider .data-row:last-child removes. */
+.render-findings > .list > li:not(:last-child) > .data-row {
+  border-bottom: 1px solid var(--line);
+}
+/* Rows grow when evidence opens; keep the dot and badge beside the title. */
+.render-findings .data-row {
+  align-items: flex-start;
+}
+.render-evidence {
+  margin-top: 6px;
+}
+.render-evidence dl {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 8px;
+}
+.render-evidence dl > div {
+  display: grid;
+  grid-template-columns: minmax(96px, max-content) minmax(0, 1fr);
+  gap: 10px;
+}
+.render-evidence dt {
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--ink);
+}
+.render-evidence dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.render-evidence p {
+  margin: 0;
+}
+@media (max-width: 520px) {
+  .render-evidence dl > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
 .compare-rows {
   margin-top: 12px;
   display: flex;

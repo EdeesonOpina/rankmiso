@@ -1,4 +1,5 @@
 use seo_core::{AnalyzeOptions, EngineError, PageSnapshot};
+use seo_rules::rendering::{self, RenderingComparison};
 use seo_rules::sitemap::{self, SitemapDocument};
 use seo_rules::{analyze, rankmiso_may_fetch};
 use wasm_bindgen::prelude::*;
@@ -30,6 +31,18 @@ pub fn analyze_sitemap(document_json: &str) -> Result<String, JsValue> {
     let document: SitemapDocument = serde_json::from_str(document_json)
         .map_err(|error| js_error(EngineError::new("INVALID_JSON", error.to_string())))?;
     match sitemap::analyze(&document) {
+        Ok(result) => serde_json::to_string(&result)
+            .map_err(|error| js_error(EngineError::new("ENCODE_FAILED", error.to_string()))),
+        Err(error) => Err(js_error(error)),
+    }
+}
+
+/// Compares the initial HTML with the rendered page. Findings are not part of the page score.
+#[wasm_bindgen]
+pub fn analyze_rendering(comparison_json: &str) -> Result<String, JsValue> {
+    let comparison: RenderingComparison = serde_json::from_str(comparison_json)
+        .map_err(|error| js_error(EngineError::new("INVALID_JSON", error.to_string())))?;
+    match rendering::analyze(&comparison) {
         Ok(result) => serde_json::to_string(&result)
             .map_err(|error| js_error(EngineError::new("ENCODE_FAILED", error.to_string()))),
         Err(error) => Err(js_error(error)),

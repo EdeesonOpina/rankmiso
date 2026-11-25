@@ -9,6 +9,7 @@ mod international;
 mod links;
 mod metadata;
 mod performance;
+pub mod rendering;
 pub mod sitemap;
 mod social;
 mod structured_data;

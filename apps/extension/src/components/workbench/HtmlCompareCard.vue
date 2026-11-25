@@ -1,16 +1,31 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { browser } from "wxt/browser";
-import { compareHtml, signalsFromAudit, type CompareRow } from "../../services/html-signals";
+import {
+  compareHtml,
+  parseHtml,
+  renderSignalsFromAudit,
+  renderSignalsFromDocument,
+  signalsFromAudit,
+  type CompareRow,
+} from "../../services/html-signals";
+import {
+  analyzeRendering,
+  type RenderingReport,
+  type SourceUnavailable,
+} from "../../services/rendering-engine";
+import { selectChecks } from "../../services/check-list";
 import { sitePermission } from "../../services/page-access";
 import type { MessageKey } from "../../locales/en";
 import { useI18n } from "../../composables/useI18n";
 import type { AuditResult } from "../../types/audit";
 import WbCard from "./WbCard.vue";
+import DataRow from "./DataRow.vue";
+import { badgeTone, checkTone, statusKey } from "./checks";
 import { useWorkbench } from "./context";
 
 const props = defineProps<{ audit: AuditResult; network: boolean }>();
-const { t } = useI18n();
+const { t, n } = useI18n();
 const { copy } = useWorkbench();
 const rows = ref<CompareRow[] | null>(null);
 const source = ref<"fetch" | "file" | null>(null);
@@ -20,6 +35,47 @@ const hops = ref<string[]>([]);
 let controller: AbortController | null = null;
 
 const rendered = computed(() => signalsFromAudit(props.audit));
+const report = ref<RenderingReport | null>(null);
+const findings = computed(() =>
+  report.value ? selectChecks(report.value.findings, { sort: "severity" }) : [],
+);
+const allUnavailable = computed(
+  () => findings.value.length > 0 && findings.value.every((f) => f.status === "UNAVAILABLE"),
+);
+const summary = computed(() => {
+  const count = (match: (status: string) => boolean) =>
+    n(findings.value.filter((finding) => match(finding.status)).length);
+  return t("render.summary", {
+    review: count((status) => status === "ERROR" || status === "WARNING"),
+    note: count((status) => status === "INFO"),
+    same: count((status) => status === "PASS" || status === "NOT_APPLICABLE"),
+    notCompared: count((status) => status === "UNAVAILABLE"),
+  });
+});
+
+/** Runs the Rust diagnostics. A failure here never hides the plain comparison rows. */
+async function diagnose(
+  source:
+    | { origin: "fetch" | "file"; html: string }
+    | { origin: "fetch"; unavailable: SourceUnavailable },
+) {
+  const url = props.audit.page.url;
+  const renderedSignals = renderSignalsFromAudit(props.audit);
+  try {
+    report.value = await analyzeRendering(
+      url,
+      renderedSignals,
+      "html" in source
+        ? {
+            origin: source.origin,
+            signals: renderSignalsFromDocument(parseHtml(source.html, url), url),
+          }
+        : source,
+    );
+  } catch {
+    report.value = null;
+  }
+}
 
 const labels: Record<CompareRow["id"], string> = {
   title: "Title",
@@ -66,6 +122,7 @@ async function compareFetched() {
   if (!props.network || busy.value) return;
   status.value = "";
   rows.value = null;
+  report.value = null;
   hops.value = [];
   let originPattern: string;
   try {
@@ -79,6 +136,7 @@ async function compareFetched() {
   const granted = await browser.permissions.request({ origins: [originPattern] });
   if (!granted) {
     status.value = t("compare.denied");
+    await diagnose({ origin: "fetch", unavailable: "denied" });
     return;
   }
   controller?.abort();
@@ -90,9 +148,11 @@ async function compareFetched() {
     const result = await network.fetchComparisonHtml(props.audit.page.url, controller.signal);
     if (!result.ok) {
       status.value = t(reasonKey(result.reason));
+      await diagnose({ origin: "fetch", unavailable: result.reason });
       return;
     }
     rows.value = compareHtml(result.html, props.audit.page.url, rendered.value);
+    await diagnose({ origin: "fetch", html: result.html });
     hops.value = result.hops;
     source.value = "fetch";
     status.value = t("compare.ready");
@@ -111,10 +171,12 @@ async function onFile(event: Event) {
   if (file.size > 512_000) {
     status.value = t("compare.size");
     rows.value = null;
+    report.value = null;
     return;
   }
   const html = await file.text();
   rows.value = compareHtml(html, props.audit.page.url, rendered.value);
+  await diagnose({ origin: "file", html });
   hops.value = [];
   source.value = "file";
   status.value = t("compare.fileReady");
@@ -150,6 +212,40 @@ async function onFile(event: Event) {
     <p v-if="busy" class="hint" role="status">{{ t("compare.working") }}</p>
     <p v-else-if="status" class="hint" role="status">{{ status }}</p>
     <p v-if="hops.length" class="hint">{{ t("compare.hops") }} {{ hops.join(" · ") }}</p>
+    <section v-if="report" class="render-findings" aria-labelledby="render-findings-title">
+      <h3 id="render-findings-title">{{ t("render.title") }}</h3>
+      <p class="hint">{{ allUnavailable ? t("render.unavailable") : summary }}</p>
+      <ul class="list" role="list">
+        <li v-for="finding in findings" :key="finding.id">
+          <DataRow
+            :title="finding.title"
+            :sub="finding.description"
+            :tone="checkTone(finding.status)"
+            :badge="t(statusKey[finding.status])"
+            :badge-tone="badgeTone(finding.status)"
+          >
+            <details
+              v-if="finding.evidence.length || finding.recommendation"
+              class="disclosure render-evidence"
+            >
+              <summary>{{ t("render.evidence") }}<span aria-hidden="true">⌄</span></summary>
+              <div class="details-body">
+                <dl>
+                  <div v-for="(item, index) in finding.evidence" :key="`${item.label}-${index}`">
+                    <dt>{{ item.label }}</dt>
+                    <dd>{{ item.value }}</dd>
+                  </div>
+                </dl>
+                <p v-if="finding.recommendation">
+                  <strong>{{ t("render.investigate") }}</strong> {{ finding.recommendation }}
+                </p>
+              </div>
+            </details>
+          </DataRow>
+        </li>
+      </ul>
+      <p class="hint">{{ t("render.note") }}</p>
+    </section>
     <div v-if="rows" class="compare-rows">
       <div v-for="row in rows" :key="row.id" class="compare-item">
         <div class="compare-head">

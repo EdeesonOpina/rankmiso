@@ -285,3 +285,16 @@ Status: Chromium Playwright covers save, a same-crawl comparison with no confirm
 ## R7 automated evidence (2026-11-13)
 
 Fresh Chrome Playwright qualification passed 10/10 tests against the current `.output/chrome-mv3`: local audit and exports; crawl start/stop, non-HTML PDF classification, bounded counts, responsive views, theme switch, save/restore/delete and same-crawl comparison, changed-title comparison, formula-safe CSV and comparison JSON, stale-result invalidation, plus 100-page/20,000-link heap sampling. Firefox production manifest/build inspection passed, but no persistent signed Firefox installation or restart test was performed. Continue the manual permission grant/deny/revoke and Firefox runtime checks above using isolated profiles; do not treat automated Chromium coverage as native Firefox acceptance.
+
+## M11.1 — JavaScript SEO diagnostics (unreleased)
+
+Status values: Passed, Failed, Blocked, Not performed. Record browser, version, and profile.
+
+| Check                                                                                                                      | Chrome                                                       | Firefox                      |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------- |
+| Technical → Compare HTML on a static page: every row Passed or Not applicable                                              | Not performed                                                | n/a (fetch is Chromium only) |
+| Compare HTML on a client-rendered page (title or links added by script): Warning or Note rows with both values in Evidence | Passed in Playwright fixture only                            | n/a                          |
+| Compare an HTML file: diagnostics appear, file not saved                                                                   | Not performed                                                | Not performed                |
+| Deny the site-access prompt: every row "Not measured", none Passed                                                         | Not performed                                                | n/a                          |
+| Light and dark theme, keyboard open/close of Evidence, 768px and sidebar width                                             | Partly: Playwright light/dark screenshots, 768px no overflow | Not performed                |
+| Page score unchanged after a comparison                                                                                    | Not performed                                                | Not performed                |
