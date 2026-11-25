@@ -80,6 +80,7 @@ const {
   status,
   error,
   audit,
+  snapshot,
   tab,
   stale,
   probing,
@@ -272,6 +273,7 @@ onUnmounted(() => window.removeEventListener("focus", onFocus));
 provide(workbenchKey, {
   surface: props.surface,
   tabId,
+  snapshot,
   ready,
   probing,
   probeMessage,

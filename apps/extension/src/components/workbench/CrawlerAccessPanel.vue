@@ -20,14 +20,15 @@ import {
   type CrawlState,
 } from "../../services/crawler-access";
 import { sitePermission } from "../../services/page-access";
+import { crawlerAccessFor, rememberCrawlerAccess } from "../../services/ai-search-store";
 import type { AuditResult } from "../../types/audit";
-import PageHeading from "./PageHeading.vue";
 import SxPanel from "./SxPanel.vue";
 import SxStat from "./SxStat.vue";
 
 const props = defineProps<{ audit: AuditResult }>();
 const { t, n } = useI18n();
-const result = ref<AccessCheck | null>(null);
+// The latest check for this page survives switching tabs or sections.
+const result = ref<AccessCheck | null>(crawlerAccessFor(props.audit.page.url) ?? null);
 const busy = ref(false);
 const message = ref("");
 let controller: AbortController | null = null;
@@ -196,7 +197,9 @@ async function check() {
   controller = new AbortController();
   busy.value = true;
   try {
-    result.value = await checkCrawlerAccess(props.audit.page.url, controller.signal);
+    const url = props.audit.page.url;
+    result.value = await checkCrawlerAccess(url, controller.signal);
+    rememberCrawlerAccess(url, result.value);
   } catch (error) {
     message.value = t(
       error instanceof DOMException && error.name === "AbortError"
@@ -216,13 +219,7 @@ onBeforeUnmount(cancel);
 </script>
 
 <template>
-  <div class="ax">
-    <PageHeading
-      :overline="t('access.overline')"
-      :title="t('access.title')"
-      :text="t('access.intro')"
-    />
-
+  <div class="ax-panel">
     <section class="ax-console" :aria-label="t('access.title')">
       <div>
         <strong translate="no">{{ host || t("access.noOrigin") }}</strong>

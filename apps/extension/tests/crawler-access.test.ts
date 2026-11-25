@@ -243,9 +243,16 @@ describe("AI & Search view", () => {
     expect(readings).not.toMatch(/\b(ranked|indexed|cited|visible in)\b/i);
   });
 
+  it("keeps the latest check for the page when the view is opened again", () => {
+    const wrapper = mount(AiSearchView, { props: { audit } });
+    expect(wrapper.find(".ax-card").exists()).toBe(true);
+    expect(harness.check).not.toHaveBeenCalled();
+  });
+
   it("explains a failed check without inventing results", async () => {
     harness.check.mockRejectedValue(new Error("boom"));
-    const wrapper = mount(AiSearchView, { props: { audit } });
+    const other = { page: { url: `${origin}/other`, title: "Other", language: "en" } } as never;
+    const wrapper = mount(AiSearchView, { props: { audit: other } });
     await wrapper.get("button.primary").trigger("click");
     await flushPromises();
     expect(wrapper.get("[role=status]").text()).toContain("could not finish");

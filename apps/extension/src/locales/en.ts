@@ -423,6 +423,60 @@ export const messages = {
   "access.disclaimer":
     "These are readings of the published rules, not crawl results. RankMiso's requests are not made by these crawlers, and firewalls or bot management can treat real crawlers differently. Nothing here shows a page is crawled, indexed, ranked, or cited.",
   "access.names": "Product names belong to their owners. RankMiso is not affiliated with them.",
+  "aiSearch.title": "AI & Search",
+  "aiSearch.intro":
+    "How this page presents itself to search engines and AI-assisted search: crawler rules, and observable content readiness.",
+  "aiSearch.views": "AI & Search views",
+  "aiSearch.tab.access": "Crawler access",
+  "aiSearch.tab.readiness": "Content readiness",
+  "ready.title": "Content readiness",
+  "ready.local":
+    "Analyzed on this device from the page RankMiso already read. No request is made, and results are not saved.",
+  "ready.pageType": "Page type: {type}",
+  "ready.pageType.article": "article",
+  "ready.pageType.product": "product",
+  "ready.pageType.other": "general page",
+  "ready.empty.title": "No page data yet",
+  "ready.empty.body":
+    "Content readiness uses the page snapshot from the current analysis. Refresh the analysis if this stays empty.",
+  "ready.failed": "Content readiness could not run",
+  "ready.stat.completed": "Checks completed",
+  "ready.stat.opportunities": "Opportunities",
+  "ready.stat.notMeasured": "Not measured",
+  "ready.stat.notApplicable": "Not applicable",
+  "ready.groupCount": "{count} to review",
+  "ready.group.discoverability": "Technical discoverability",
+  "ready.group.discoverabilityText":
+    "Whether search and AI search crawlers may reach and quote this page. Crawl rules, indexing, and appearing in answers are separate things.",
+  "ready.group.structure": "Content structure",
+  "ready.group.structureText": "Headings and the main content region.",
+  "ready.group.clarity": "Content clarity",
+  "ready.group.clarityText": "Whether the title, headings, and links say what the page is about.",
+  "ready.group.attribution": "Entity and attribution",
+  "ready.group.attributionText": "Author, publisher, and dates where the page type calls for them.",
+  "ready.group.structuredData": "Structured data consistency",
+  "ready.group.structuredDataText":
+    "Whether JSON-LD matches what the page shows. Structured data is not required for AI search features.",
+  "ready.group.accessibility": "Content accessibility",
+  "ready.group.accessibilityText": "Existing accessibility checks that affect how content is read.",
+  "ready.status.review": "Review",
+  "ready.status.opportunity": "Opportunity",
+  "ready.status.observation": "Observation",
+  "ready.status.clear": "No issue observed",
+  "ready.status.notMeasured": "Not measured",
+  "ready.status.notApplicable": "Not applicable",
+  "ready.next": "What to check:",
+  "ready.reused": "Page check · open in Issues",
+  "ready.action.access": "Check crawler access",
+  "ready.action.rendering": "Open HTML comparison",
+  "ready.stale.access":
+    "Crawler access was checked before the latest page analysis. Check again if robots.txt may have changed.",
+  "ready.stale.rendering":
+    "The HTML comparison ran before the latest page analysis. Compare again if the page may have changed.",
+  "ready.disclaimer":
+    "These checks describe observable structure on this page. They are not a score, and they do not predict whether any AI service will show or cite the page. Google says its AI features need no special files, markup, or schema.",
+  "ready.llms":
+    "llms.txt is not checked: Google says it is not needed for its AI features, and no provider listed here documents reading it.",
   "nav.settings": "Settings",
   "ai.title": "AI Integrations",
   "ai.description":

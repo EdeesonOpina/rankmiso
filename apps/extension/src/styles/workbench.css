@@ -6196,3 +6196,62 @@ button.sx-row.is-selected {
     gap: 0;
   }
 }
+
+/* AI & Search tabs and content readiness (M11.5). */
+.ax-tabs {
+  margin: 0 0 18px;
+}
+.ax-findings {
+  list-style: none;
+  margin: 0;
+  padding: 0 22px 8px;
+}
+.ax-finding {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ax-finding:last-child {
+  border-bottom: 0;
+}
+.ax-finding-main {
+  min-width: 0;
+  flex: 1;
+}
+.ax-finding-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+.ax-finding h4 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink);
+}
+.ax-finding p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.ax-finding .ax-next strong {
+  color: var(--ink);
+}
+.ax-finding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.ax-finding-actions:empty {
+  display: none;
+}
+@media (max-width: 520px) {
+  .ax-findings {
+    padding: 0 14px 8px;
+  }
+}
