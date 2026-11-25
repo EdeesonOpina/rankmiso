@@ -8,7 +8,7 @@
 - Hop-by-hop redirect trace. New optional `webRequest` permission, asked for only on "Allow redirect details"; with it, Site Explorer follows same-origin redirects.
 - Structured data checks across JSON-LD, Microdata, and RDFa; required properties now follow Google's documentation (Article and Organization have none; FAQ rich results are retired).
 - The Chrome Web Store promo tiles no longer say "Free", and the marketing build refuses status words.
-- Discoverability follows the new workspace design (hero, pill tabs, evidence column) and gains a compact popup screen. Platform cards show the platforms' own logos, bundled with the extension and never fetched. Platform and content-use cards align by row. AI visibility suggests starter questions built only from what the audit read on the page.
+- Discoverability follows the new workspace design (hero, pill tabs, evidence column) and gains a compact popup screen. Platform cards show the platforms' own logos, bundled with the extension and never fetched. Platform and content-use cards align by row. AI visibility suggests starter questions built only from what the audit read on the page. Overview gains a Discoverability summary in the report, sidebar, and popup.
 - The page SEO score is unchanged by the new findings. Firefox runtime and permission lifecycle remain owner acceptance items.
 
 ## 0.7.0 — release candidate (unpublished)

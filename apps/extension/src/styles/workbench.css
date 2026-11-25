@@ -7316,3 +7316,14 @@ html[data-theme="dark"] .ax-limits p {
     min-width: 0;
   }
 }
+
+/* Discoverability summary on Overview. */
+.disc-card .disc-sub {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.disc-card .section-heading .subtle-btn {
+  flex: none;
+  white-space: nowrap;
+}

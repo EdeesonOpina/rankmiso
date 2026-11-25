@@ -296,7 +296,7 @@ const themeKey: Record<ThemePreference, MessageKey> = {
           :is="screens[current]"
           v-if="audit || current === 'ai-integrations'"
           :audit="audit"
-          :snapshot="current === 'ai-search' ? snapshot : undefined"
+          :snapshot="current === 'ai-search' || current === 'overview' ? snapshot : undefined"
           :hide-heading="current === 'ai-integrations'"
           :focus-id="focusCheck"
           :preference="preference"
