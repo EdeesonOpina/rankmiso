@@ -6308,3 +6308,74 @@ button.sx-row.is-selected {
 .redirect-card .ax-findings {
   padding: 0;
 }
+
+/* AI answer visibility (M11.7). */
+.vis-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: end;
+  padding: 0 22px 22px;
+}
+.vis-form label {
+  display: grid;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.vis-form input,
+.vis-form select,
+.vis-form textarea {
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+}
+.vis-form textarea {
+  resize: vertical;
+}
+.vis-wide {
+  grid-column: 1 / -1;
+}
+.vis-record {
+  margin: 0 22px 18px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--surface2);
+}
+.vis-none {
+  margin: 0;
+  padding: 0 22px 22px;
+}
+.vis-rows .ax-mark {
+  margin-top: 2px;
+}
+.vis-history {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 12px;
+  list-style: none;
+}
+.vis-history p {
+  margin: 2px 0 0;
+}
+.vis-history-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: baseline;
+}
+@media (max-width: 520px) {
+  .vis-form {
+    padding: 0 14px 14px;
+  }
+  .vis-record {
+    margin: 0 14px 14px;
+  }
+}

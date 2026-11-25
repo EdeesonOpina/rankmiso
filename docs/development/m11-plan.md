@@ -13,7 +13,7 @@ M11.0 and M11.1 are done in this checkpoint. M11.2–M11.8 are plans only and ne
 | M11.4 | Structured data intelligence               | Implemented on `feature/v0.7.1-m11-integration`. See `docs/features/structured-data.md`.                               |
 | M11.5 | AIO/GEO content analysis                   | Implemented locally on `feature/m11.5-aio-geo-readiness` (stacked on M11.6). See `docs/features/content-readiness.md`. |
 | M11.6 | AI and search crawler accessibility        | Implemented locally on `feature/m11.6-crawler-accessibility`; not pushed. See `docs/features/crawler-access.md`.       |
-| M11.7 | AI platform visibility and citations       | Plan                                                                                                                   |
+| M11.7 | AI platform visibility and citations       | Implemented on `feature/v0.7.1-m11-integration`. See `docs/features/ai-visibility.md`.                                 |
 | M11.8 | Platform branding and UI integration       | Plan, with licence findings                                                                                            |
 
 ## M11.0 — baseline record
@@ -88,17 +88,9 @@ Done: optional `webRequest` permission (owner approved 2026-11-25) with `redirec
 
 Done: `seo-rules::sd_entities` (one entity list for JSON-LD, Microdata, RDFa); required properties corrected to Google's documentation (Article/Organization have none; FAQ rich results retired); value types, URLs, conflicts and duplicates, references, article attribution. Content readiness reuses the five new checks and no longer duplicates JSON-LD date format. Tests: Rust 133 passed / 1 ignored; Vitest 256 passed / 4 skipped; Playwright Chromium 15/15 including `structured-data.spec.ts`. Next: M11.7.
 
-### M11.7 checkpoint (in progress — resume here)
+### M11.7 checkpoint
 
-Committed: `seo-rules::visibility` (WASM `classify_visibility`, schema 1: cited / mentioned / not-observed / unknown / not-measured from pasted answer text and citation links; subdomains match, look-alikes do not; 7 tests), `visibilityPlatforms` in `crawlers.config.ts`, `services/visibility.ts` (bounded localStorage store `rankmiso.aiVisibility`: 50 queries, 500 observations, 20 per query and platform, 400 KB; validation on load; CSV via shared `toCsv`), and `download` exported from `services/export.ts`.
-
-Not done yet:
-
-1. `VisibilityPanel.vue` as a third AI & Search tab ("Visibility"): add query (text, domain defaulting to the current host, optional brand); per query, platform rows with latest status, date, and change from the previous sample; record-observation form (platform, date, pasted answer, citation lines, manual outcome only when nothing is pasted, notes); history with delete; delete query; JSON and CSV export; storage usage line; locale strings and styles.
-2. Vitest for `services/visibility.ts` (limits, damaged store, deletion, CSV formula safety) and the panel; Playwright: record, reload, persist, delete.
-3. `docs/features/ai-visibility.md`; then M11.8 (UI review at 350/390/768/1024/wide, light/dark), version 0.7.1 alignment, final package in `~/Downloads/BUILDS/rankmiso-v0.7.1-final-test/` with `MANUAL-TESTING.md`.
-
-Last full verification (after M11.4): Rust 133 passed / 1 ignored, Vitest 256 passed / 4 skipped, Playwright Chromium 15/15, Clippy, ESLint, Prettier clean, Chrome and Firefox builds pass.
+Done: `seo-rules::visibility`, bounded store `services/visibility.ts`, Visibility tab (`VisibilityPanel.vue`) with questions, recorded samples, change from the previous sample, deletion, JSON/CSV export. No network requests (asserted in `visibility.spec.ts`). Tests: Rust visibility 7; Vitest `visibility.test.ts` 8; Playwright `visibility.spec.ts` passes (record, reload, export, delete). Next: M11.8, then version 0.7.1 and the test package.
 
 ## M11.2 — redirect intelligence (plan)
 
