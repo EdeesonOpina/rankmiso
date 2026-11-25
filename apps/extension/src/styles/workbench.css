@@ -6200,6 +6200,14 @@ button.sx-row.is-selected {
 /* AI & Search tabs and content readiness (M11.5). */
 .ax-tabs {
   margin: 0 0 18px;
+  /* Three tabs must stay visible in the sidebar and on phones, not scroll out of view. */
+  flex-wrap: wrap;
+  overflow: visible;
+}
+@media (max-width: 520px) {
+  .ax-tabs button {
+    padding: 10px 11px 12px;
+  }
 }
 .ax-findings {
   list-style: none;
