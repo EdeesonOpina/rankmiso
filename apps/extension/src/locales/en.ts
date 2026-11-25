@@ -304,6 +304,125 @@ export const messages = {
   "nav.allTools": "All tools",
   "nav.site": "Site",
   "nav.sitemaps": "Sitemaps",
+  "nav.aiSearch": "AI & Search",
+  "access.overline": "Site intelligence",
+  "access.title": "AI & Search crawler access",
+  "access.intro":
+    "What this site's robots.txt, robots meta tags, and X-Robots-Tag header say to documented search and AI crawlers.",
+  "access.check": "Check access",
+  "access.checking": "Checking…",
+  "access.cancel": "Cancel",
+  "access.never": "Not checked yet",
+  "access.checked": "Checked {time}",
+  "access.requests":
+    "Reads robots.txt and this page once each, without cookies. Results stay on this device.",
+  "access.denied": "Site access was not granted, so nothing was checked.",
+  "access.unavailable": "Site access could not be requested in this browser.",
+  "access.cancelled": "Check cancelled.",
+  "access.failed": "The check could not finish.",
+  "access.noOrigin": "This page is not a website RankMiso can check.",
+  "access.empty.title": "No check yet",
+  "access.empty.body":
+    "Choose Check access to read the rules. RankMiso asks for access to this site first.",
+  "access.stat.allowed": "Allowed by a rule group",
+  "access.stat.disallowed": "Disallowed",
+  "access.stat.noRule": "No applicable rule",
+  "access.stat.noRuleNote": "Allowed by default",
+  "access.stat.unknown": "Unknown",
+  "access.robots.read": "read, HTTP {status}.",
+  "access.robots.missing":
+    "returned HTTP {status}. Under RFC 9309 crawlers treat this as no rules.",
+  "access.robots.error":
+    "returned HTTP {status}. Under RFC 9309 crawlers treat the site as fully disallowed until this recovers.",
+  "access.robots.notRead":
+    "could not be read from this browser. That says nothing about what crawlers see.",
+  "access.page.ok": "This browser got HTTP {status} for the page.",
+  "access.page.auth": "This browser got HTTP {status} for the page: login required.",
+  "access.page.forbidden":
+    "This browser got HTTP 403 for the page. Real crawlers may be treated differently.",
+  "access.page.notFound": "This browser got HTTP {status} for the page.",
+  "access.page.rateLimited": "This browser got HTTP 429 for the page: rate limited.",
+  "access.page.serverError": "This browser got HTTP {status} for the page: server error.",
+  "access.page.other": "This browser got HTTP {status} for the page.",
+  "access.page.notMeasured":
+    "The page could not be read, so its meta tags and X-Robots-Tag were not measured.",
+  "access.pathChecked": "Path checked: {path}",
+  "access.search": "Search engines",
+  "access.searchText": "Crawlers that build traditional search indexes.",
+  "access.ai": "AI search and assistants",
+  "access.aiText":
+    "Crawlers and fetchers behind AI answers. A platform can depend on more than one.",
+  "access.contentUse": "AI training and content use",
+  "access.contentUseText":
+    "Training crawlers and preference tokens. These govern how content is used, not whether a page appears in search.",
+  "access.state.allowed": "Allowed by robots.txt",
+  "access.state.disallowed": "Disallowed by robots.txt",
+  "access.state.noRules": "No rule for this crawler",
+  "access.state.robotsMissing": "No robots.txt rules",
+  "access.state.robotsError": "robots.txt server error",
+  "access.state.notMeasured": "Not measured",
+  "access.state.unsupported": "Not supported",
+  "access.use.allowed": "No restriction stated",
+  "access.use.disallowed": "Use restricted",
+  "access.use.none": "No preference stated",
+  "access.kind.search": "Search crawler",
+  "access.kind.aiSearch": "AI search crawler",
+  "access.kind.aiTraining": "Model training crawler",
+  "access.kind.userFetch": "Fetches pages when a user asks",
+  "access.kind.contentUse": "Preference token, does not crawl",
+  "access.behaviour.obeys": "The provider says it follows robots.txt.",
+  "access.behaviour.mayIgnore":
+    "The provider says robots.txt rules may not apply to requests a user starts.",
+  "access.behaviour.ignores": "The provider says it generally ignores robots.txt.",
+  "access.behaviour.preference":
+    "A preference the provider's crawlers read. It never crawls by itself.",
+  "access.behaviour.notStated": "The provider's page does not say how it treats robots.txt.",
+  "access.note.brave":
+    "Brave publishes no crawler name and says it crawls only what Googlebot may crawl, so this shows the Googlebot reading.",
+  "access.note.yahoo":
+    "Yahoo's help pages do not say which index supplies its results, so RankMiso does not guess.",
+  "access.note.duckduckgo":
+    "DuckDuckGo also uses other result sources, so this is only part of the picture.",
+  "access.note.googleAi":
+    "Google says AI Overviews and AI Mode use the Search index with no extra requirements. nosnippet and max-snippet limit what they show.",
+  "access.note.gemini":
+    "Google-Extended is a control token, not a crawler. Google says it does not affect Google Search.",
+  "access.note.copilot":
+    "Microsoft documents no separate Copilot crawler. Copilot answers draw on Bing's crawl.",
+  "access.note.perplexity":
+    "Perplexity's page does not say whether PerplexityBot follows robots.txt.",
+  "access.support.partial": "Partly documented",
+  "access.support.informational": "Informational",
+  "access.support.unsupported": "Not supported",
+  "access.evidence": "Evidence",
+  "access.ev.token": "robots.txt token",
+  "access.ev.kind": "Role",
+  "access.ev.result": "Reading",
+  "access.ev.group": "Group used",
+  "access.ev.groupWildcard": "* (no group names this token)",
+  "access.ev.noGroup": "None",
+  "access.ev.rule": "Deciding rule",
+  "access.ev.noRule": "No rule matched this path",
+  "access.ev.indexing": "Indexing directives",
+  "access.ev.noDirectives": "None on this page",
+  "access.ev.notMeasured": "Not measured",
+  "access.docs": "Provider documentation",
+  "access.reviewed": "reviewed {date}",
+  "access.wildcardNote":
+    "Read from the * group. The provider may act only on rules that name this token.",
+  "access.ms.title": "Microsoft AI preferences on this page",
+  "access.ms.training": "AI Training",
+  "access.ms.grounding": "AI Grounding",
+  "access.ms.none": "Not set (default allow)",
+  "access.ms.notMeasured": "Not measured: the page could not be read.",
+  "access.ms.future":
+    "Announced: Microsoft honours these from 1 February 2027, as it recrawls pages.",
+  "access.ms.now": "Microsoft honours these since 1 February 2027, once it recrawls the page.",
+  "access.ms.separate":
+    "They govern content use, not crawl access; Bingbot's robots.txt reading is separate.",
+  "access.disclaimer":
+    "These are readings of the published rules, not crawl results. RankMiso's requests are not made by these crawlers, and firewalls or bot management can treat real crawlers differently. Nothing here shows a page is crawled, indexed, ranked, or cited.",
+  "access.names": "Product names belong to their owners. RankMiso is not affiliated with them.",
   "nav.settings": "Settings",
   "ai.title": "AI Integrations",
   "ai.description":

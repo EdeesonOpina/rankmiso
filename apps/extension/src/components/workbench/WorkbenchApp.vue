@@ -27,6 +27,7 @@ import {
   Link,
   Moon,
   Network,
+  Radar,
   PanelsTopLeft,
   PersonStanding,
   RotateCw,
@@ -63,6 +64,7 @@ import InternationalView from "./InternationalView.vue";
 import AccessibilityView from "./AccessibilityView.vue";
 import SiteView from "./SiteView.vue";
 import SitemapsView from "./SitemapsView.vue";
+import AiSearchView from "./AiSearchView.vue";
 import HistoryView from "./HistoryView.vue";
 import ExportView from "./ExportView.vue";
 import SettingsView from "./SettingsView.vue";
@@ -113,6 +115,7 @@ const icons: Record<string, Component> = {
   accessibility: PersonStanding,
   site: PanelsTopLeft,
   sitemaps: Network,
+  "ai-search": Radar,
   reports: Clock,
   export: Download,
   "ai-integrations": Cpu,
@@ -135,6 +138,7 @@ const views: Record<string, Component> = {
   accessibility: AccessibilityView,
   site: SiteView,
   sitemaps: SitemapsView,
+  "ai-search": AiSearchView,
   reports: HistoryView,
   export: ExportView,
   "ai-integrations": AIIntegrationsView,

@@ -298,3 +298,17 @@ Status values: Passed, Failed, Blocked, Not performed. Record browser, version, 
 | Deny the site-access prompt: every row "Not measured", none Passed                                                         | Not performed                                                | n/a                          |
 | Light and dark theme, keyboard open/close of Evidence, 768px and sidebar width                                             | Partly: Playwright light/dark screenshots, 768px no overflow | Not performed                |
 | Page score unchanged after a comparison                                                                                    | Not performed                                                | Not performed                |
+
+## M11.6 — AI & Search crawler access (unreleased)
+
+Status values: Passed, Failed, Blocked, Not performed. Record browser, version, and profile.
+
+| Check | Chrome | Firefox |
+| --- | --- | --- |
+| Fixture site: robots groups for GPTBot, OAI-SearchBot, Claude-SearchBot, `__usage_ai-training`, and `*`; meta and X-Robots-Tag scoped directives; exactly two requests | Passed (Playwright, Chromium 156) | Not performed |
+| Real site with a robots.txt that names AI crawlers: readings match the file by hand | Not performed | Not performed |
+| Deny the site-access prompt: "not granted", nothing fetched | Passed in Vitest only | Not performed |
+| robots.txt 404, 5xx, and unreachable: "No robots.txt rules", "server error", "Not measured" | Unit tests only | Not performed |
+| Cancel during a slow check | Not performed | Not performed |
+| Light and dark theme, 390 / 768 / 1024 px, sidebar 350 px, keyboard open of Evidence | Passed for layout (Playwright screenshots, no overflow); keyboard Not performed | Not performed |
+| Site Explorer still skips robots-disallowed pages | Passed (Playwright) | Not performed |

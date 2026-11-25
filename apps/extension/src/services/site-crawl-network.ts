@@ -217,7 +217,7 @@ async function readLimitedUrl(
   }
 }
 
-async function readBody(response: Response, maxBytes: number) {
+export async function readBody(response: Response, maxBytes: number) {
   const reader = response.body?.getReader();
   if (!reader) return { text: "", truncated: false };
   const chunks: Uint8Array[] = [];
