@@ -3,6 +3,7 @@
 
 mod accessibility;
 mod content;
+pub mod crawler_access;
 mod headings;
 mod images;
 mod international;
