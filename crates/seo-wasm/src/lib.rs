@@ -5,6 +5,7 @@ use seo_rules::redirects::{self, RedirectTrace};
 use seo_rules::rendering::{self, RenderingComparison};
 use seo_rules::site_relations::{self, RelationsInput};
 use seo_rules::sitemap::{self, SitemapDocument};
+use seo_rules::visibility::{self, Observation};
 use seo_rules::{analyze, rankmiso_may_fetch};
 use wasm_bindgen::prelude::*;
 
@@ -95,6 +96,18 @@ pub fn analyze_redirects(trace_json: &str) -> Result<String, JsValue> {
     let trace: RedirectTrace = serde_json::from_str(trace_json)
         .map_err(|error| js_error(EngineError::new("INVALID_JSON", error.to_string())))?;
     match redirects::analyze(&trace) {
+        Ok(result) => serde_json::to_string(&result)
+            .map_err(|error| js_error(EngineError::new("ENCODE_FAILED", error.to_string()))),
+        Err(error) => Err(js_error(error)),
+    }
+}
+
+/// Classifies one user-recorded AI answer observation for a domain.
+#[wasm_bindgen]
+pub fn classify_visibility(observation_json: &str) -> Result<String, JsValue> {
+    let observation: Observation = serde_json::from_str(observation_json)
+        .map_err(|error| js_error(EngineError::new("INVALID_JSON", error.to_string())))?;
+    match visibility::classify(&observation) {
         Ok(result) => serde_json::to_string(&result)
             .map_err(|error| js_error(EngineError::new("ENCODE_FAILED", error.to_string()))),
         Err(error) => Err(js_error(error)),

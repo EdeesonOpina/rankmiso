@@ -21,6 +21,7 @@ mod social;
 mod structured_data;
 mod support;
 mod technical;
+pub mod visibility;
 
 pub use technical::rankmiso_may_fetch;
 

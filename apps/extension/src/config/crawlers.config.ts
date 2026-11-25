@@ -227,3 +227,49 @@ function crawlerUrl(id: string): string {
   if (!found) throw new Error(`Unknown crawler ${id}`);
   return found.documentationUrl;
 }
+
+/** AI answer surfaces a user can record observations for (M11.7). `platformId` links to the
+ * crawler-access platform where one exists. Links open the product home page; RankMiso never
+ * queries these services. */
+export interface VisibilityPlatform {
+  readonly id: string;
+  readonly name: string;
+  readonly homeUrl: string;
+  readonly platformId: string;
+}
+
+export const visibilityPlatforms: readonly VisibilityPlatform[] = [
+  { id: "chatgpt", name: "ChatGPT search", homeUrl: "https://chatgpt.com/", platformId: "chatgpt" },
+  {
+    id: "google-ai-overviews",
+    name: "Google AI Overviews",
+    homeUrl: "https://www.google.com/",
+    platformId: "google-ai",
+  },
+  {
+    id: "google-ai-mode",
+    name: "Google AI Mode",
+    homeUrl: "https://www.google.com/",
+    platformId: "google-ai",
+  },
+  { id: "gemini", name: "Gemini", homeUrl: "https://gemini.google.com/", platformId: "gemini" },
+  {
+    id: "copilot",
+    name: "Microsoft Copilot",
+    homeUrl: "https://copilot.microsoft.com/",
+    platformId: "copilot",
+  },
+  { id: "claude", name: "Claude", homeUrl: "https://claude.ai/", platformId: "claude" },
+  {
+    id: "perplexity",
+    name: "Perplexity",
+    homeUrl: "https://www.perplexity.ai/",
+    platformId: "perplexity",
+  },
+  {
+    id: "duckassist",
+    name: "DuckDuckGo AI-assisted answers",
+    homeUrl: "https://duckduckgo.com/",
+    platformId: "duckassist",
+  },
+];
