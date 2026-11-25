@@ -1754,6 +1754,8 @@ export const messages = {
   "wb.sc.structured": "Structured",
   "wb.sc.array": "Array[{count}]",
   "wb.sc.hint": "Extraction is not a Google rich-result eligibility test.",
+  "wb.sc.supported":
+    "RankMiso checks the properties Google lists as required for BreadcrumbList, Product, and LocalBusiness, plus date and number formats, URLs, duplicate or conflicting entities, @id references, and article author and publisher names, across JSON-LD, Microdata, and RDFa. It is not a full Schema.org validator. Google no longer shows FAQ rich results.",
   "wb.so.overline": "Share appearance",
   "wb.so.title": "Social previews",
   "wb.so.text": "Platform-inspired approximations using metadata from the page.",

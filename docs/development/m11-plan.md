@@ -10,7 +10,7 @@ M11.0 and M11.1 are done in this checkpoint. M11.2–M11.8 are plans only and ne
 | M11.1 | JavaScript SEO diagnostics                 | Merged to `develop` (#65). See `docs/features/javascript-seo.md`.                                                      |
 | M11.2 | Redirect intelligence                      | Implemented on `feature/v0.7.1-m11-integration`. See `docs/features/redirects.md`.                                     |
 | M11.3 | Canonical and hreflang intelligence        | Implemented on `feature/v0.7.1-m11-integration`. See `docs/features/canonical-hreflang.md`.                            |
-| M11.4 | Structured data intelligence               | Plan                                                                                                                   |
+| M11.4 | Structured data intelligence               | Implemented on `feature/v0.7.1-m11-integration`. See `docs/features/structured-data.md`.                               |
 | M11.5 | AIO/GEO content analysis                   | Implemented locally on `feature/m11.5-aio-geo-readiness` (stacked on M11.6). See `docs/features/content-readiness.md`. |
 | M11.6 | AI and search crawler accessibility        | Implemented locally on `feature/m11.6-crawler-accessibility`; not pushed. See `docs/features/crawler-access.md`.       |
 | M11.7 | AI platform visibility and citations       | Plan                                                                                                                   |
@@ -83,6 +83,10 @@ Done: Google-documented hreflang codes and fully-qualified alternates in `RULE_H
 ### M11.2 checkpoint
 
 Done: optional `webRequest` permission (owner approved 2026-11-25) with `redirect-observer.ts`; hop-by-hop `redirect-trace.ts`; `seo-rules::redirects`; Technical → Redirect trace card; Site Explorer follows same-origin redirects when details are granted. Found and fixed: Chrome reports report-page requests with the tab's id, so RankMiso's own requests are matched by `initiator`/`originUrl`, not tab -1. Tests: Rust 125 passed / 1 ignored; Vitest 256 passed / 4 skipped; Playwright Chromium 14/14 including `redirects.spec.ts` (hops, loop, 404 destination, crawl canonical → redirect). Site Explorer heap median 20,390,083 bytes. Next: M11.4.
+
+### M11.4 checkpoint
+
+Done: `seo-rules::sd_entities` (one entity list for JSON-LD, Microdata, RDFa); required properties corrected to Google's documentation (Article/Organization have none; FAQ rich results retired); value types, URLs, conflicts and duplicates, references, article attribution. Content readiness reuses the five new checks and no longer duplicates JSON-LD date format. Tests: Rust 133 passed / 1 ignored; Vitest 256 passed / 4 skipped; Playwright Chromium 15/15 including `structured-data.spec.ts`. Next: M11.7.
 
 ## M11.2 — redirect intelligence (plan)
 
