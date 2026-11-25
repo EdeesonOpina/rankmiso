@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import {
+  ArrowUpRight,
   Ban,
+  Clock,
   CircleAlert,
   CircleCheck,
   CircleHelp,
@@ -50,6 +52,14 @@ const root = ref<HTMLElement | null>(null);
 const allOpen = ref(false);
 const searchPlatforms = platforms.filter((item) => item.group === "search");
 const aiPlatforms = platforms.filter((item) => item.group === "ai");
+/** Who publishes each content-use token, for its mark and a plain-text owner name. */
+const useOwner: Record<string, { mark: string; name: string }> = {
+  gptbot: { mark: "chatgpt", name: "OpenAI" },
+  claudebot: { mark: "claude", name: "Anthropic" },
+  "google-extended": { mark: "gemini", name: "Google" },
+  "applebot-extended": { mark: "apple", name: "Apple" },
+  "usage-ai-training": { mark: "bing", name: "Microsoft" },
+};
 const contentUse = contentUseCrawlerIds.map((id) => crawlerById(id)).filter((item) => !!item);
 
 const kindKey: Record<CrawlerKind, MessageKey> = {
@@ -304,30 +314,47 @@ function toggleEvidence() {
             class="ax-section"
           >
             <ul class="ax-use" role="list">
-              <li v-for="item in contentUse" :key="item.id">
-                <div>
-                  <strong translate="no">{{ item.token }}</strong>
-                  <small>{{ t(kindKey[item.kind]) }}</small>
+              <li v-for="item in contentUse" :key="item.id" class="ax-use-card">
+                <div class="ax-use-head">
+                  <PlatformMark :platform-id="useOwner[item.id]?.mark ?? ''" :name="item.token" />
+                  <div class="ax-card-title">
+                    <h4 translate="no">{{ item.token }}</h4>
+                    <span class="ax-support"
+                      >{{ useOwner[item.id]?.name }} · {{ t(kindKey[item.kind]) }}</span
+                    >
+                  </div>
                 </div>
-                <span class="badge" :class="tone(verdicts.get(item.id), true)">{{
-                  label(verdicts.get(item.id), item.kind === "content-use")
-                }}</span>
-                <small class="ax-use-detail">
-                  {{ verdicts.get(item.id)?.rule ?? t("access.ev.noRule") }}
-                  <template v-if="verdicts.get(item.id)?.viaWildcard">
-                    · {{ t("access.wildcardNote") }}</template
-                  >
-                  ·
-                  <a :href="item.documentationUrl" target="_blank" rel="noopener noreferrer">{{
-                    t("access.docs")
-                  }}</a>
-                </small>
+                <p class="ax-status">
+                  <span class="badge" :class="tone(verdicts.get(item.id), true)">{{
+                    label(verdicts.get(item.id), item.kind === "content-use")
+                  }}</span>
+                </p>
+                <div class="ax-use-rule">
+                  <span>{{ t("access.ev.rule") }}</span>
+                  <code>{{ verdicts.get(item.id)?.rule ?? t("access.ev.noRule") }}</code>
+                </div>
+                <p v-if="verdicts.get(item.id)?.viaWildcard" class="ax-note">
+                  {{ t("access.wildcardNote") }}
+                </p>
+                <a
+                  class="ax-use-doc"
+                  :href="item.documentationUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ t("access.docs") }} <ArrowUpRight class="ic" aria-hidden="true"
+                /></a>
               </li>
             </ul>
             <div v-if="microsoftLines" class="ax-ms">
-              <h4>{{ t("access.ms.title") }}</h4>
+              <div class="ax-ms-head">
+                <PlatformMark platform-id="bing" name="Microsoft" />
+                <div>
+                  <h4>{{ t("access.ms.title") }}</h4>
+                  <p>{{ t("access.ms.separate") }}</p>
+                </div>
+              </div>
               <p v-if="!microsoftLines.measured">{{ t("access.ms.notMeasured") }}</p>
-              <dl v-else>
+              <dl v-else class="ax-ms-tiles">
                 <div>
                   <dt>{{ t("access.ms.training") }}</dt>
                   <dd>{{ microsoftLines.training }}</dd>
@@ -337,11 +364,12 @@ function toggleEvidence() {
                   <dd>{{ microsoftLines.grounding }}</dd>
                 </div>
               </dl>
-              <p>{{ microsoftLines.timing }} {{ t("access.ms.separate") }}</p>
-              <p>
-                <a :href="MICROSOFT_PREFERENCES_URL" target="_blank" rel="noopener noreferrer">{{
-                  t("access.docs")
-                }}</a>
+              <p class="ax-ms-foot">
+                <Clock class="ic" aria-hidden="true" />
+                <span>{{ microsoftLines.timing }}</span>
+                <a :href="MICROSOFT_PREFERENCES_URL" target="_blank" rel="noopener noreferrer"
+                  >{{ t("access.docs") }} <ArrowUpRight class="ic" aria-hidden="true"
+                /></a>
               </p>
             </div>
           </SxPanel>

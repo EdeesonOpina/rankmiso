@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, reactive, ref, useId } from "vue";
+import { computed, nextTick, reactive, ref, useId } from "vue";
+import { ArrowUpRight, Copy, Sparkles } from "lucide-vue-next";
 import { visibilityPlatforms } from "../../config/crawlers.config";
 import { useI18n } from "../../composables/useI18n";
 import type { MessageKey } from "../../locales/en";
@@ -18,6 +19,12 @@ import {
   type VisibilityQuery,
   type VisibilityStatus,
 } from "../../services/visibility";
+import {
+  questionTemplates,
+  siteFacts,
+  type QuestionTemplate,
+  type TemplateSource,
+} from "../../services/visibility-templates";
 import type { AuditResult } from "../../types/audit";
 import PlatformMark from "../PlatformMark.vue";
 import SxPanel from "./SxPanel.vue";
@@ -32,11 +39,41 @@ const ids = { query: useId(), domain: useId(), brand: useId() };
 const loaded = loadStore();
 const store = reactive(loaded.store);
 const message = ref(loaded.damaged ? t("visibility.damaged") : "");
+// Starter questions and the brand come only from what this audit read on the page.
+const facts = siteFacts(props.audit);
+const templates = questionTemplates(props.audit);
 const draft = reactive({
   text: "",
   domain: sitePermission(props.audit.page.url)?.hostname.replace(/^www\./, "") ?? "",
-  brand: "",
+  brand: facts.brand,
 });
+const queryInput = ref<HTMLInputElement | null>(null);
+const sourceKey: Record<TemplateSource, MessageKey> = {
+  structuredData: "visibility.src.structuredData",
+  title: "visibility.src.title",
+  domain: "visibility.src.domain",
+  h1: "visibility.src.h1",
+  heading: "visibility.src.heading",
+  terms: "visibility.src.terms",
+};
+
+async function useTemplate(item: QuestionTemplate) {
+  draft.text = item.text;
+  await nextTick();
+  queryInput.value?.focus();
+}
+
+async function copyQuestion(query: VisibilityQuery) {
+  try {
+    await navigator.clipboard.writeText(query.text);
+    message.value = t("visibility.copied");
+  } catch {
+    message.value = t("visibility.copyFailed");
+  }
+}
+
+const sampleCount = (query: VisibilityQuery) =>
+  store.observations.filter((item) => item.queryId === query.id).length;
 const recording = ref<string | null>(null);
 const busy = ref(false);
 const form = reactive({
@@ -216,177 +253,270 @@ const platformName = (id: string) =>
       <p v-if="message" class="ax-message" role="status">{{ message }}</p>
     </section>
 
-    <section class="ax-callout">
-      <strong>{{ t("visibility.calloutTitle") }}</strong>
-      <p>{{ t("visibility.calloutText") }}</p>
-    </section>
-
-    <SxPanel :title="t('visibility.addTitle')" :text="t('visibility.addText')" class="ax-section">
-      <form class="vis-form" @submit.prevent="addQuery">
-        <label :for="ids.query">
-          <span>{{ t("visibility.query") }}</span>
-          <input :id="ids.query" v-model="draft.text" maxlength="300" required />
-        </label>
-        <label :for="ids.domain">
-          <span>{{ t("visibility.domain") }}</span>
-          <input :id="ids.domain" v-model="draft.domain" maxlength="253" required />
-        </label>
-        <label :for="ids.brand">
-          <span>{{ t("visibility.brand") }}</span>
-          <input :id="ids.brand" v-model="draft.brand" maxlength="80" />
-        </label>
-        <button type="submit" class="primary">{{ t("visibility.add") }}</button>
-      </form>
-    </SxPanel>
-
-    <section v-if="!store.queries.length" class="ax-empty">
-      <h2>{{ t("visibility.empty.title") }}</h2>
-      <p>{{ t("visibility.empty.body") }}</p>
-    </section>
-
-    <SxPanel
-      v-for="query in store.queries"
-      :key="query.id"
-      :title="query.text"
-      :text="t('visibility.queryMeta', { domain: query.domain })"
-      class="ax-section vis-query"
-    >
-      <template #aside>
-        <div class="ax-actions">
-          <button type="button" class="secondary" @click="startRecording(query)">
-            {{ t("visibility.record") }}
-          </button>
-          <button
-            type="button"
-            class="icon-text"
-            :aria-label="t('visibility.deleteQuery', { query: query.text })"
-            @click="removeQuery(query)"
-          >
-            {{ t("visibility.delete") }}
-          </button>
-        </div>
-      </template>
-
-      <form
-        v-if="recording === query.id"
-        class="vis-form vis-record"
-        @submit.prevent="record(query)"
-      >
-        <label>
-          <span>{{ t("visibility.platform") }}</span>
-          <select v-model="form.platformId">
-            <option v-for="platform in visibilityPlatforms" :key="platform.id" :value="platform.id">
-              {{ platform.name }}
-            </option>
-          </select>
-        </label>
-        <label>
-          <span>{{ t("visibility.date") }}</span>
-          <input v-model="form.observedOn" type="date" required />
-        </label>
-        <label class="vis-wide">
-          <span>{{ t("visibility.response") }}</span>
-          <textarea v-model="form.response" rows="4" maxlength="20000"></textarea>
-        </label>
-        <label class="vis-wide">
-          <span>{{ t("visibility.citations") }}</span>
-          <textarea v-model="form.citations" rows="3"></textarea>
-        </label>
-        <label>
-          <span>{{ t("visibility.outcome") }}</span>
-          <select v-model="form.outcome">
-            <option value="cited">{{ t("visibility.status.cited") }}</option>
-            <option value="mentioned">{{ t("visibility.status.mentioned") }}</option>
-            <option value="not-observed">{{ t("visibility.status.notObserved") }}</option>
-            <option value="unknown">{{ t("visibility.status.unknown") }}</option>
-          </select>
-        </label>
-        <label>
-          <span>{{ t("visibility.notes") }}</span>
-          <input v-model="form.notes" maxlength="500" />
-        </label>
-        <p class="ax-small vis-wide">{{ t("visibility.outcomeNote") }}</p>
-        <p class="ax-small vis-wide">
-          <a
-            :href="visibilityPlatforms.find((p) => p.id === form.platformId)?.homeUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            >{{ t("visibility.open", { platform: platformName(form.platformId) }) }}</a
-          >
-        </p>
-        <div class="ax-actions vis-wide">
-          <button type="submit" class="primary" :disabled="busy">{{ t("visibility.save") }}</button>
-          <button type="button" class="secondary" @click="recording = null">
-            {{ t("compare.cancel") }}
-          </button>
-        </div>
-      </form>
-
-      <p v-if="!rows(query).length" class="ax-small vis-none">{{ t("visibility.noSamples") }}</p>
-      <ul v-else class="ax-findings vis-rows" role="list">
-        <li v-for="row in rows(query)" :key="row.platform.id" class="ax-finding">
-          <PlatformMark :platform-id="row.platform.platformId" :name="row.platform.name" />
-          <div class="ax-finding-main">
-            <div class="ax-finding-head">
-              <h4>{{ row.platform.name }}</h4>
-              <span class="badge" :class="tone[row.latest!.status]">{{
-                t(statusKey[row.latest!.status])
-              }}</span>
-            </div>
-            <p>
-              {{
-                t("visibility.latest", {
-                  date: row.latest!.observedOn,
-                  count: n(row.history.length),
-                })
-              }}
-              <template v-if="row.previous && row.previous.status !== row.latest!.status">
-                {{
-                  t("visibility.changed", {
-                    status: t(statusKey[row.previous.status]),
-                    date: row.previous.observedOn,
-                  })
-                }}
-              </template>
+    <div class="ax-cols">
+      <div class="ax-main">
+        <SxPanel
+          :title="t('visibility.addTitle')"
+          :text="t('visibility.addText')"
+          class="ax-section vis-composer"
+        >
+          <form class="vis-form" @submit.prevent="addQuery">
+            <label :for="ids.query" class="vis-wide">
+              <span>{{ t("visibility.query") }}</span>
+              <input
+                :id="ids.query"
+                ref="queryInput"
+                v-model="draft.text"
+                class="vis-question"
+                maxlength="300"
+                :placeholder="templates[0]?.text ?? t('visibility.queryPlaceholder')"
+                required
+              />
+            </label>
+            <label :for="ids.domain">
+              <span>{{ t("visibility.domain") }}</span>
+              <input :id="ids.domain" v-model="draft.domain" maxlength="253" required />
+            </label>
+            <label :for="ids.brand">
+              <span>{{ t("visibility.brand") }}</span>
+              <input :id="ids.brand" v-model="draft.brand" maxlength="80" />
+            </label>
+            <button type="submit" class="primary">{{ t("visibility.add") }}</button>
+          </form>
+          <div class="vis-starters">
+            <p class="vis-starters-head">
+              <Sparkles class="ic" aria-hidden="true" />
+              <strong>{{ t("visibility.starters") }}</strong>
+              <span>{{ t("visibility.startersText") }}</span>
             </p>
-            <details class="disclosure ax-evidence">
-              <summary>{{ t("visibility.history") }}<span aria-hidden="true">⌄</span></summary>
-              <ol class="details-body vis-history">
-                <li v-for="item in row.history" :key="item.id">
-                  <div class="vis-history-head">
-                    <strong>{{ item.observedOn }} · {{ t(statusKey[item.status]) }}</strong>
-                    <small>{{
-                      t(
-                        item.basis === "pasted"
-                          ? "visibility.basis.pasted"
-                          : "visibility.basis.manual",
-                      )
-                    }}</small>
-                    <button
-                      type="button"
-                      class="icon-text"
-                      :aria-label="t('visibility.deleteSample', { date: item.observedOn })"
-                      @click="removeObservation(item)"
-                    >
-                      {{ t("visibility.delete") }}
-                    </button>
-                  </div>
-                  <p
-                    v-for="citation in item.citations.filter((c) => c.onDomain)"
-                    :key="citation.url"
-                    class="url-line"
-                  >
-                    {{ t("visibility.citedAt", { order: n(citation.order), url: citation.url }) }}
-                  </p>
-                  <p v-for="mention in item.mentions" :key="mention">“{{ mention }}”</p>
-                  <p v-if="item.notes">{{ item.notes }}</p>
-                </li>
-              </ol>
-            </details>
+            <ul v-if="templates.length" class="vis-chips" role="list">
+              <li v-for="item in templates" :key="item.text">
+                <button
+                  type="button"
+                  class="vis-chip"
+                  :aria-pressed="draft.text === item.text"
+                  @click="useTemplate(item)"
+                >
+                  <span class="vis-chip-text">{{ item.text }}</span>
+                  <small>{{ t(sourceKey[item.source], { value: item.value }) }}</small>
+                </button>
+              </li>
+            </ul>
+            <p v-else class="ax-side-text">{{ t("visibility.startersNone") }}</p>
           </div>
-        </li>
-      </ul>
-    </SxPanel>
+        </SxPanel>
+
+        <section v-if="!store.queries.length" class="ax-empty">
+          <h2>{{ t("visibility.empty.title") }}</h2>
+          <p>{{ t("visibility.empty.body") }}</p>
+        </section>
+
+        <SxPanel
+          v-for="query in store.queries"
+          :key="query.id"
+          :title="query.text"
+          :text="
+            t('visibility.queryMeta', { domain: query.domain }) +
+            ' · ' +
+            t('visibility.sampleCount', { count: n(sampleCount(query)) })
+          "
+          class="ax-section vis-query"
+        >
+          <template #aside>
+            <div class="ax-actions">
+              <button type="button" class="secondary" @click="startRecording(query)">
+                {{ t("visibility.record") }}
+              </button>
+              <button
+                type="button"
+                class="secondary vis-icon-btn"
+                :aria-label="t('visibility.copyQuestion', { query: query.text })"
+                :title="t('visibility.copyQuestion', { query: query.text })"
+                @click="copyQuestion(query)"
+              >
+                <Copy class="ic" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                class="icon-text"
+                :aria-label="t('visibility.deleteQuery', { query: query.text })"
+                @click="removeQuery(query)"
+              >
+                {{ t("visibility.delete") }}
+              </button>
+            </div>
+          </template>
+
+          <form
+            v-if="recording === query.id"
+            class="vis-form vis-record"
+            @submit.prevent="record(query)"
+          >
+            <label>
+              <span>{{ t("visibility.platform") }}</span>
+              <select v-model="form.platformId">
+                <option
+                  v-for="platform in visibilityPlatforms"
+                  :key="platform.id"
+                  :value="platform.id"
+                >
+                  {{ platform.name }}
+                </option>
+              </select>
+            </label>
+            <label>
+              <span>{{ t("visibility.date") }}</span>
+              <input v-model="form.observedOn" type="date" required />
+            </label>
+            <label class="vis-wide">
+              <span>{{ t("visibility.response") }}</span>
+              <textarea v-model="form.response" rows="4" maxlength="20000"></textarea>
+            </label>
+            <label class="vis-wide">
+              <span>{{ t("visibility.citations") }}</span>
+              <textarea v-model="form.citations" rows="3"></textarea>
+            </label>
+            <label>
+              <span>{{ t("visibility.outcome") }}</span>
+              <select v-model="form.outcome">
+                <option value="cited">{{ t("visibility.status.cited") }}</option>
+                <option value="mentioned">{{ t("visibility.status.mentioned") }}</option>
+                <option value="not-observed">{{ t("visibility.status.notObserved") }}</option>
+                <option value="unknown">{{ t("visibility.status.unknown") }}</option>
+              </select>
+            </label>
+            <label>
+              <span>{{ t("visibility.notes") }}</span>
+              <input v-model="form.notes" maxlength="500" />
+            </label>
+            <p class="ax-small vis-wide">{{ t("visibility.outcomeNote") }}</p>
+            <p class="ax-small vis-wide">
+              <a
+                :href="visibilityPlatforms.find((p) => p.id === form.platformId)?.homeUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                >{{ t("visibility.open", { platform: platformName(form.platformId) }) }}</a
+              >
+            </p>
+            <div class="ax-actions vis-wide">
+              <button type="submit" class="primary" :disabled="busy">
+                {{ t("visibility.save") }}
+              </button>
+              <button type="button" class="secondary" @click="recording = null">
+                {{ t("compare.cancel") }}
+              </button>
+            </div>
+          </form>
+
+          <div v-if="!rows(query).length" class="vis-none">
+            <p>{{ t("visibility.noSamples") }}</p>
+            <span>{{ t("visibility.noSamplesText") }}</span>
+          </div>
+          <ul v-else class="ax-findings vis-rows" role="list">
+            <li v-for="row in rows(query)" :key="row.platform.id" class="ax-finding">
+              <PlatformMark :platform-id="row.platform.platformId" :name="row.platform.name" />
+              <div class="ax-finding-main">
+                <div class="ax-finding-head">
+                  <h4>{{ row.platform.name }}</h4>
+                  <span class="badge" :class="tone[row.latest!.status]">{{
+                    t(statusKey[row.latest!.status])
+                  }}</span>
+                </div>
+                <p>
+                  {{
+                    t("visibility.latest", {
+                      date: row.latest!.observedOn,
+                      count: n(row.history.length),
+                    })
+                  }}
+                  <template v-if="row.previous && row.previous.status !== row.latest!.status">
+                    {{
+                      t("visibility.changed", {
+                        status: t(statusKey[row.previous.status]),
+                        date: row.previous.observedOn,
+                      })
+                    }}
+                  </template>
+                </p>
+                <details class="disclosure ax-evidence">
+                  <summary>{{ t("visibility.history") }}<span aria-hidden="true">⌄</span></summary>
+                  <ol class="details-body vis-history">
+                    <li v-for="item in row.history" :key="item.id">
+                      <div class="vis-history-head">
+                        <strong>{{ item.observedOn }} · {{ t(statusKey[item.status]) }}</strong>
+                        <small>{{
+                          t(
+                            item.basis === "pasted"
+                              ? "visibility.basis.pasted"
+                              : "visibility.basis.manual",
+                          )
+                        }}</small>
+                        <button
+                          type="button"
+                          class="icon-text"
+                          :aria-label="t('visibility.deleteSample', { date: item.observedOn })"
+                          @click="removeObservation(item)"
+                        >
+                          {{ t("visibility.delete") }}
+                        </button>
+                      </div>
+                      <p
+                        v-for="citation in item.citations.filter((c) => c.onDomain)"
+                        :key="citation.url"
+                        class="url-line"
+                      >
+                        {{
+                          t("visibility.citedAt", { order: n(citation.order), url: citation.url })
+                        }}
+                      </p>
+                      <p v-for="mention in item.mentions" :key="mention">“{{ mention }}”</p>
+                      <p v-if="item.notes">{{ item.notes }}</p>
+                    </li>
+                  </ol>
+                </details>
+              </div>
+            </li>
+          </ul>
+        </SxPanel>
+      </div>
+
+      <aside class="ax-aside" :aria-label="t('visibility.howTitle')">
+        <section class="ax-side">
+          <h3>{{ t("visibility.howTitle") }}</h3>
+          <ol class="vis-steps">
+            <li>
+              <strong>{{ t("visibility.step1") }}</strong
+              ><small>{{ t("visibility.step1Text") }}</small>
+            </li>
+            <li>
+              <strong>{{ t("visibility.step2") }}</strong
+              ><small>{{ t("visibility.step2Text") }}</small>
+            </li>
+            <li>
+              <strong>{{ t("visibility.step3") }}</strong
+              ><small>{{ t("visibility.step3Text") }}</small>
+            </li>
+          </ol>
+        </section>
+        <section class="ax-callout">
+          <strong>{{ t("visibility.calloutTitle") }}</strong>
+          <p>{{ t("visibility.calloutText") }}</p>
+        </section>
+        <section class="ax-side">
+          <h3>{{ t("visibility.whereTitle") }}</h3>
+          <p class="ax-side-text">{{ t("visibility.whereText") }}</p>
+          <ul class="vis-where" role="list">
+            <li v-for="platform in visibilityPlatforms" :key="platform.id">
+              <a :href="platform.homeUrl" target="_blank" rel="noopener noreferrer">
+                <PlatformMark :platform-id="platform.platformId" :name="platform.name" />
+                <span class="vis-where-name">{{ platform.name }}</span>
+                <ArrowUpRight class="ic" aria-hidden="true" />
+              </a>
+            </li>
+          </ul>
+        </section>
+      </aside>
+    </div>
 
     <p class="ax-disclaimer">{{ t("visibility.disclaimer") }} {{ t("access.marks") }}</p>
   </div>
