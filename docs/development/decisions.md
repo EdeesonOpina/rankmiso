@@ -278,3 +278,11 @@ There is still one robots.txt evaluator. `technical::robots_verdict` now follows
 The crawler registry is TypeScript configuration, because it is product data with documentation links and review dates. The Rust engine receives only tokens and observations. Platforms and crawlers are separate lists; a platform names the crawlers it depends on, and preference tokens are marked as not crawling. Results keep three things apart: robots.txt crawl readings, indexing directives, and Microsoft content-use preferences.
 
 A failed request from the browser is "not measured", never "allowed". RFC 9309's 5xx rule is shown as a server error rather than folded into "disallowed", so the user sees the cause.
+
+## M11.5 — content readiness (2026-11-25)
+
+Readiness is a separate Rust analyzer (`seo-rules::readiness`, schema 1) that takes the page snapshot, calls the existing `analyze` once to reuse its checks by id, and adds `READY_*` rules. It does not touch `analyze_page`, the audit schema, saved audits, exports, MCP, or the score. Grouping existing checks instead of copying their logic keeps one rule per problem.
+
+There is no readiness score. Google says AI features have no extra requirements, so a number would suggest a measurement that does not exist. The view reports counts of what was checked, what may need review, and what could not be measured.
+
+M11.1 and M11.6 results are shared through a small in-memory store keyed by page URL (`services/ai-search-store.ts`, 20 entries). Readiness only reads it. Persisting these results was rejected for now: they describe a moment, and storing them would need staleness rules and size limits first.

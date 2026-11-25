@@ -4,17 +4,17 @@ Branch `feature/m11-v0.7.1-seo-intelligence`, worktree `/home/ed/Projects/Rust/r
 
 M11.0 and M11.1 are done in this checkpoint. M11.2–M11.8 are plans only and need owner approval before work starts. A documented plan is not a finished feature.
 
-| ID    | Feature                                    | State                                                                                            |
-| ----- | ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| M11.0 | Release hardening and marketing compliance | Marketing fix done on `fix/marketing-compliance-v071`. Browser acceptance not performed (below). |
-| M11.1 | JavaScript SEO diagnostics                 | Implemented and tested in Chromium. See `docs/features/javascript-seo.md`.                       |
-| M11.2 | Redirect intelligence                      | Plan                                                                                             |
-| M11.3 | Canonical and hreflang intelligence        | Plan                                                                                             |
-| M11.4 | Structured data intelligence               | Plan                                                                                             |
-| M11.5 | AIO/GEO content analysis                   | Plan                                                                                             |
-| M11.6 | AI and search crawler accessibility        | Plan, with research                                                                              |
-| M11.7 | AI platform visibility and citations       | Plan                                                                                             |
-| M11.8 | Platform branding and UI integration       | Plan, with licence findings                                                                      |
+| ID    | Feature                                    | State                                                                                                                  |
+| ----- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| M11.0 | Release hardening and marketing compliance | Marketing source fix merged to `develop` (#64). Store warning resolved; listing approved by Google (owner).            |
+| M11.1 | JavaScript SEO diagnostics                 | Merged to `develop` (#65). See `docs/features/javascript-seo.md`.                                                      |
+| M11.2 | Redirect intelligence                      | Plan                                                                                                                   |
+| M11.3 | Canonical and hreflang intelligence        | Plan                                                                                                                   |
+| M11.4 | Structured data intelligence               | Plan                                                                                                                   |
+| M11.5 | AIO/GEO content analysis                   | Implemented locally on `feature/m11.5-aio-geo-readiness` (stacked on M11.6). See `docs/features/content-readiness.md`. |
+| M11.6 | AI and search crawler accessibility        | Implemented locally on `feature/m11.6-crawler-accessibility`; not pushed. See `docs/features/crawler-access.md`.       |
+| M11.7 | AI platform visibility and citations       | Plan                                                                                                                   |
+| M11.8 | Platform branding and UI integration       | Plan, with licence findings                                                                                            |
 
 ## M11.0 — baseline record
 
@@ -47,6 +47,31 @@ The owner reports v0.7.0 was submitted to the Chrome Web Store and Firefox Add-o
 
 These belong in the local handoff and progress logs, and in release notes if v0.7.0 notes are revised. Earlier entries stay unchanged.
 
+## Checkpoint 3 — M11.5 content readiness (2026-11-25)
+
+Git: `develop` 5d1bfa1 contains M11.0 (#64) and M11.1 (#65). M11.6 was never pushed (not authorized), so it is not in `develop`. M11.5 depends on M11.6 (the AI & Search section and crawler results), so the local M11.6 branch was rebased onto 5d1bfa1 (e779b9c, 19f96c3; no shared history rewritten) and M11.5 is stacked on it. Review and merge M11.6 first.
+
+### Official guidance read for M11.5 (2026-11-25)
+
+| Source                                                   | URL                                                                                                            | What it supports                                                                                                                                                                                                                                                                                                                                              | RankMiso measures                                                                                          | RankMiso cannot measure                                    | Scope               |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------- |
+| Google: AI features and your website                     | https://developers.google.com/search/docs/appearance/ai-features                                               | No additional requirements, special files, markup, or schema for AI Overviews and AI Mode; page must be indexed and snippet-eligible; content available as text; structured data should match visible text; nosnippet, data-nosnippet, max-snippet, noindex limit what is shown                                                                               | snippet directives in meta and X-Robots-Tag; noindex; JSON-LD headline vs visible title and headings       | actual indexing, snippet eligibility, data-nosnippet spans | Google              |
+| Google: Optimizing for generative AI features            | https://developers.google.com/search/docs/fundamentals/ai-optimization-guide                                   | No AI text files or Markdown needed (neither helps nor harms); structured data not required; JavaScript content processed if not blocked; clear headings; semantic HTML "generally a good idea"; GEO/AEO is still SEO. Also says a site must be included in Search generative AI features in Search Console, which page 1 does not mention (open discrepancy) | heading structure; main/article region; rendering differences (M11.1 result)                               | Search Console settings                                    | Google              |
+| Google: Creating helpful, reliable, people-first content | https://developers.google.com/search/docs/fundamentals/creating-helpful-content                                | Main heading or title should summarize the content; accurate bylines where readers expect them; no preferred word count; do not fake freshness                                                                                                                                                                                                                | title/H1 word overlap; machine-readable author on article-like pages; word count shown as information only | content quality, originality, visible bylines              | Google              |
+| Google: General structured data guidelines               | https://developers.google.com/search/docs/appearance/structured-data/sd-policies                               | Markup must represent visible content; do not mark up invisible content                                                                                                                                                                                                                                                                                       | headline/name vs visible text; date contradictions; url vs canonical                                       | rich-result eligibility (not claimed)                      | Google rich results |
+| Google: JavaScript SEO basics                            | https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics                   | Google renders; not all bots run JavaScript; links need `<a href>`                                                                                                                                                                                                                                                                                            | M11.1 comparison result                                                                                    | how any crawler actually rendered the page                 | Google, general     |
+| Bing: training and grounding preferences (2026-10-30)    | https://blogs.bing.com/search/2026/10/your-content-your-choice-clearer-preferences-for-training-and-grounding/ | Grounding informs AI answers; preferences default to allow; take effect 2027-02-01                                                                                                                                                                                                                                                                            | shown in Crawler access (M11.6)                                                                            | whether Microsoft recrawled the page                       | Microsoft           |
+| Bing Webmaster Guidelines                                | https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a                                             | Not read: the page renders client-side and returned no body to the fetcher                                                                                                                                                                                                                                                                                    | —                                                                                                          | —                                                          | —                   |
+
+No requirement for ChatGPT, Claude, Gemini, Perplexity, or Copilot content was found or invented. llms.txt is not checked: Google says AI text files are not needed, and no provider in the registry documents reading it.
+
+### Decisions
+
+- Information architecture: AI & Search keeps one navigation entry and gains two tabs, Crawler access and Content readiness. Visibility (M11.7) is not shown until it exists.
+- No score. Each group reports checks completed, opportunities, not measured, and not applicable. The page score is unchanged (tested).
+- Existing page checks are reused by id and shown with an "open in Issues" link; no rule is reimplemented.
+- M11.1 and M11.6 results are read from an in-memory store for this report page (20 pages max). Readiness never starts a network request or asks for permission, and says "Not measured" with a button to run the existing check. A full reload of the report page clears the store.
+
 ## M11.2 — redirect intelligence (plan)
 
 Reuse: `html-fetch.ts` already follows same-origin redirects manually (5 hops, 8 s, 512 KB); `seo-rules::technical::{redirects, redirect_hops}` already grade the navigation's redirect count and probe hops.
@@ -74,7 +99,7 @@ Reuse: `seo-rules::structured_data`, `structured-markup.ts` (JSON-LD, Microdata,
 - Required-property checks only for the supported list, citing the Google Search Central page for each type with the date checked. Findings never say "eligible for rich results". The wording is "has the properties Google lists for X". FAQ results are restricted by Google to some sites; the finding says so.
 - Tests: Rust fixture per type, one valid and one invalid each, plus conflict and reference cases.
 
-## M11.5 — AIO/GEO content intelligence (plan)
+## M11.5 — AIO/GEO content intelligence (original plan; implemented, see below and `docs/features/content-readiness.md`)
 
 Goal: show whether content is accessible, crawlable, structured, attributed, and consistent. It does not predict AI citation or ranking.
 
@@ -107,7 +132,7 @@ Informational only. When the user runs site checks, fetch `/llms.txt` once (same
 
 A new report section "AI Readiness" under Site intelligence, with the same card and finding list pattern as Technical. Tests: Rust fixtures for article, product, home page, and a page with no headings; applicability tests so non-article pages never get attribution warnings.
 
-## M11.6 — AI and search crawler accessibility (plan)
+## M11.6 — AI and search crawler accessibility (original plan; implemented, see `docs/features/crawler-access.md`)
 
 ### Registry research (official pages read 2026-11-25)
 
