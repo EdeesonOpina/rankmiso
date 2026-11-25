@@ -22,9 +22,9 @@ const statusKey: Record<VisibilityStatus, MessageKey> = {
 };
 
 /**
- * Overview lines for Discoverability, from results already on this device: the latest
- * crawler check made in this window, content readiness from the collected snapshot, and the
- * local visibility journal. Nothing here makes a request.
+ * Overview lines for Discoverability, from results already on this device: content readiness
+ * from the collected snapshot (using a stored crawler check when there is one) and the local
+ * visibility journal. Nothing here makes a request.
  */
 export function useDiscoverabilitySummary(
   audit: () => AuditResult,
@@ -64,25 +64,6 @@ export function useDiscoverabilitySummary(
   });
 
   const lines = computed<SummaryLine[]>(() => {
-    const access = crawler.value?.report.agents;
-    const accessLine: SummaryLine = access
-      ? (() => {
-          const blocked = access.filter((agent) => agent.crawl === "disallowed").length;
-          const allowed = access.filter((agent) => agent.crawl === "allowed").length;
-          return {
-            title: t("disc.access"),
-            sub: t("disc.accessRead", { allowed: n(allowed), blocked: n(blocked) }),
-            badge: blocked ? t("disc.blocked", { count: n(blocked) }) : t("disc.noneBlocked"),
-            tone: blocked ? "warn" : "ok",
-          };
-        })()
-      : {
-          title: t("disc.access"),
-          sub: t("disc.accessNone"),
-          badge: t("access.state.notMeasured"),
-          tone: "gray",
-        };
-
     const totals = report.value ? summarize(report.value.findings) : null;
     const readinessLine: SummaryLine = totals
       ? {
@@ -127,7 +108,7 @@ export function useDiscoverabilitySummary(
           tone: "gray",
         };
 
-    return [accessLine, readinessLine, visibilityLine];
+    return [readinessLine, visibilityLine];
   });
 
   return { lines };

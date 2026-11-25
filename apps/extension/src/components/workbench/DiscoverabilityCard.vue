@@ -3,6 +3,7 @@ import { useI18n } from "../../composables/useI18n";
 import { useDiscoverabilitySummary } from "../../composables/useDiscoverabilitySummary";
 import type { AuditResult } from "../../types/audit";
 import { useWorkbench } from "./context";
+import PlatformSnapshots from "../PlatformSnapshots.vue";
 import DataRow from "./DataRow.vue";
 
 /** Overview summary of Discoverability. Reads local results only; the section has the detail. */
@@ -28,6 +29,7 @@ const dotTone = { ok: "good", warn: "warn", gray: "gray" } as const;
         {{ t(surface === "report" ? "disc.open" : "disc.openShort") }} →
       </button>
     </div>
+    <PlatformSnapshots :url="audit.page.url" button-class="secondary" />
     <div class="list">
       <DataRow
         v-for="line in lines"

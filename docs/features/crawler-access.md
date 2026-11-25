@@ -17,6 +17,10 @@ The Rust engine (`seo-rules::crawler_access`, WASM `analyze_crawler_access`, inp
 
 These three are shown separately and never merged into one status.
 
+## Where results are kept
+
+The latest check for each page is kept in this extension's `localStorage` (key `rankmiso.crawlerAccess`), which the popup, sidebar, and report share. A check made in one window shows in the others, including Overview's platform snapshots, and survives a browser restart. Each result shows when it was checked; **Check access** replaces it. At most 20 pages and 1.5 MB are kept, oldest dropped first. Damaged data is ignored. Settings → reset clears it. Nothing is uploaded.
+
 ## robots.txt evaluation (RFC 9309)
 
 One evaluator, `technical::robots_verdict`, is shared by this view, the page check `RULE_ROBOTS_TXT`, and Site Explorer's `crawl_permitted`.

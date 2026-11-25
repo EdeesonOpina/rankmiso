@@ -49,7 +49,8 @@ export function tone(
  */
 export function useCrawlerAccess(url: () => string) {
   const { t, n } = useI18n();
-  const result = ref<AccessCheck | null>(crawlerAccessFor(url()) ?? null);
+  // Shared with every RankMiso window through the store; a new check anywhere shows here.
+  const result = computed<AccessCheck | null>(() => crawlerAccessFor(url()) ?? null);
   const busy = ref(false);
   const message = ref("");
   let controller: AbortController | null = null;
@@ -107,8 +108,7 @@ export function useCrawlerAccess(url: () => string) {
     busy.value = true;
     try {
       const page = url();
-      result.value = await checkCrawlerAccess(page, controller.signal);
-      rememberCrawlerAccess(page, result.value);
+      rememberCrawlerAccess(page, await checkCrawlerAccess(page, controller.signal));
     } catch (error) {
       message.value = t(
         error instanceof DOMException && error.name === "AbortError"

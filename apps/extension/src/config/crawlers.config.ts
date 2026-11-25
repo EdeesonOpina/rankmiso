@@ -188,6 +188,25 @@ export const platforms: readonly PlatformDefinition[] = [
   ),
 ];
 
+/** Short names for compact tiles; the full name stays in the tile's tooltip. */
+export const platformShortNames: Readonly<Record<string, string>> = {
+  "google-search": "Google",
+  bing: "Bing",
+  duckduckgo: "DuckDuckGo",
+  brave: "Brave",
+  apple: "Apple",
+  yandex: "Yandex",
+  baidu: "Baidu",
+  yahoo: "Yahoo",
+  chatgpt: "ChatGPT",
+  "google-ai": "Google AI",
+  gemini: "Gemini",
+  copilot: "Copilot",
+  claude: "Claude",
+  perplexity: "Perplexity",
+  duckassist: "DuckAssist",
+};
+
 /** Tokens listed under content use: model-training crawlers and preference-only tokens. */
 export const contentUseCrawlerIds: readonly string[] = [
   "gptbot",

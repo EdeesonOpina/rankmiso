@@ -46,6 +46,7 @@ export async function clearStoredSettings(): Promise<void> {
   localStorage.removeItem(appConfig.themeKey);
   localStorage.removeItem(appConfig.navHintKey);
   localStorage.removeItem(appConfig.siteCrawlKey);
+  localStorage.removeItem(appConfig.crawlerAccessKey);
   localStorage.removeItem(appConfig.inspectionModeKey);
   try {
     await browser.storage.local.remove([

@@ -4,6 +4,7 @@ import type { AuditResult, Category, PageSnapshot } from "../../types/audit";
 import { categoryLabelKey } from "../../services/category-label";
 import { useI18n } from "../../composables/useI18n";
 import { useDiscoverabilitySummary } from "../../composables/useDiscoverabilitySummary";
+import PlatformSnapshots from "../PlatformSnapshots.vue";
 
 defineOptions({ inheritAttrs: false });
 const props = defineProps<{ audit: AuditResult; snapshot?: PageSnapshot | null }>();
@@ -182,6 +183,7 @@ function paneFor(category: Category): string {
       {{ t("disc.open") }} ↗
     </button>
   </div>
+  <PlatformSnapshots :url="audit.page.url" button-class="button-sm red" />
   <div class="surface pa-list">
     <button
       v-for="line in discovery"
