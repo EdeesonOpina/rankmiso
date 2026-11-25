@@ -6,6 +6,7 @@ import { capturesDir, foxPath, marketingRoot, outputDir } from "./paths.ts";
 import {
   canvas,
   chromePromo,
+  storeStatusWord,
   seoShare,
   sets,
   type FrameSize,
@@ -75,15 +76,25 @@ export async function compose(): Promise<void> {
         .replace("__SERIF__", fontSerif)
         .replace("__BODY__", `${body}<div class="grain"></div>`);
 
-    const smallBody = `<main class="small"><div class="bg-dots"></div><div class="bg-glow a"></div><div class="inner"><div class="brand"><img src="${fox}" alt="" /></div><div><b>RankMiso</b><div class="line">SEO insights,<br /><span class="serif">one click away</span><span class="dot"></span></div><div class="meta">Free · Open source</div></div></div></main>`;
+    const smallBody = `<main class="small"><div class="bg-dots"></div><div class="bg-glow a"></div><div class="inner"><div class="brand"><img src="${fox}" alt="" /></div><div><b>RankMiso</b><div class="line">SEO insights,<br /><span class="serif">one click away</span><span class="dot"></span></div><div class="meta">Open source · No account</div></div></div></main>`;
     const marqueeBody =
       `<main class="marquee"><div class="bg-dots"></div><div class="bg-glow a"></div><div class="bg-glow b"></div>` +
       `<section class="copy"><div class="brand"><img src="${fox}" alt="" /><b>RankMiso</b><span class="tag">Browser extension</span></div>` +
       `<h1>Your website,<br /><span class="serif">clearly</span> <span class="nw">understood<span class="dot"></span></span></h1>` +
       `<p class="sub">Instant SEO insights for the page you are on. Checked locally, in your browser.</p>` +
-      `<div class="chips"><span class="chip"><i></i>Free</span><span class="chip"><i></i>Open source</span><span class="chip"><i></i>No account</span></div></section>` +
+      `<div class="chips"><span class="chip"><i></i>Open source</span><span class="chip"><i></i>No account</span><span class="chip"><i></i>No tracking</span></div></section>` +
       `<div class="scene"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="${report}" alt="" /></div>` +
       `<div class="pop"><img src="${overview}" alt="RankMiso popup" /></div><span class="dot"></span></div></main>`;
+    for (const [name, body] of [
+      ["small", smallBody],
+      ["marquee", marqueeBody],
+    ]) {
+      const word = storeStatusWord(body);
+      if (word)
+        throw new Error(
+          `Chrome promo ${name} tile says "${word}"; the store rejects status words.`,
+        );
+    }
     // Dark is the default file name; the light pair gets a -light suffix.
     const file = (name: string, suffix: string) =>
       join(chromeDir, suffix ? name.replace(".png", `${suffix}.png`) : name);
