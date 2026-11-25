@@ -262,3 +262,11 @@ Use GitHub Sponsors as the single voluntary funding destination: `https://github
 ## v0.7.0 report presentation
 
 The full-page report follows the Site Explorer reference layout. Sample crawl numbers from that HTML are not product data. Report colors are set on `.wb.report`, so the sidebar and popup keep their existing tokens. Compare still reads the existing `SiteComparison`: shared pages divided by the larger of the two analyzed-page counts, the four issue counts, and link-page counts. The link donut is omitted when those counts are all zero. Changing a crawl selector still hides the previous result. The comparison engine, storage limits, and export columns are unchanged.
+
+## M11 — v0.7.1 target and JavaScript SEO diagnostics (2026-11-25)
+
+The owner chose **v0.7.1** for the M11 milestone, ahead of v0.8.0. This is a project-specific choice: conventional Semantic Versioning keeps patch releases for compatible fixes, and M11 adds features. Package versions stay at 0.7.0 until the release-alignment step. Rust crates and the MCP companion keep their own versions.
+
+JavaScript SEO diagnostics live in Rust (`seo-rules::rendering`), following the sitemap pattern: a separate typed input (schema 1), a WASM function (`analyze_rendering`), and standard `CheckResult` findings with weight 0. They are not merged into `analyze_page`, so the page score, the audit schema, saved audits, MCP exports, and Site Explorer snapshots are unchanged. TypeScript only collects signals from the fetched or chosen HTML and from the existing audit. Link targets are passed as absolute URLs, and Rust decides which are internal, so there is one classifier. If the initial HTML cannot be read, every rule returns `UNAVAILABLE` with the reason, never a pass.
+
+For platform branding (planned M11.8), text names come first. OpenAI requires permission for its logo, Microsoft requires an express licence for logos and icons, and Google allows its logo for informational use but not in marketing material. Logos are added only per brand with written permission or a verified licence on file.

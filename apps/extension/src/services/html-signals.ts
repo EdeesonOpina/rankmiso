@@ -272,3 +272,98 @@ function links(document: Document, rel: string): Array<{ href: string; hreflang:
 function clean(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
+
+/** Input for the Rust rendering diagnostics (`analyze_rendering`, schema 1). */
+export interface RenderSignals {
+  title: string;
+  description: string;
+  canonicals: string[];
+  robots: string[];
+  h1: string[];
+  links: string[];
+  linksTruncated: boolean;
+  jsonLdTypes: string[];
+}
+
+const MAX_RENDER_LINKS = 2_000;
+
+/** Signals from the initial HTML. Link targets are absolute; Rust decides which are internal. */
+export function renderSignalsFromDocument(document: Document, pageUrl: string): RenderSignals {
+  const targets: string[] = [];
+  let total = 0;
+  document.querySelectorAll("a[href]").forEach((link) => {
+    try {
+      const url = new URL(link.getAttribute("href") || "", pageUrl);
+      if (url.protocol !== "http:" && url.protocol !== "https:") return;
+      total += 1;
+      if (targets.length < MAX_RENDER_LINKS) targets.push(url.href);
+    } catch {
+      /* skip unreadable hrefs */
+    }
+  });
+  const types: string[] = [];
+  document.querySelectorAll('script[type="application/ld+json"]').forEach((script) => {
+    try {
+      collectTypes(JSON.parse(script.textContent || "null"), types);
+    } catch {
+      /* invalid JSON-LD has no readable types */
+    }
+  });
+  return {
+    title: clean(document.title),
+    description: meta(document, "description"),
+    canonicals: links(document, "canonical").map((link) => link.href),
+    robots: [meta(document, "robots"), meta(document, "googlebot")].filter(Boolean),
+    h1: Array.from(document.querySelectorAll("h1"))
+      .map((heading) => clean(heading.textContent || ""))
+      .filter(Boolean)
+      .slice(0, 20),
+    links: targets,
+    linksTruncated: total > targets.length,
+    jsonLdTypes: shortTypes(types),
+  };
+}
+
+/** Signals from the rendered page, read from the audit RankMiso already made. */
+export function renderSignalsFromAudit(audit: {
+  page: { title: string | null };
+  details: {
+    metadata: {
+      description: string | null;
+      canonicals: string[];
+      robots: string[];
+      googlebot: string[];
+    };
+    headings: Array<{ level: number; text: string }>;
+    links: Array<{ href: string; resolvedUrl: string | null }>;
+    structuredData: Array<{ format: string; types: string[] }>;
+  };
+  source: { limitations: string[] };
+}): RenderSignals {
+  const { metadata } = audit.details;
+  return {
+    title: clean(audit.page.title || ""),
+    description: clean(metadata.description || ""),
+    canonicals: metadata.canonicals,
+    robots: [...metadata.robots, ...metadata.googlebot],
+    h1: audit.details.headings
+      .filter((heading) => heading.level === 1)
+      .map((heading) => heading.text)
+      .slice(0, 20),
+    links: audit.details.links
+      .map((link) => link.resolvedUrl || link.href)
+      .filter((href) => /^https?:/i.test(href))
+      .slice(0, MAX_RENDER_LINKS),
+    linksTruncated: audit.source.limitations.includes("LINKS_TRUNCATED"),
+    jsonLdTypes: shortTypes(
+      audit.details.structuredData
+        .filter((block) => block.format === "json-ld")
+        .flatMap((block) => block.types),
+    ),
+  };
+}
+
+/** `https://schema.org/Article` and `Article` are the same type. */
+function shortTypes(types: string[]): string[] {
+  return [...new Set(types.map((type) => type.split(/[/#]/).pop() || type).filter(Boolean))];
+}

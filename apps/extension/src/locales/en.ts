@@ -401,6 +401,14 @@ export const messages = {
     "Compare the two values. If they differ, check whether the separate response itself changed before assuming the page script changed them.",
   "compare.copyFetched": "Copy fetched value",
   "compare.copyRendered": "Copy rendered value",
+  "render.title": "JavaScript SEO diagnostics",
+  "render.summary":
+    "{review} to review · {note} to note · {same} unchanged · {notCompared} not compared",
+  "render.unavailable": "The initial HTML was not available, so nothing was compared.",
+  "render.evidence": "Evidence",
+  "render.investigate": "What to check:",
+  "render.note":
+    "These findings compare the initial HTML with what this browser rendered. They are not part of the SEO score. Search engines render pages on their own schedule and may not see exactly this result.",
   "technical.indexTitle": "Indexability signals",
   "technical.googleIndex": "Google index status",
   "technical.unknown": "Unknown",
