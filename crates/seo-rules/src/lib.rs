@@ -12,6 +12,7 @@ mod links;
 mod metadata;
 mod performance;
 pub mod readiness;
+pub mod redirects;
 pub mod rendering;
 pub mod site_relations;
 pub mod sitemap;
