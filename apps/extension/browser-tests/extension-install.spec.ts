@@ -141,6 +141,6 @@ test("Chromium declares optional HTTP/HTTPS access without requiring it", async 
 
   expect(manifest.host_permissions).toBeUndefined();
   expect(manifest.permissions).toEqual(["storage", "activeTab", "scripting", "sidePanel"]);
-  expect(manifest.optional_permissions).toEqual(["tabs", "nativeMessaging"]);
+  expect(manifest.optional_permissions).toEqual(["tabs", "nativeMessaging", "webRequest"]);
   expect(manifest.optional_host_permissions).toEqual(["http://*/*", "https://*/*"]);
 });

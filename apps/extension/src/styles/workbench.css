@@ -6264,3 +6264,47 @@ button.sx-row.is-selected {
   margin: 0;
   padding: 0 22px 22px;
 }
+
+/* Redirect trace (M11.2). */
+.redirect-card {
+  margin-top: 18px;
+}
+.redirect-field {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.redirect-field input {
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+}
+.redirect-steps {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 4px;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  color: var(--muted);
+}
+.redirect-steps li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  align-items: baseline;
+}
+.redirect-steps .url-line {
+  overflow-wrap: anywhere;
+}
+.redirect-card .ax-findings {
+  padding: 0;
+}

@@ -286,3 +286,7 @@ Readiness is a separate Rust analyzer (`seo-rules::readiness`, schema 1) that ta
 There is no readiness score. Google says AI features have no extra requirements, so a number would suggest a measurement that does not exist. The view reports counts of what was checked, what may need review, and what could not be measured.
 
 M11.1 and M11.6 results are shared through a small in-memory store keyed by page URL (`services/ai-search-store.ts`, 20 entries). Readiness only reads it. Persisting these results was rejected for now: they describe a moment, and storing them would need staleness rules and size limits first.
+
+## M11.2 — redirect details permission (2026-11-25)
+
+The owner approved `webRequest` as an optional permission. Browsers hide redirect responses from `redirect: "manual"` fetches, and `redirect: "follow"` would let the browser follow redirects to unvalidated (including private) addresses. Reading each hop's status and Location with a non-blocking `onHeadersReceived` listener lets RankMiso validate and request every hop itself. Requests are attributed to RankMiso by `initiator` (Chrome) or `originUrl`/`documentUrl` (Firefox), or tab -1, because report pages run in tabs.

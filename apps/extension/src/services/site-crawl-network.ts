@@ -2,6 +2,7 @@ import { crawlPermitted } from "./engine";
 import { collectSitemaps } from "./sitemap-explore";
 import { crawlUrl, inCrawlScope, type FetchResult } from "./site-crawl";
 import { CRAWL_LIMITS } from "./site-crawl";
+import type { RedirectObserver } from "./redirect-observer";
 
 export function robotsUrl(origin: string): string {
   return new URL("/robots.txt", origin).href;
@@ -53,6 +54,8 @@ export async function fetchCrawlPage(
   origin: string,
   signal: AbortSignal,
   fetcher: typeof fetch = fetch,
+  /** Reads redirect status and Location when the optional webRequest permission is granted. */
+  redirects: RedirectObserver | null = null,
 ): Promise<FetchResult> {
   if (signal.aborted) {
     return {
@@ -94,7 +97,16 @@ export async function fetchCrawlPage(
         referrerPolicy: "no-referrer",
         signal: controller.signal,
       });
-      if (response.type === "opaqueredirect" || response.status === 0) {
+      let status = response.status;
+      let location = response.headers.get("location");
+      const observed =
+        (response.type === "opaqueredirect" || response.status === 0) && redirects
+          ? await redirects.read(current)
+          : null;
+      if (observed) {
+        status = observed.status;
+        location = observed.location;
+      } else if (response.type === "opaqueredirect" || response.status === 0) {
         await response.body?.cancel();
         return {
           status: null,
@@ -102,18 +114,18 @@ export async function fetchCrawlPage(
           contentType: "",
           html: "",
           hops,
-          error: "The redirect could not be checked, so it was not followed.",
+          error:
+            "The redirect could not be read, so it was not followed. Allow redirect details in Technical, Redirect trace.",
           truncated: false,
           retryable: false,
         };
       }
-      if (response.status >= 300 && response.status < 400) {
-        const location = response.headers.get("location");
+      if (status >= 300 && status < 400) {
         await response.body?.cancel();
         const next = location ? crawlUrl(location, current) : null;
         if (!next || hop === CRAWL_LIMITS.maxRedirects) {
           return {
-            status: response.status,
+            status,
             finalUrl: current,
             contentType: "",
             html: "",

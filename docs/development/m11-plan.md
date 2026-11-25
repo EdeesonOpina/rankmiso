@@ -8,7 +8,7 @@ M11.0 and M11.1 are done in this checkpoint. M11.2–M11.8 are plans only and ne
 | ----- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
 | M11.0 | Release hardening and marketing compliance | Marketing source fix merged to `develop` (#64). Store warning resolved; listing approved by Google (owner).            |
 | M11.1 | JavaScript SEO diagnostics                 | Merged to `develop` (#65). See `docs/features/javascript-seo.md`.                                                      |
-| M11.2 | Redirect intelligence                      | Plan                                                                                                                   |
+| M11.2 | Redirect intelligence                      | Implemented on `feature/v0.7.1-m11-integration`. See `docs/features/redirects.md`.                                     |
 | M11.3 | Canonical and hreflang intelligence        | Implemented on `feature/v0.7.1-m11-integration`. See `docs/features/canonical-hreflang.md`.                            |
 | M11.4 | Structured data intelligence               | Plan                                                                                                                   |
 | M11.5 | AIO/GEO content analysis                   | Implemented locally on `feature/m11.5-aio-geo-readiness` (stacked on M11.6). See `docs/features/content-readiness.md`. |
@@ -79,6 +79,10 @@ Owner policy (2026-11-25): one local branch, `feature/v0.7.1-m11-integration` in
 ### M11.3 checkpoint
 
 Done: Google-documented hreflang codes and fully-qualified alternates in `RULE_HREFLANG_INVALID`; crawl pages record hreflang; `site_relations` engine; Site Explorer Overview panel; shared `FindingList.vue` (also used by Content readiness). Tests: Rust 118 passed / 1 ignored; Vitest 248 passed / 4 skipped; `site-relations.spec.ts` passes in Chromium. Found: browser fetch cannot read redirect responses, so Site Explorer records redirected URLs as unreadable; relations treat them as not verified. Next: M11.2.
+
+### M11.2 checkpoint
+
+Done: optional `webRequest` permission (owner approved 2026-11-25) with `redirect-observer.ts`; hop-by-hop `redirect-trace.ts`; `seo-rules::redirects`; Technical → Redirect trace card; Site Explorer follows same-origin redirects when details are granted. Found and fixed: Chrome reports report-page requests with the tab's id, so RankMiso's own requests are matched by `initiator`/`originUrl`, not tab -1. Tests: Rust 125 passed / 1 ignored; Vitest 256 passed / 4 skipped; Playwright Chromium 14/14 including `redirects.spec.ts` (hops, loop, 404 destination, crawl canonical → redirect). Site Explorer heap median 20,390,083 bytes. Next: M11.4.
 
 ## M11.2 — redirect intelligence (plan)
 
