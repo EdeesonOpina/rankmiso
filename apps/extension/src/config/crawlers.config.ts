@@ -28,7 +28,7 @@ export interface CrawlerDefinition {
 
 export interface PlatformDefinition {
   readonly id: string;
-  /** Product name in plain text. Names belong to their owners; no logo is bundled. */
+  /** Product name in plain text. Names belong to their owners; marks: platform-marks.config.ts. */
   readonly name: string;
   readonly group: "search" | "ai";
   /** First entry is the one the platform's status follows. Empty when nothing is documented. */

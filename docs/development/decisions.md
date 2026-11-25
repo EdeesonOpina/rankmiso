@@ -271,6 +271,8 @@ JavaScript SEO diagnostics live in Rust (`seo-rules::rendering`), following the 
 
 For platform branding (planned M11.8), text names come first. OpenAI requires permission for its logo, Microsoft requires an express licence for logos and icons, and Google allows its logo for informational use but not in marketing material. Logos are added only per brand with written permission or a verified licence on file.
 
+Update 2026-11-25: the owner asked for the platforms' own logos in AI & Search. They ship as unmodified local SVGs in `apps/extension/public/platforms/`, appear only beside factual status at 17–20 px, and never appear in store or marketing images. Sources and the per-brand terms are in `docs/branding/third-party-marks.md`. Permission from Google (Gemini), OpenAI, and Microsoft is still not on file, so keeping each logo for a store release is an owner decision. Removing a brand's entry from `platform-marks.config.ts` brings back its letter tile.
+
 ## M11.6 — crawler accessibility (2026-11-25)
 
 There is still one robots.txt evaluator. `technical::robots_verdict` now follows RFC 9309: product tokens match exactly (case-insensitive, `/version` ignored) instead of by substring, all groups naming a token are merged, `*` applies only when no group names the token, `Allow` wins ties, paths are percent-normalized and include the query, `/robots.txt` is always allowed, and parsing stops at 500 KiB. `RULE_ROBOTS_TXT` (Googlebot) and Site Explorer's `crawl_permitted` (RankMiso) use the same function, so a group named `Google` no longer applies to Googlebot, and a `$`-anchored wildcard pattern now matches at the end of the path instead of the first occurrence.

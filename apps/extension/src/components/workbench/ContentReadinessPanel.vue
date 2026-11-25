@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { CircleCheck, CircleHelp, CircleSlash, Lightbulb } from "lucide-vue-next";
+import { CircleAlert, CircleCheck, CircleHelp, CircleSlash, Lightbulb } from "lucide-vue-next";
 import { useI18n } from "../../composables/useI18n";
 import type { MessageKey } from "../../locales/en";
 import { crawlerAccessFor, renderingFor } from "../../services/ai-search-store";
@@ -85,6 +85,13 @@ const groupKey: Record<ReadinessGroup, { title: MessageKey; text: MessageKey }> 
   accessibility: { title: "ready.group.accessibility", text: "ready.group.accessibilityText" },
 };
 
+/** The first opportunities, most serious first, for the side panel. */
+const nextSteps = computed(() =>
+  [...(report.value?.findings ?? [])]
+    .filter((finding) => finding.status === "ERROR" || finding.status === "WARNING")
+    .sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9))
+    .slice(0, 3),
+);
 const pageTypeKey: Record<ReadinessReport["pageType"], MessageKey> = {
   article: "ready.pageType.article",
   product: "ready.pageType.product",
@@ -104,10 +111,12 @@ const staleNotes = computed(() => {
 
 <template>
   <div class="ax-panel">
-    <section class="ax-console" :aria-label="t('ready.title')">
+    <section class="ax-head" :aria-label="t('ready.title')">
       <div>
-        <strong translate="no">{{ host }}</strong>
-        <p>{{ audit.page.title || audit.page.url }}</p>
+        <h3>{{ t("ready.title") }}</h3>
+        <p>
+          <strong translate="no">{{ host }}</strong> · {{ audit.page.title || audit.page.url }}
+        </p>
         <p class="ax-small">{{ t("ready.local") }}</p>
       </div>
       <span v-if="report" class="sx-chip ghost">{{
@@ -115,81 +124,106 @@ const staleNotes = computed(() => {
       }}</span>
     </section>
 
-    <section v-if="!report" class="ax-empty">
-      <h2>{{ t(failed ? "ready.failed" : "ready.empty.title") }}</h2>
-      <p>{{ t("ready.empty.body") }}</p>
-    </section>
+    <div v-if="report" class="sx-stats">
+      <SxStat
+        :label="t('ready.stat.completed')"
+        :value="n(totals.completed)"
+        :icon="CircleCheck"
+        tone="brand"
+      />
+      <SxStat
+        :label="t('ready.stat.opportunities')"
+        :value="n(totals.opportunities)"
+        :icon="Lightbulb"
+        tone="warning"
+      />
+      <SxStat
+        :label="t('ready.stat.notMeasured')"
+        :value="n(totals.notMeasured)"
+        :icon="CircleHelp"
+        tone="neutral"
+      />
+      <SxStat
+        :label="t('ready.stat.notApplicable')"
+        :value="n(totals.notApplicable)"
+        :icon="CircleSlash"
+        tone="neutral"
+      />
+    </div>
+    <ul v-if="report && staleNotes.length" class="ax-facts" role="list">
+      <li v-for="note in staleNotes" :key="note">{{ note }}</li>
+    </ul>
 
-    <template v-else>
-      <div class="sx-stats">
-        <SxStat
-          :label="t('ready.stat.completed')"
-          :value="n(totals.completed)"
-          :icon="CircleCheck"
-          tone="brand"
-        />
-        <SxStat
-          :label="t('ready.stat.opportunities')"
-          :value="n(totals.opportunities)"
-          :icon="Lightbulb"
-          tone="warning"
-        />
-        <SxStat
-          :label="t('ready.stat.notMeasured')"
-          :value="n(totals.notMeasured)"
-          :icon="CircleHelp"
-          tone="neutral"
-        />
-        <SxStat
-          :label="t('ready.stat.notApplicable')"
-          :value="n(totals.notApplicable)"
-          :icon="CircleSlash"
-          tone="neutral"
-        />
+    <div class="ax-cols">
+      <div class="ax-main">
+        <section v-if="!report" class="ax-empty">
+          <h2>{{ t(failed ? "ready.failed" : "ready.empty.title") }}</h2>
+          <p>{{ t("ready.empty.body") }}</p>
+        </section>
+
+        <template v-else>
+          <SxPanel
+            v-for="group in groups"
+            :key="group.id"
+            :title="t(groupKey[group.id].title)"
+            :text="t(groupKey[group.id].text)"
+            :badge="t('ready.groupCount', { count: n(group.summary.opportunities) })"
+            class="ax-section"
+          >
+            <FindingList :findings="group.findings">
+              <template #actions="{ finding }">
+                <button
+                  v-if="finding.id === 'READY_CRAWLER_ACCESS' && finding.status === 'UNAVAILABLE'"
+                  type="button"
+                  class="secondary"
+                  @click="emit('openAccess')"
+                >
+                  {{ t("ready.action.access") }}
+                </button>
+                <button
+                  v-if="finding.id === 'READY_RENDERING' && finding.status === 'UNAVAILABLE'"
+                  type="button"
+                  class="secondary"
+                  @click="go('technical')"
+                >
+                  {{ t("ready.action.rendering") }}
+                </button>
+                <button
+                  v-if="finding.reused"
+                  type="button"
+                  class="icon-text"
+                  @click="go('issues', { check: finding.id })"
+                >
+                  {{ t("ready.reused") }}
+                </button>
+              </template>
+            </FindingList>
+          </SxPanel>
+        </template>
       </div>
-      <ul v-if="staleNotes.length" class="ax-facts" role="list">
-        <li v-for="note in staleNotes" :key="note">{{ note }}</li>
-      </ul>
 
-      <SxPanel
-        v-for="group in groups"
-        :key="group.id"
-        :title="t(groupKey[group.id].title)"
-        :text="t(groupKey[group.id].text)"
-        :badge="t('ready.groupCount', { count: n(group.summary.opportunities) })"
-        class="ax-section"
-      >
-        <FindingList :findings="group.findings">
-          <template #actions="{ finding }">
-            <button
-              v-if="finding.id === 'READY_CRAWLER_ACCESS' && finding.status === 'UNAVAILABLE'"
-              type="button"
-              class="secondary"
-              @click="emit('openAccess')"
-            >
-              {{ t("ready.action.access") }}
-            </button>
-            <button
-              v-if="finding.id === 'READY_RENDERING' && finding.status === 'UNAVAILABLE'"
-              type="button"
-              class="secondary"
-              @click="go('technical')"
-            >
-              {{ t("ready.action.rendering") }}
-            </button>
-            <button
-              v-if="finding.reused"
-              type="button"
-              class="icon-text"
-              @click="go('issues', { check: finding.id })"
-            >
-              {{ t("ready.reused") }}
-            </button>
-          </template>
-        </FindingList>
-      </SxPanel>
-    </template>
-
-    <p class="ax-disclaimer">{{ t("ready.disclaimer") }} {{ t("ready.llms") }}</p>
+      <aside class="ax-aside" :aria-label="t('ready.nextTitle')">
+        <section v-if="report" class="ax-side">
+          <h3>{{ t("ready.nextTitle") }}</h3>
+          <p class="ax-side-text">{{ t("ready.nextText") }}</p>
+          <ul v-if="nextSteps.length" class="ax-signals" role="list">
+            <li v-for="finding in nextSteps" :key="finding.id">
+              <span class="ax-signal-icon" :class="finding.status === 'ERROR' ? 'err' : 'warn'"
+                ><CircleAlert class="ic" aria-hidden="true"
+              /></span>
+              <div>
+                <strong>{{ finding.title }}</strong>
+                <small>{{ t(groupKey[finding.group].title) }}</small>
+              </div>
+            </li>
+          </ul>
+          <p v-else class="ax-side-text">{{ t("ready.nextNone") }}</p>
+        </section>
+        <section class="ax-limits">
+          <h3><CircleAlert class="ic" aria-hidden="true" />{{ t("ready.limitsTitle") }}</h3>
+          <p>{{ t("ready.disclaimer") }} {{ t("ready.llms") }}</p>
+        </section>
+      </aside>
+    </div>
   </div>
 </template>

@@ -19,6 +19,7 @@ import {
   type VisibilityStatus,
 } from "../../services/visibility";
 import type { AuditResult } from "../../types/audit";
+import PlatformMark from "../PlatformMark.vue";
 import SxPanel from "./SxPanel.vue";
 
 /**
@@ -188,9 +189,9 @@ const platformName = (id: string) =>
 
 <template>
   <div class="ax-panel vis">
-    <section class="ax-console" :aria-label="t('visibility.title')">
+    <section class="ax-head" :aria-label="t('visibility.title')">
       <div>
-        <strong>{{ t("visibility.title") }}</strong>
+        <h3>{{ t("visibility.title") }}</h3>
         <p>{{ t("visibility.intro") }}</p>
         <p class="ax-small">{{ usage }}</p>
       </div>
@@ -213,6 +214,11 @@ const platformName = (id: string) =>
         </button>
       </div>
       <p v-if="message" class="ax-message" role="status">{{ message }}</p>
+    </section>
+
+    <section class="ax-callout">
+      <strong>{{ t("visibility.calloutTitle") }}</strong>
+      <p>{{ t("visibility.calloutText") }}</p>
     </section>
 
     <SxPanel :title="t('visibility.addTitle')" :text="t('visibility.addText')" class="ax-section">
@@ -319,7 +325,7 @@ const platformName = (id: string) =>
       <p v-if="!rows(query).length" class="ax-small vis-none">{{ t("visibility.noSamples") }}</p>
       <ul v-else class="ax-findings vis-rows" role="list">
         <li v-for="row in rows(query)" :key="row.platform.id" class="ax-finding">
-          <span class="ax-mark" aria-hidden="true">{{ row.platform.name.charAt(0) }}</span>
+          <PlatformMark :platform-id="row.platform.platformId" :name="row.platform.name" />
           <div class="ax-finding-main">
             <div class="ax-finding-head">
               <h4>{{ row.platform.name }}</h4>
@@ -382,6 +388,6 @@ const platformName = (id: string) =>
       </ul>
     </SxPanel>
 
-    <p class="ax-disclaimer">{{ t("visibility.disclaimer") }} {{ t("access.names") }}</p>
+    <p class="ax-disclaimer">{{ t("visibility.disclaimer") }} {{ t("access.marks") }}</p>
   </div>
 </template>
