@@ -2,6 +2,7 @@ use seo_core::{AnalyzeOptions, EngineError, PageSnapshot};
 use seo_rules::crawler_access::{self, AccessRequest};
 use seo_rules::readiness::{self, ReadinessRequest};
 use seo_rules::rendering::{self, RenderingComparison};
+use seo_rules::site_relations::{self, RelationsInput};
 use seo_rules::sitemap::{self, SitemapDocument};
 use seo_rules::{analyze, rankmiso_may_fetch};
 use wasm_bindgen::prelude::*;
@@ -69,6 +70,18 @@ pub fn analyze_readiness(request_json: &str) -> Result<String, JsValue> {
     let request: ReadinessRequest = serde_json::from_str(request_json)
         .map_err(|error| js_error(EngineError::new("INVALID_JSON", error.to_string())))?;
     match readiness::analyze(&request) {
+        Ok(result) => serde_json::to_string(&result)
+            .map_err(|error| js_error(EngineError::new("ENCODE_FAILED", error.to_string()))),
+        Err(error) => Err(js_error(error)),
+    }
+}
+
+/// Canonical and hreflang relationships across one Site Explorer crawl.
+#[wasm_bindgen]
+pub fn analyze_site_relations(input_json: &str) -> Result<String, JsValue> {
+    let input: RelationsInput = serde_json::from_str(input_json)
+        .map_err(|error| js_error(EngineError::new("INVALID_JSON", error.to_string())))?;
+    match site_relations::analyze(&input) {
         Ok(result) => serde_json::to_string(&result)
             .map_err(|error| js_error(EngineError::new("ENCODE_FAILED", error.to_string()))),
         Err(error) => Err(js_error(error)),
