@@ -1,5 +1,6 @@
 use seo_core::{AnalyzeOptions, EngineError, PageSnapshot};
 use seo_rules::crawler_access::{self, AccessRequest};
+use seo_rules::readiness::{self, ReadinessRequest};
 use seo_rules::rendering::{self, RenderingComparison};
 use seo_rules::sitemap::{self, SitemapDocument};
 use seo_rules::{analyze, rankmiso_may_fetch};
@@ -56,6 +57,18 @@ pub fn analyze_crawler_access(request_json: &str) -> Result<String, JsValue> {
     let request: AccessRequest = serde_json::from_str(request_json)
         .map_err(|error| js_error(EngineError::new("INVALID_JSON", error.to_string())))?;
     match crawler_access::analyze(&request) {
+        Ok(result) => serde_json::to_string(&result)
+            .map_err(|error| js_error(EngineError::new("ENCODE_FAILED", error.to_string()))),
+        Err(error) => Err(js_error(error)),
+    }
+}
+
+/// Content readiness for AI-assisted discovery. Findings are not part of the page score.
+#[wasm_bindgen]
+pub fn analyze_readiness(request_json: &str) -> Result<String, JsValue> {
+    let request: ReadinessRequest = serde_json::from_str(request_json)
+        .map_err(|error| js_error(EngineError::new("INVALID_JSON", error.to_string())))?;
+    match readiness::analyze(&request) {
         Ok(result) => serde_json::to_string(&result)
             .map_err(|error| js_error(EngineError::new("ENCODE_FAILED", error.to_string()))),
         Err(error) => Err(js_error(error)),

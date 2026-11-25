@@ -10,6 +10,7 @@ mod international;
 mod links;
 mod metadata;
 mod performance;
+pub mod readiness;
 pub mod rendering;
 pub mod sitemap;
 mod social;
