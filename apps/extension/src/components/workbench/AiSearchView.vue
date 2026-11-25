@@ -13,9 +13,9 @@ import VisibilityPanel from "./VisibilityPanel.vue";
 const props = defineProps<{ audit: AuditResult }>();
 const { t, n } = useI18n();
 const tabs = [
-  { id: "access", key: "aiSearch.tab.access", icon: Globe },
-  { id: "readiness", key: "aiSearch.tab.readiness", icon: CircleCheck },
-  { id: "visibility", key: "aiSearch.tab.visibility", icon: BarChart3 },
+  { id: "access", key: "aiSearch.tab.access", short: "pa.tab.access", icon: Globe },
+  { id: "readiness", key: "aiSearch.tab.readiness", short: "pa.tab.readiness", icon: CircleCheck },
+  { id: "visibility", key: "aiSearch.tab.visibility", short: "pa.tab.visibility", icon: BarChart3 },
 ] as const;
 type Tab = (typeof tabs)[number]["id"];
 const active = ref<Tab>("access");
@@ -69,10 +69,12 @@ const host = computed(
         type="button"
         :class="{ active: active === tab.id }"
         :aria-current="active === tab.id ? 'page' : undefined"
+        :aria-label="t(tab.key)"
         @click="active = tab.id"
       >
         <component :is="tab.icon" class="ic" aria-hidden="true" />
-        {{ t(tab.key) }}
+        <span class="ax-tab-full">{{ t(tab.key) }}</span>
+        <span class="ax-tab-short" aria-hidden="true">{{ t(tab.short) }}</span>
         <span v-if="tab.id === 'access'" class="count" aria-hidden="true">{{
           n(platforms.length)
         }}</span>

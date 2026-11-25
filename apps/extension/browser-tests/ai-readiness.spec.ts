@@ -219,7 +219,7 @@ test("content readiness reports real fixture observations per page type", async 
             new Promise<number>((done) => {
               const nav = document.querySelector('nav[aria-label="Discoverability views"]');
               const button = Array.from(nav?.querySelectorAll("button") ?? []).find(
-                (item) => item.textContent?.trim() === "Content readiness",
+                (item) => item.getAttribute("aria-label") === "Content readiness",
               );
               const started = performance.now();
               const observer = new MutationObserver(() => {

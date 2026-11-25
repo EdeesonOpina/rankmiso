@@ -6891,12 +6891,23 @@ html[data-theme="dark"] .ax-limits p {
 .ax-card-head {
   min-height: 38px;
 }
-.ax-card .ax-evidence {
-  margin-top: auto;
-  padding-top: 10px;
+/* Equal space above and below the Evidence divider, with or without a note. */
+.ax-card {
+  padding-bottom: 2px;
 }
-.ax-card .ax-note {
-  margin-bottom: 4px;
+.ax-card > .ax-status,
+.ax-card > .ax-note {
+  margin-bottom: 14px;
+}
+.ax-card > .ax-note + .ax-evidence,
+.ax-card > .ax-status + .ax-evidence {
+  margin-top: auto;
+}
+.ax-card .ax-evidence {
+  padding-top: 0;
+}
+.ax-card > .ax-status + .ax-note {
+  margin-top: -6px;
 }
 
 /* AI training and content use: one card per token, like the platform cards. */
@@ -7261,4 +7272,47 @@ html[data-theme="dark"] .ax-limits p {
 }
 .ax-ms .ax-ms-head h4 {
   margin: 0;
+}
+
+/* Short tab labels in the sidebar and on phones keep the three tabs on one line. */
+.ax-tab-short {
+  display: none;
+}
+.wb.sidebar .ax-tab-full {
+  display: none;
+}
+.wb.sidebar .ax-tab-short {
+  display: inline;
+}
+.wb.sidebar .sx-tabs.ax-tabs {
+  width: 100%;
+  flex-wrap: nowrap;
+  padding: 5px;
+  gap: 4px;
+}
+.wb.sidebar .sx-tabs.ax-tabs button {
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+  padding: 9px 6px;
+  font-size: 11.5px;
+}
+.wb.sidebar .sx-tabs.ax-tabs .ic {
+  display: none;
+}
+@media (max-width: 520px) {
+  .ax-tab-full {
+    display: none;
+  }
+  .ax-tab-short {
+    display: inline;
+  }
+  .sx-tabs.ax-tabs {
+    flex-wrap: nowrap;
+  }
+  .sx-tabs.ax-tabs button {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+  }
 }
