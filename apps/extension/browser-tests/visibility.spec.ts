@@ -38,7 +38,7 @@ test("AI visibility records samples locally, keeps them after reload, and delete
     await report.goto(url);
     const open = async () =>
       report
-        .getByRole("navigation", { name: "AI & Search views" })
+        .getByRole("navigation", { name: "Discoverability views" })
         .getByRole("button", { name: "Visibility" })
         .click();
     await open();

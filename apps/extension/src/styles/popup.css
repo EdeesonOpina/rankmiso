@@ -2042,7 +2042,7 @@ html[data-theme="dark"] .app .rail-link[aria-current="page"] {
     0 3px 7px rgba(0, 0, 0, 0.25);
 }
 
-/* AI & Search popup screen (v0.7.1 concept). */
+/* Discoverability popup screen (v0.7.1 concept). */
 .pmark {
   flex: 0 0 30px;
   width: 30px;

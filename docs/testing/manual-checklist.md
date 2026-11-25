@@ -299,7 +299,7 @@ Status values: Passed, Failed, Blocked, Not performed. Record browser, version, 
 | Light and dark theme, keyboard open/close of Evidence, 768px and sidebar width                                             | Partly: Playwright light/dark screenshots, 768px no overflow | Not performed                |
 | Page score unchanged after a comparison                                                                                    | Not performed                                                | Not performed                |
 
-## M11.6 — AI & Search crawler access (unreleased)
+## M11.6 — Discoverability crawler access (unreleased)
 
 Status values: Passed, Failed, Blocked, Not performed. Record browser, version, and profile.
 

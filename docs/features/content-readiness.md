@@ -1,6 +1,6 @@
 # Content readiness (M11.5, unreleased)
 
-Where: report and sidebar → Site intelligence → **AI & Search** → **Content readiness** tab.
+Where: report and sidebar → Site intelligence → **Discoverability** → **Content readiness** tab.
 
 It runs on the page snapshot RankMiso already collected for the current analysis. It makes no network request, asks for no permission, and saves nothing. The Rust engine (`seo-rules::readiness`, WASM `analyze_readiness`, input schema 1) groups existing page checks by id and adds the rules below. All findings have weight 0; the page score does not change.
 

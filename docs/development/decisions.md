@@ -292,3 +292,7 @@ M11.1 and M11.6 results are shared through a small in-memory store keyed by page
 ## M11.2 — redirect details permission (2026-11-25)
 
 The owner approved `webRequest` as an optional permission. Browsers hide redirect responses from `redirect: "manual"` fetches, and `redirect: "follow"` would let the browser follow redirects to unvalidated (including private) addresses. Reading each hop's status and Location with a non-blocking `onHeadersReceived` listener lets RankMiso validate and request every hop itself. Requests are attributed to RankMiso by `initiator` (Chrome) or `originUrl`/`documentUrl` (Firefox), or tab -1, because report pages run in tabs.
+
+## Discoverability section name (2026-11-25)
+
+The owner renamed the section "AI & Search" to **Discoverability**, with "Findable" as the short label in the popup rail and the sidebar. "AI Discover" was rejected because Google Discover is a separate Google surface that SEO users track, so the name would suggest Discover data RankMiso does not have. The internal id stays `ai-search`, so links such as `?section=ai-search`, saved state, and tests keep working.

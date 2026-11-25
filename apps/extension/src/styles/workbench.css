@@ -5941,7 +5941,7 @@ button.sx-row.is-selected {
   }
 }
 
-/* AI & Search crawler access (M11.6). Report tokens only; marks are neutral monograms. */
+/* Discoverability crawler access (M11.6). Report tokens only; marks are neutral monograms. */
 .ax {
   min-width: 0;
 }
@@ -6197,7 +6197,7 @@ button.sx-row.is-selected {
   }
 }
 
-/* AI & Search tabs and content readiness (M11.5). */
+/* Discoverability tabs and content readiness (M11.5). */
 .ax-tabs {
   margin: 0 0 18px;
   /* Three tabs must stay visible in the sidebar and on phones, not scroll out of view. */
@@ -6388,7 +6388,7 @@ button.sx-row.is-selected {
   }
 }
 
-/* AI & Search workspace layout (v0.7.1 concept): hero, pill tabs, evidence aside, marks. */
+/* Discoverability workspace layout (v0.7.1 concept): hero, pill tabs, evidence aside, marks. */
 .pmark {
   flex: 0 0 34px;
   width: 34px;

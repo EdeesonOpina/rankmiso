@@ -1,6 +1,6 @@
 # Third-party platform marks
 
-RankMiso shows search and AI platforms' own logos beside their names in AI & Search, so each card can be recognised at a glance. The owner asked for this on 2026-11-25. Names and marks belong to their owners; RankMiso is not affiliated with them and does not claim endorsement.
+RankMiso shows search and AI platforms' own logos beside their names in Discoverability, so each card can be recognised at a glance. The owner asked for this on 2026-11-25. Names and marks belong to their owners; RankMiso is not affiliated with them and does not claim endorsement.
 
 ## Rules in the product
 

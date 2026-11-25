@@ -68,7 +68,7 @@ test("structured data checks report flawed markup and feed content readiness", a
 
     await report.locator('[data-nav="ai-search"]').click();
     await report
-      .getByRole("navigation", { name: "AI & Search views" })
+      .getByRole("navigation", { name: "Discoverability views" })
       .getByRole("button", { name: "Content readiness" })
       .click();
     const finding = (title: string) =>

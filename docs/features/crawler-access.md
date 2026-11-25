@@ -1,6 +1,6 @@
-# AI & Search crawler access (M11.6, unreleased)
+# Discoverability crawler access (M11.6, unreleased)
 
-Where: full-page report and sidebar → Site intelligence → **AI & Search**. Nothing runs until the user chooses **Check access**. RankMiso first asks for access to the site (the existing optional host permission for that origin).
+Where: full-page report and sidebar → Site intelligence → **Discoverability**. Nothing runs until the user chooses **Check access**. RankMiso first asks for access to the site (the existing optional host permission for that origin).
 
 ## What it reads
 

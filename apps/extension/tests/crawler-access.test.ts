@@ -181,7 +181,7 @@ function fixtureCheck(): AccessCheck {
   };
 }
 
-describe("AI & Search view", () => {
+describe("Discoverability view", () => {
   const audit = { page: { url: page, title: "Guide", language: "en" } } as never;
 
   beforeEach(() => {

@@ -99,7 +99,7 @@ test("content readiness reports real fixture observations per page type", async 
     };
     const readiness = async () => {
       await report
-        .getByRole("navigation", { name: "AI & Search views" })
+        .getByRole("navigation", { name: "Discoverability views" })
         .getByRole("button", { name: "Content readiness" })
         .click();
       await expect(report.locator(".ax-finding").first()).toBeVisible({ timeout: 20_000 });
@@ -209,7 +209,7 @@ test("content readiness reports real fixture observations per page type", async 
     const timings: number[] = [];
     for (let sample = 0; sample < 5; sample += 1) {
       await report
-        .getByRole("navigation", { name: "AI & Search views" })
+        .getByRole("navigation", { name: "Discoverability views" })
         .getByRole("button", { name: "Crawler access" })
         .click();
       // Measured inside the page, from the click to the first rendered finding.
@@ -217,7 +217,7 @@ test("content readiness reports real fixture observations per page type", async 
         await report.evaluate(
           () =>
             new Promise<number>((done) => {
-              const nav = document.querySelector('nav[aria-label="AI & Search views"]');
+              const nav = document.querySelector('nav[aria-label="Discoverability views"]');
               const button = Array.from(nav?.querySelectorAll("button") ?? []).find(
                 (item) => item.textContent?.trim() === "Content readiness",
               );

@@ -24,7 +24,7 @@ const robots = [
   "Disallow: /private",
 ].join("\n");
 
-test("AI & Search reads robots.txt, robots meta, and X-Robots-Tag per crawler", async () => {
+test("Discoverability reads robots.txt, robots meta, and X-Robots-Tag per crawler", async () => {
   test.setTimeout(120_000);
   const requests: string[] = [];
   const server = createServer((request, response) => {
@@ -74,10 +74,12 @@ test("AI & Search reads robots.txt, robots meta, and X-Robots-Tag per crawler", 
     await report.goto(
       `chrome-extension://${extensionId}/dashboard.html?tabId=${pageId}&section=ai-search`,
     );
-    await expect(report.getByRole("heading", { name: "AI & Search", exact: true })).toBeVisible();
+    await expect(
+      report.getByRole("heading", { name: "Discoverability", exact: true }),
+    ).toBeVisible();
     await expect(
       report
-        .getByRole("navigation", { name: "AI & Search views" })
+        .getByRole("navigation", { name: "Discoverability views" })
         .getByRole("button", { name: "Crawler access" }),
     ).toHaveAttribute("aria-current", "page");
     await expect(report.getByText("No check yet")).toBeVisible();

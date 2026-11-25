@@ -15,7 +15,7 @@ import { loadStore, type VisibilityStatus } from "../../services/visibility";
 import type { AuditResult, PageSnapshot } from "../../types/audit";
 import PlatformMark from "../PlatformMark.vue";
 
-/** Compact AI & Search: real results only. The report holds the full evidence and the journal. */
+/** Compact Discoverability: real results only. The report holds the full evidence and the journal. */
 defineOptions({ inheritAttrs: false });
 const props = defineProps<{ audit: AuditResult; snapshot?: PageSnapshot | null }>();
 const emit = defineEmits<{ report: [section?: string] }>();

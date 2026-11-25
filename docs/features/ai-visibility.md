@@ -1,6 +1,6 @@
 # AI answer visibility (M11.7, unreleased)
 
-Where: report and sidebar → AI & Search → **Visibility**.
+Where: report and sidebar → Discoverability → **Visibility**.
 
 This is a log of what the user saw, not a tracker that queries AI services. RankMiso never sends questions to ChatGPT, Google, Gemini, Copilot, Claude, Perplexity, or DuckDuckGo, and does not scrape their pages. No official API offers this data without accounts and keys, so nothing automated is shipped. Links open each service's home page.
 

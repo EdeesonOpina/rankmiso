@@ -86,7 +86,7 @@ test("M11 views fit every width in light and dark", async () => {
           async () => {
             await report.locator('[data-nav="ai-search"]').click();
             await report
-              .getByRole("navigation", { name: "AI & Search views" })
+              .getByRole("navigation", { name: "Discoverability views" })
               .getByRole("button", { name })
               .click();
           },
@@ -139,10 +139,10 @@ test("M11 views fit every width in light and dark", async () => {
       await sidebar.screenshot({ animations: "disabled", path: `${shots}/sidebar-${section}.png` });
     }
 
-    // Keyboard: the AI & Search tabs are reachable and operable.
+    // Keyboard: the Discoverability tabs are reachable and operable.
     await report.setViewportSize({ width: 1440, height: 900 });
     await report.locator('[data-nav="ai-search"]').click();
-    const nav = report.getByRole("navigation", { name: "AI & Search views" });
+    const nav = report.getByRole("navigation", { name: "Discoverability views" });
     await nav.getByRole("button", { name: "Crawler access" }).focus();
     await report.keyboard.press("Tab");
     await expect(nav.getByRole("button", { name: "Content readiness" })).toBeFocused();
