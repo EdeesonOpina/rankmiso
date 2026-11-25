@@ -14,6 +14,7 @@ mod performance;
 pub mod readiness;
 pub mod redirects;
 pub mod rendering;
+pub mod sd_entities;
 pub mod site_relations;
 pub mod sitemap;
 mod social;

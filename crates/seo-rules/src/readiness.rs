@@ -29,7 +29,7 @@ const SD_POLICIES: &str =
     "https://developers.google.com/search/docs/appearance/structured-data/sd-policies";
 
 /// Existing checks reused as-is, with the readiness group they are shown in.
-const REUSED: [(&str, Group); 19] = [
+const REUSED: [(&str, Group); 24] = [
     ("RULE_HTTP_STATUS", Group::Discoverability),
     ("RULE_NOINDEX_DETECTED", Group::Discoverability),
     ("RULE_ROBOTS_CONFLICT", Group::Discoverability),
@@ -45,6 +45,11 @@ const REUSED: [(&str, Group); 19] = [
     ("RULE_META_DESCRIPTION_MISSING", Group::Clarity),
     ("RULE_LINK_EMPTY_ANCHOR", Group::Clarity),
     ("RULE_JSONLD_SYNTAX", Group::StructuredData),
+    ("RULE_SD_CONFLICTS", Group::StructuredData),
+    ("RULE_SD_REFERENCES", Group::StructuredData),
+    ("RULE_SD_VALUE_TYPES", Group::StructuredData),
+    ("RULE_SD_URL_VALUES", Group::StructuredData),
+    ("RULE_SD_ATTRIBUTION", Group::Attribution),
     ("RULE_IMAGE_ALT_MISSING", Group::Accessibility),
     ("RULE_BUTTON_NAME_MISSING", Group::Accessibility),
     ("RULE_FORM_LABEL_MISSING", Group::Accessibility),
@@ -1058,7 +1063,11 @@ fn dates(page: &Observed) -> CheckResult {
         };
     }
     let mut problems: Vec<String> = Vec::new();
-    for (label, value) in &present {
+    // JSON-LD date formats are RULE_SD_VALUE_TYPES (reused above); only meta dates are read here.
+    for (label, value) in present
+        .iter()
+        .filter(|(label, _)| label.starts_with("article:"))
+    {
         if day(value).is_none() {
             problems.push(format!("{label} is not an ISO 8601 date: {value}"));
         }

@@ -44,12 +44,29 @@ pub fn checks(views: &[StructuredDataView]) -> Vec<CheckResult> {
         .filter(|view| view.format == "json-ld")
         .cloned()
         .collect();
-    vec![
+    let mut checks = vec![
         syntax(&json_ld),
-        coverage(&json_ld),
         extracted(views, "microdata", "RULE_MICRODATA_EXTRACTED", "Microdata"),
         extracted(views, "rdfa", "RULE_RDFA_EXTRACTED", "RDFa"),
-    ]
+    ];
+    let mut entity_checks = crate::sd_entities::checks(views);
+    if views.is_empty() || views.iter().all(|view| !view.valid_json) {
+        // Keep the earlier wording: without readable markup nothing was compared.
+        entity_checks[0] = unread();
+    }
+    checks.splice(1..1, entity_checks);
+    checks
+}
+
+fn unread() -> CheckResult {
+    crate::support::check(
+        "RULE_SCHEMA_RICH_RESULTS",
+        Category::StructuredData,
+        CheckStatus::Unavailable,
+        1,
+        "Required properties were not compared",
+        "Structured data was missing or did not parse, so required properties were not checked. This is not an official rich-result test.",
+    )
 }
 
 fn extracted(views: &[StructuredDataView], format: &str, id: &str, label: &str) -> CheckResult {
@@ -143,151 +160,6 @@ fn syntax(views: &[StructuredDataView]) -> CheckResult {
     }
 }
 
-fn coverage(views: &[StructuredDataView]) -> CheckResult {
-    if views.is_empty() || views.iter().all(|view| !view.valid_json) {
-        return crate::support::check(
-            "RULE_SCHEMA_RICH_RESULTS",
-            Category::StructuredData,
-            CheckStatus::Unavailable,
-            1,
-            "Rich-result fields were not compared",
-            "JSON-LD was missing or did not parse, so the local field list was not applied. This is not an official rich-result test.",
-        );
-    }
-    let mut missing = Vec::new();
-    let mut recognized = 0_u32;
-    for view in views.iter().filter(|view| view.valid_json) {
-        let Ok(value) = serde_json::from_str::<serde_json::Value>(&view.raw) else {
-            continue;
-        };
-        walk_objects(&value, &mut |object| {
-            for kind in type_names(object) {
-                let Some(fields) = required_fields(&kind) else {
-                    continue;
-                };
-                recognized += 1;
-                for field in fields {
-                    if !has_field(object, field) {
-                        missing.push(format!("{kind} is missing {field}"));
-                    }
-                }
-            }
-        });
-    }
-    if recognized == 0 {
-        return crate::support::check(
-            "RULE_SCHEMA_RICH_RESULTS",
-            Category::StructuredData,
-            CheckStatus::Info,
-            1,
-            "No listed rich-result type was found",
-            "None of the JSON-LD types are in the local field list. This is not an official rich-result test.",
-        );
-    }
-    if missing.is_empty() {
-        crate::support::check(
-            "RULE_SCHEMA_RICH_RESULTS",
-            Category::StructuredData,
-            CheckStatus::Info,
-            1,
-            "The local field list is complete",
-            "The listed types include the fields this checklist looks for. This is not an official rich-result test.",
-        )
-    } else {
-        let mut check = crate::support::check(
-            "RULE_SCHEMA_RICH_RESULTS",
-            Category::StructuredData,
-            CheckStatus::Warning,
-            1,
-            "A listed type is missing a field",
-            "Missing fields are listed below. This is a local checklist, not an official rich-result test.",
-        );
-        check.evidence = bounded_evidence(&missing, "missing");
-        check
-    }
-}
-
-fn required_fields(kind: &str) -> Option<&'static [&'static str]> {
-    match kind.to_ascii_lowercase().as_str() {
-        "article" | "newsarticle" | "blogposting" => {
-            Some(&["headline", "image", "datepublished", "author"])
-        }
-        "product" => Some(&["name", "image"]),
-        "organization" => Some(&["name", "url"]),
-        "breadcrumblist" => Some(&["itemlistelement"]),
-        "faqpage" => Some(&["mainentity"]),
-        "website" => Some(&["name", "url"]),
-        _ => None,
-    }
-}
-
-fn walk_objects(
-    value: &serde_json::Value,
-    visit: &mut dyn FnMut(&serde_json::Map<String, serde_json::Value>),
-) {
-    match value {
-        serde_json::Value::Object(map) => {
-            visit(map);
-            for child in map.values() {
-                walk_objects(child, visit);
-            }
-        }
-        serde_json::Value::Array(items) => {
-            for item in items {
-                walk_objects(item, visit);
-            }
-        }
-        _ => {}
-    }
-}
-
-fn type_names(map: &serde_json::Map<String, serde_json::Value>) -> Vec<String> {
-    let Some(kind) = map
-        .iter()
-        .find(|(key, _)| key.eq_ignore_ascii_case("@type"))
-        .map(|(_, value)| value)
-    else {
-        return Vec::new();
-    };
-    let mut names = Vec::new();
-    push_type_names(kind, &mut names);
-    names
-}
-
-fn push_type_names(value: &serde_json::Value, names: &mut Vec<String>) {
-    match value {
-        serde_json::Value::String(kind) => {
-            if let Some(short) = kind.rsplit(['/', '#']).next() {
-                if !short.is_empty() {
-                    names.push(short.to_string());
-                }
-            }
-        }
-        serde_json::Value::Array(items) => {
-            for item in items {
-                push_type_names(item, names);
-            }
-        }
-        _ => {}
-    }
-}
-
-fn has_field(object: &serde_json::Map<String, serde_json::Value>, field: &str) -> bool {
-    object
-        .iter()
-        .any(|(key, value)| key.eq_ignore_ascii_case(field) && present(value))
-}
-
-fn present(value: &serde_json::Value) -> bool {
-    match value {
-        serde_json::Value::Null => false,
-        serde_json::Value::String(text) => !text.trim().is_empty(),
-        serde_json::Value::Array(items) => items.iter().any(present),
-        serde_json::Value::Object(map) => !map.is_empty(),
-        _ => true,
-    }
-}
-
 fn collect_types(value: &serde_json::Value) -> Vec<String> {
     let mut types = Vec::new();
     walk(value, &mut types);
@@ -346,11 +218,14 @@ mod field_tests {
     }
 
     #[test]
-    fn a_missing_article_field_is_a_warning() {
+    fn a_missing_required_property_is_a_warning() {
+        // Article has no Google-required properties; Product requires one of three.
         assert_eq!(
-            rich_status(
-                r#"{"@type":"Article","image":"https://example.com/a.jpg","datePublished":"2026-01-01","author":"Ada"}"#
-            ),
+            rich_status(r#"{"@type":"Article","image":"https://example.com/a.jpg"}"#),
+            CheckStatus::Info
+        );
+        assert_eq!(
+            rich_status(r#"{"@type":"Product","name":"Miso"}"#),
             CheckStatus::Warning
         );
     }
@@ -375,7 +250,8 @@ mod field_tests {
             .find(|check| check.id == "RULE_MICRODATA_EXTRACTED")
             .unwrap();
         assert_eq!(syntax.status, CheckStatus::Info);
-        assert_eq!(rich.status, CheckStatus::Unavailable);
+        // Since v0.7.1 Microdata is checked too; Article has no Google-required properties.
+        assert_eq!(rich.status, CheckStatus::Info);
         assert_eq!(micro.status, CheckStatus::Info);
         assert!(micro
             .evidence
