@@ -430,6 +430,12 @@ export const messages = {
   "aiSearch.tab.access": "Crawler access",
   "aiSearch.tab.readiness": "Content readiness",
   "ready.title": "Content readiness",
+  "relations.canonical": "Canonical relationships",
+  "relations.hreflang": "Hreflang relationships",
+  "relations.text":
+    "Judged only between pages this crawl analyzed. Targets outside the crawl are listed as not verified.",
+  "relations.running": "Relationships are checked when the crawl stops.",
+  "relations.failed": "Relationships could not be checked for this crawl.",
   "ready.local":
     "Analyzed on this device from the page RankMiso already read. No request is made, and results are not saved.",
   "ready.pageType": "Page type: {type}",

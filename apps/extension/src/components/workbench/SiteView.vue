@@ -81,6 +81,7 @@ import { categoryIcon } from "./site-icons";
 import SiteComparePanel from "./SiteComparePanel.vue";
 import SiteCrawlConsole from "./SiteCrawlConsole.vue";
 import SxPanel from "./SxPanel.vue";
+import SiteRelationsPanel from "./SiteRelationsPanel.vue";
 import SxStat from "./SxStat.vue";
 
 const props = defineProps<{ audit: AuditResult }>();
@@ -1105,6 +1106,8 @@ function limitLabel(limit: CrawlLimitReason): string {
           </div>
         </SxPanel>
       </div>
+
+      <SiteRelationsPanel v-if="session" :session="session" />
 
       <div class="sx-foot-notes">
         <p v-if="siteAnalysis.summary.redirectAliases" class="sx-small">

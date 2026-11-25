@@ -8,7 +8,6 @@ import {
   analyzeReadiness,
   readinessGroups,
   summarize,
-  type ReadinessFinding,
   type ReadinessGroup,
   type ReadinessReport,
 } from "../../services/readiness";
@@ -17,6 +16,7 @@ import type { AuditResult } from "../../types/audit";
 import { useWorkbench } from "./context";
 import SxPanel from "./SxPanel.vue";
 import SxStat from "./SxStat.vue";
+import FindingList from "./FindingList.vue";
 
 const props = defineProps<{ audit: AuditResult }>();
 const emit = defineEmits<{ openAccess: [] }>();
@@ -84,27 +84,6 @@ const groupKey: Record<ReadinessGroup, { title: MessageKey; text: MessageKey }> 
   structuredData: { title: "ready.group.structuredData", text: "ready.group.structuredDataText" },
   accessibility: { title: "ready.group.accessibility", text: "ready.group.accessibilityText" },
 };
-
-function label(finding: ReadinessFinding): string {
-  if (finding.status === "ERROR" || finding.status === "WARNING") return t("ready.status.review");
-  if (finding.status === "INFO")
-    return t(finding.recommendation ? "ready.status.opportunity" : "ready.status.observation");
-  if (finding.status === "PASS") return t("ready.status.clear");
-  if (finding.status === "UNAVAILABLE") return t("ready.status.notMeasured");
-  return t("ready.status.notApplicable");
-}
-
-function tone(finding: ReadinessFinding): "ok" | "warn" | "err" | "gray" {
-  if (finding.status === "ERROR") return "err";
-  if (finding.status === "WARNING") return "warn";
-  if (finding.status === "PASS") return "ok";
-  return "gray";
-}
-
-function dot(finding: ReadinessFinding): "good" | "warn" | "err" | "gray" {
-  const value = tone(finding);
-  return value === "ok" ? "good" : value;
-}
 
 const pageTypeKey: Record<ReadinessReport["pageType"], MessageKey> = {
   article: "ready.pageType.article",
@@ -180,66 +159,34 @@ const staleNotes = computed(() => {
         :badge="t('ready.groupCount', { count: n(group.summary.opportunities) })"
         class="ax-section"
       >
-        <ul class="ax-findings" role="list">
-          <li v-for="finding in group.findings" :key="finding.id" class="ax-finding">
-            <span class="record-dot" :class="dot(finding)" aria-hidden="true"></span>
-            <div class="ax-finding-main">
-              <div class="ax-finding-head">
-                <h4>{{ finding.title }}</h4>
-                <span class="badge" :class="tone(finding)">{{ label(finding) }}</span>
-              </div>
-              <p>{{ finding.description }}</p>
-              <p v-if="finding.recommendation" class="ax-next">
-                <strong>{{ t("ready.next") }}</strong> {{ finding.recommendation }}
-              </p>
-              <div class="ax-finding-actions">
-                <button
-                  v-if="finding.id === 'READY_CRAWLER_ACCESS' && finding.status === 'UNAVAILABLE'"
-                  type="button"
-                  class="secondary"
-                  @click="emit('openAccess')"
-                >
-                  {{ t("ready.action.access") }}
-                </button>
-                <button
-                  v-if="finding.id === 'READY_RENDERING' && finding.status === 'UNAVAILABLE'"
-                  type="button"
-                  class="secondary"
-                  @click="go('technical')"
-                >
-                  {{ t("ready.action.rendering") }}
-                </button>
-                <button
-                  v-if="finding.reused"
-                  type="button"
-                  class="icon-text"
-                  @click="go('issues', { check: finding.id })"
-                >
-                  {{ t("ready.reused") }}
-                </button>
-              </div>
-              <details
-                v-if="finding.evidence.length || finding.references.length"
-                class="disclosure ax-evidence"
-              >
-                <summary>{{ t("access.evidence") }}<span aria-hidden="true">⌄</span></summary>
-                <div class="details-body ax-crawler">
-                  <dl v-if="finding.evidence.length">
-                    <div v-for="(item, index) in finding.evidence" :key="`${item.label}-${index}`">
-                      <dt>{{ item.label }}</dt>
-                      <dd>{{ item.value }}</dd>
-                    </div>
-                  </dl>
-                  <p v-for="source in finding.references" :key="source.url">
-                    <a :href="source.url" target="_blank" rel="noopener noreferrer">{{
-                      source.title
-                    }}</a>
-                  </p>
-                </div>
-              </details>
-            </div>
-          </li>
-        </ul>
+        <FindingList :findings="group.findings">
+          <template #actions="{ finding }">
+            <button
+              v-if="finding.id === 'READY_CRAWLER_ACCESS' && finding.status === 'UNAVAILABLE'"
+              type="button"
+              class="secondary"
+              @click="emit('openAccess')"
+            >
+              {{ t("ready.action.access") }}
+            </button>
+            <button
+              v-if="finding.id === 'READY_RENDERING' && finding.status === 'UNAVAILABLE'"
+              type="button"
+              class="secondary"
+              @click="go('technical')"
+            >
+              {{ t("ready.action.rendering") }}
+            </button>
+            <button
+              v-if="finding.reused"
+              type="button"
+              class="icon-text"
+              @click="go('issues', { check: finding.id })"
+            >
+              {{ t("ready.reused") }}
+            </button>
+          </template>
+        </FindingList>
       </SxPanel>
     </template>
 

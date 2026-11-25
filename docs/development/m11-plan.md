@@ -9,7 +9,7 @@ M11.0 and M11.1 are done in this checkpoint. M11.2–M11.8 are plans only and ne
 | M11.0 | Release hardening and marketing compliance | Marketing source fix merged to `develop` (#64). Store warning resolved; listing approved by Google (owner).            |
 | M11.1 | JavaScript SEO diagnostics                 | Merged to `develop` (#65). See `docs/features/javascript-seo.md`.                                                      |
 | M11.2 | Redirect intelligence                      | Plan                                                                                                                   |
-| M11.3 | Canonical and hreflang intelligence        | Plan                                                                                                                   |
+| M11.3 | Canonical and hreflang intelligence        | Implemented on `feature/v0.7.1-m11-integration`. See `docs/features/canonical-hreflang.md`.                            |
 | M11.4 | Structured data intelligence               | Plan                                                                                                                   |
 | M11.5 | AIO/GEO content analysis                   | Implemented locally on `feature/m11.5-aio-geo-readiness` (stacked on M11.6). See `docs/features/content-readiness.md`. |
 | M11.6 | AI and search crawler accessibility        | Implemented locally on `feature/m11.6-crawler-accessibility`; not pushed. See `docs/features/crawler-access.md`.       |
@@ -71,6 +71,14 @@ No requirement for ChatGPT, Claude, Gemini, Perplexity, or Copilot content was f
 - No score. Each group reports checks completed, opportunities, not measured, and not applicable. The page score is unchanged (tested).
 - Existing page checks are reused by id and shown with an "open in Issues" link; no rule is reimplemented.
 - M11.1 and M11.6 results are read from an in-memory store for this report page (20 pages max). Readiness never starts a network request or asks for permission, and says "Not measured" with a button to run the existing check. A full reload of the report page clears the store.
+
+## v0.7.1 integration log
+
+Owner policy (2026-11-25): one local branch, `feature/v0.7.1-m11-integration` in `/home/ed/Projects/Rust/rankmiso-v071-integration`, created from the M11.5 head 6a51151 (develop 5d1bfa1 + M11.6 + M11.5). Remaining order: M11.3 → M11.2 → M11.4 → M11.7 → M11.8, then version 0.7.1 and one test package. No push or PR until the owner accepts the complete build. Cargo target is a symlink to `/tmp/rankmiso-m11-cargo` (tmpfs).
+
+### M11.3 checkpoint
+
+Done: Google-documented hreflang codes and fully-qualified alternates in `RULE_HREFLANG_INVALID`; crawl pages record hreflang; `site_relations` engine; Site Explorer Overview panel; shared `FindingList.vue` (also used by Content readiness). Tests: Rust 118 passed / 1 ignored; Vitest 248 passed / 4 skipped; `site-relations.spec.ts` passes in Chromium. Found: browser fetch cannot read redirect responses, so Site Explorer records redirected URLs as unreadable; relations treat them as not verified. Next: M11.2.
 
 ## M11.2 — redirect intelligence (plan)
 

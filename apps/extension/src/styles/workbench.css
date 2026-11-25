@@ -6255,3 +6255,12 @@ button.sx-row.is-selected {
     padding: 0 14px 8px;
   }
 }
+
+/* Site Explorer canonical and hreflang relationships (M11.3). */
+.sx-relations .ax-findings {
+  padding: 0 22px 8px;
+}
+.sx-relations-note {
+  margin: 0;
+  padding: 0 22px 22px;
+}

@@ -55,6 +55,9 @@ export interface CrawlPage {
   descriptionTruncated?: boolean;
   canonical: string;
   canonicalCount?: number;
+  /** Absolute hreflang alternates (first 20). Missing on pages crawled before v0.7.1. */
+  hreflang?: Array<{ lang: string; href: string }>;
+  hreflangTruncated?: boolean;
   robots: string;
   h1Count: number;
   nonHtml?: boolean;

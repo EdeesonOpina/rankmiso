@@ -5,6 +5,7 @@ const MAX_LINKS = 200;
 const MAX_HEADINGS = 40;
 const MAX_META_TAGS = 100;
 const MAX_TEXT = 20_000;
+const MAX_HREFLANG = 20;
 
 export function extractCrawlPage(html: string, pageUrl: string): CrawlPage {
   const document = new DOMParser().parseFromString(html, "text/html");
@@ -16,6 +17,12 @@ export function extractCrawlPage(html: string, pageUrl: string): CrawlPage {
   const canonicalElements = Array.from(document.querySelectorAll('link[rel~="canonical" i]'));
   const canonicalHref = canonicalElements[0]?.getAttribute("href") ?? "";
   const canonical = canonicalHref ? (crawlUrl(canonicalHref, pageUrl) ?? "") : "";
+  const alternates = Array.from(document.querySelectorAll('link[rel~="alternate" i][hreflang]'));
+  const hreflang = alternates.slice(0, MAX_HREFLANG).flatMap((link) => {
+    const lang = (link.getAttribute("hreflang") || "").trim().slice(0, 35);
+    const href = crawlUrl(link.getAttribute("href") ?? "", pageUrl);
+    return lang && href ? [{ lang, href }] : [];
+  });
   const headings = Array.from(document.querySelectorAll("h1")).slice(0, MAX_HEADINGS);
   const links = Array.from(document.querySelectorAll("a[href]")).slice(0, MAX_LINKS);
   const internal: string[] = [];
@@ -51,6 +58,8 @@ export function extractCrawlPage(html: string, pageUrl: string): CrawlPage {
       descriptionElements.length === 0 ? "missing" : description ? "present" : "empty",
     canonical,
     canonicalCount: canonicalElements.length,
+    hreflang,
+    hreflangTruncated: alternates.length > MAX_HREFLANG,
     robots,
     h1Count: headings.length,
     internalLinks: internal,
