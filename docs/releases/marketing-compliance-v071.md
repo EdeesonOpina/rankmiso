@@ -40,6 +40,6 @@ ab667d1ed735322914d99e0447384be1ab3fe3061a80bd8d1b676238dc974d24  chrome/promo-s
 
 The full list is `marketing/output/SHA256SUMS.txt` (git-ignored, local).
 
-## Not done
+## Store outcome
 
-No images were uploaded and nothing was resubmitted. The owner uploads the new tiles in a new draft in the Developer Dashboard.
+The owner uploaded the corrected small tile and marquee in a new Chrome Web Store draft, and Google approved them. The warning is resolved. This record and the source change keep future builds from bringing the wording back. No further submission or appeal is needed.
