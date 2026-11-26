@@ -15,6 +15,7 @@ import { scoreTone, useWorkbench } from "./context";
 import { actionable, badgeTone, checkTone, limitationText, statusKey } from "./checks";
 import PageHeading from "./PageHeading.vue";
 import DataRow from "./DataRow.vue";
+import DiscoverabilityCard from "./DiscoverabilityCard.vue";
 import ScoreRing from "./ScoreRing.vue";
 import TrendChart from "./TrendChart.vue";
 
@@ -116,6 +117,8 @@ const latestSaved = computed(() => scored.value.at(-1)?.comparison.score ?? null
           />
         </div>
       </component>
+
+      <DiscoverabilityCard :audit="audit" />
 
       <section v-if="report" class="card">
         <div class="section-heading">

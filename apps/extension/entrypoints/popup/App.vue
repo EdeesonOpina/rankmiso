@@ -29,6 +29,7 @@ import SitemapsScreen from "../../src/components/popup/SitemapsScreen.vue";
 import HistoryScreen from "../../src/components/popup/HistoryScreen.vue";
 import ExportScreen from "../../src/components/popup/ExportScreen.vue";
 import SettingsScreen from "../../src/components/popup/SettingsScreen.vue";
+import AiSearchScreen from "../../src/components/popup/AiSearchScreen.vue";
 import AIIntegrationsView from "../../src/components/workbench/AIIntegrationsView.vue";
 
 const { t } = useI18n();
@@ -38,6 +39,7 @@ const {
   status,
   error,
   audit,
+  snapshot,
   tab,
   stale,
   refresh,
@@ -74,6 +76,7 @@ const screens = {
   accessibility: AccessibilityScreen,
   site: SiteScreen,
   sitemaps: SitemapsScreen,
+  "ai-search": AiSearchScreen,
   reports: HistoryScreen,
   export: ExportScreen,
   "ai-integrations": AIIntegrationsView,
@@ -97,6 +100,7 @@ const footLabel: Record<keyof typeof screens, MessageKey> = {
   accessibility: "pm.foot.accessibility",
   site: "pm.foot.site",
   sitemaps: "pm.foot.sitemaps",
+  "ai-search": "pm.foot.aiSearch",
   reports: "pm.foot.history",
   export: "pm.foot.export",
   "ai-integrations": "ai.open",
@@ -292,6 +296,7 @@ const themeKey: Record<ThemePreference, MessageKey> = {
           :is="screens[current]"
           v-if="audit || current === 'ai-integrations'"
           :audit="audit"
+          :snapshot="current === 'ai-search' || current === 'overview' ? snapshot : undefined"
           :hide-heading="current === 'ai-integrations'"
           :focus-id="focusCheck"
           :preference="preference"

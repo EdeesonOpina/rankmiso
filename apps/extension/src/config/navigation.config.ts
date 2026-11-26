@@ -21,6 +21,7 @@ export const flatNav: readonly {
   { id: "accessibility", labelKey: "nav.accessibility", shortLabelKey: "nav.accessibilityShort" },
   { id: "site", labelKey: "site.title", shortLabelKey: "nav.site" },
   { id: "sitemaps", labelKey: "nav.sitemaps" },
+  { id: "ai-search", labelKey: "nav.aiSearch", shortLabelKey: "nav.aiSearchShort" },
   { id: "reports", labelKey: "nav.history", utility: true },
   { id: "export", labelKey: "nav.export", utility: true },
   {

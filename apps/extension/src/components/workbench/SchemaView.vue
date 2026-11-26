@@ -170,6 +170,7 @@ const counts = computed(() => {
     </div>
   </template>
   <p class="hint">{{ t("wb.sc.hint") }}</p>
+  <p class="hint">{{ t("wb.sc.supported") }}</p>
   <div class="callout">
     <ExternalLink class="ic" aria-hidden="true" />
     <div>

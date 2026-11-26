@@ -485,6 +485,9 @@ fn sitemap_directives(body: &str) -> Vec<String> {
         .collect()
 }
 
+/// RFC 9309 says crawlers must parse at least 500 KiB; RankMiso reads no further.
+pub const ROBOTS_PARSE_LIMIT: usize = 500 * 1024;
+
 struct AgentGroup {
     agents: Vec<String>,
     rules: Vec<(bool, String)>,
@@ -495,41 +498,139 @@ struct RobotsDecision {
     blocked: bool,
 }
 
+/// Which rule decided a path for one product token, under RFC 9309.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RobotsVerdict {
+    /// The `User-agent` value of the group used: the token itself, `*`, or `None` when no group applies.
+    pub group: Option<String>,
+    /// The winning rule as written, for example `Disallow: /private`. `None` when no rule matched.
+    pub rule: Option<String>,
+    pub allowed: bool,
+}
+
 pub fn rankmiso_may_fetch(body: &str, path: &str) -> bool {
-    !robots_decision_for(body, path, "rankmiso").blocked
+    robots_verdict(body, path, "rankmiso").allowed
 }
 
 fn robots_decision(body: &str, path: &str) -> RobotsDecision {
-    robots_decision_for(body, path, "googlebot")
+    let verdict = robots_verdict(body, path, "googlebot");
+    RobotsDecision {
+        agent: verdict.group.unwrap_or_else(|| "*".to_string()),
+        blocked: !verdict.allowed,
+    }
 }
 
-fn robots_decision_for(body: &str, path: &str, product: &str) -> RobotsDecision {
-    let groups = parse_groups(body);
-    let specific = groups.iter().filter_map(|group| {
-        group
-            .agents
-            .iter()
-            .filter(|agent| {
-                let token = agent.to_ascii_lowercase();
-                token != "*" && product.contains(token.as_str())
-            })
-            .max_by_key(|agent| agent.len())
-            .map(|agent| (agent.clone(), group))
-    });
-    if let Some((agent, group)) = specific.max_by_key(|(agent, _)| agent.len()) {
-        return RobotsDecision {
-            blocked: group_blocks(&group.rules, path),
-            agent,
+/// Evaluates `path` (path plus query) for one product token.
+///
+/// Group choice follows RFC 9309 §2.2.1: the product token is matched case-insensitively
+/// against each `User-agent` value (ignoring a `/version` suffix), every matching group is
+/// merged, and `*` groups are used only when no group names the token. The longest matching
+/// rule wins and `Allow` wins a tie (§2.2.2). `/robots.txt` itself is always allowed.
+pub fn robots_verdict(body: &str, path: &str, token: &str) -> RobotsVerdict {
+    let body = truncate_at_char(body, ROBOTS_PARSE_LIMIT);
+    let path = normalize_robots_path(path);
+    if path == "/robots.txt" {
+        return RobotsVerdict {
+            group: None,
+            rule: None,
+            allowed: true,
         };
     }
-    let blocked = groups
-        .iter()
-        .find(|group| group.agents.iter().any(|agent| agent == "*"))
-        .is_some_and(|group| group_blocks(&group.rules, path));
-    RobotsDecision {
-        agent: "*".to_string(),
-        blocked,
+    let groups = parse_groups(body);
+    let token = token.trim().to_ascii_lowercase();
+    let mut selected: Vec<&AgentGroup> = Vec::new();
+    let mut label: Option<String> = None;
+    for group in &groups {
+        if let Some(agent) = names(group, &token) {
+            label.get_or_insert_with(|| agent.clone());
+            selected.push(group);
+        }
     }
+    if selected.is_empty() {
+        for group in &groups {
+            if names(group, "*").is_some() {
+                label.get_or_insert_with(|| "*".to_string());
+                selected.push(group);
+            }
+        }
+    }
+    let mut best: Option<(usize, bool, &str)> = None;
+    for (allow, pattern) in selected.iter().flat_map(|group| group.rules.iter()) {
+        if pattern.is_empty() || !rule_matches(&normalize_robots_path(pattern), &path) {
+            continue;
+        }
+        let len = pattern.len();
+        let better = match best {
+            None => true,
+            Some((best_len, best_allow, _)) => {
+                len > best_len || (len == best_len && *allow && !best_allow)
+            }
+        };
+        if better {
+            best = Some((len, *allow, pattern.as_str()));
+        }
+    }
+    RobotsVerdict {
+        group: label,
+        rule: best.map(|(_, allow, pattern)| {
+            format!("{}: {pattern}", if allow { "Allow" } else { "Disallow" })
+        }),
+        allowed: best.is_none_or(|(_, allow, _)| allow),
+    }
+}
+
+/// The group's `User-agent` value that names `wanted`, ignoring a `/version` suffix.
+fn names<'a>(group: &'a AgentGroup, wanted: &str) -> Option<&'a String> {
+    group.agents.iter().find(|agent| {
+        let name = agent.split('/').next().unwrap_or("").trim();
+        name.eq_ignore_ascii_case(wanted)
+    })
+}
+
+fn truncate_at_char(body: &str, limit: usize) -> &str {
+    if body.len() <= limit {
+        return body;
+    }
+    let mut end = limit;
+    while !body.is_char_boundary(end) {
+        end -= 1;
+    }
+    &body[..end]
+}
+
+/// Compares paths the way RFC 9309 §2.2.2 asks: non-ASCII is percent-encoded as UTF-8,
+/// `%xx` escapes use upper-case hex, and escapes of unreserved characters are decoded.
+fn normalize_robots_path(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut out = String::with_capacity(value.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        let byte = bytes[index];
+        if byte == b'%'
+            && index + 2 < bytes.len()
+            && bytes[index + 1].is_ascii_hexdigit()
+            && bytes[index + 2].is_ascii_hexdigit()
+        {
+            let hex = &value[index + 1..index + 3];
+            if let Ok(decoded) = u8::from_str_radix(hex, 16) {
+                if decoded.is_ascii_alphanumeric() || b"-._~".contains(&decoded) {
+                    out.push(decoded as char);
+                } else {
+                    out.push('%');
+                    out.push_str(&hex.to_ascii_uppercase());
+                }
+                index += 3;
+                continue;
+            }
+        }
+        if byte.is_ascii() {
+            out.push(byte as char);
+        } else {
+            out.push_str(&format!("%{byte:02X}"));
+        }
+        index += 1;
+    }
+    out
 }
 
 fn parse_groups(body: &str) -> Vec<AgentGroup> {
@@ -567,23 +668,6 @@ fn parse_groups(body: &str) -> Vec<AgentGroup> {
     groups
 }
 
-fn group_blocks(rules: &[(bool, String)], path: &str) -> bool {
-    let mut best_allow = 0_usize;
-    let mut best_disallow = 0_usize;
-    for (allow, pattern) in rules {
-        if pattern.is_empty() || !rule_matches(pattern, path) {
-            continue;
-        }
-        let len = pattern.len();
-        if *allow {
-            best_allow = best_allow.max(len);
-        } else {
-            best_disallow = best_disallow.max(len);
-        }
-    }
-    best_disallow > best_allow
-}
-
 fn rule_matches(pattern: &str, path: &str) -> bool {
     let anchored = pattern.ends_with('$');
     let pattern = pattern.trim_end_matches('$');
@@ -598,10 +682,15 @@ fn rule_matches(pattern: &str, path: &str) -> bool {
         };
     }
     let parts: Vec<&str> = pattern.split('*').collect();
+    let last = parts.len() - 1;
     let mut rest = path;
     for (index, part) in parts.iter().enumerate() {
         if part.is_empty() {
             continue;
+        }
+        if anchored && index == last {
+            // `$` pins the final piece to the end, so match it there, not at its first occurrence.
+            return rest.len() >= part.len() && rest.ends_with(part);
         }
         if index == 0 {
             if !rest.starts_with(part) {
@@ -654,6 +743,57 @@ mod tests {
         assert!(rankmiso_may_fetch(body, "/docs/guide"));
         assert!(!rankmiso_may_fetch(body, "/docs/private"));
         assert!(!rankmiso_may_fetch(body, "/blog"));
+    }
+
+    #[test]
+    fn product_tokens_match_exactly_and_groups_merge() {
+        // "Google" must not catch Googlebot; two Googlebot groups are combined.
+        let body = "User-agent: Google\nDisallow: /\n\nUser-agent: googlebot\nDisallow: /a\n\nUser-agent: *\nDisallow: /\n\nUser-Agent: Googlebot/2.1\nDisallow: /b\n";
+        let a = robots_verdict(body, "/a/x", "Googlebot");
+        assert_eq!(a.group.as_deref(), Some("googlebot"));
+        assert_eq!(a.rule.as_deref(), Some("Disallow: /a"));
+        assert!(!robots_verdict(body, "/b", "Googlebot").allowed);
+        assert!(robots_verdict(body, "/c", "Googlebot").allowed);
+        let other = robots_verdict(body, "/c", "Bingbot");
+        assert_eq!(other.group.as_deref(), Some("*"));
+        assert!(!other.allowed);
+    }
+
+    #[test]
+    fn allow_wins_a_tie_and_no_group_means_allowed() {
+        let body = "User-agent: *\nDisallow: /page\nAllow: /page\n";
+        let verdict = robots_verdict(body, "/page", "GPTBot");
+        assert!(verdict.allowed);
+        assert_eq!(verdict.rule.as_deref(), Some("Allow: /page"));
+        let none = robots_verdict("User-agent: Bingbot\nDisallow: /\n", "/", "GPTBot");
+        assert_eq!(
+            none,
+            RobotsVerdict {
+                group: None,
+                rule: None,
+                allowed: true
+            }
+        );
+        assert!(robots_verdict("", "/", "GPTBot").allowed);
+    }
+
+    #[test]
+    fn wildcards_anchors_and_encoding() {
+        let body = "User-agent: *\nDisallow: /*.pdf$\nDisallow: /a*b$\nDisallow: /caf%C3%A9\nDisallow: /%7euser\n";
+        assert!(!robots_verdict(body, "/files/x.pdf", "x").allowed);
+        assert!(robots_verdict(body, "/files/x.pdf?download=1", "x").allowed);
+        assert!(!robots_verdict(body, "/axbxb", "x").allowed);
+        assert!(!robots_verdict(body, "/café/menu", "x").allowed);
+        assert!(!robots_verdict(body, "/~user/home", "x").allowed);
+        assert!(robots_verdict("User-agent: *\nDisallow: /\n", "/robots.txt", "x").allowed);
+    }
+
+    #[test]
+    fn rules_past_the_parse_limit_are_ignored() {
+        let mut body = "User-agent: *\n".to_string();
+        body.push_str(&"# padding\n".repeat(ROBOTS_PARSE_LIMIT / 10 + 1));
+        body.push_str("Disallow: /\n");
+        assert!(robots_verdict(&body, "/", "x").allowed);
     }
 
     #[test]

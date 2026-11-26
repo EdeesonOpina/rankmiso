@@ -11,6 +11,7 @@ describe("brand", () => {
     expect(brandConfig.identity.ecosystem).toBe("Miso Ecosystem");
     expect(brandConfig.assets.icon).toBe("/brand/icon.png");
     expect(brandConfig.browser.geckoId).toBe("rankmiso@rankmiso.extension");
+    expect(brandConfig.links.website).toBe("https://misoecosystem.com");
     expect(brandConfig.links.support).toBe("https://github.com/sponsors/EdeesonOpina");
     expect(messages["brand.tagline"]).toBe(brandConfig.identity.tagline);
     expect(messages["field.titleLength"]).toBe("Title length");

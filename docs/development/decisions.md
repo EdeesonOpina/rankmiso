@@ -270,3 +270,29 @@ The owner chose **v0.7.1** for the M11 milestone, ahead of v0.8.0. This is a pro
 JavaScript SEO diagnostics live in Rust (`seo-rules::rendering`), following the sitemap pattern: a separate typed input (schema 1), a WASM function (`analyze_rendering`), and standard `CheckResult` findings with weight 0. They are not merged into `analyze_page`, so the page score, the audit schema, saved audits, MCP exports, and Site Explorer snapshots are unchanged. TypeScript only collects signals from the fetched or chosen HTML and from the existing audit. Link targets are passed as absolute URLs, and Rust decides which are internal, so there is one classifier. If the initial HTML cannot be read, every rule returns `UNAVAILABLE` with the reason, never a pass.
 
 For platform branding (planned M11.8), text names come first. OpenAI requires permission for its logo, Microsoft requires an express licence for logos and icons, and Google allows its logo for informational use but not in marketing material. Logos are added only per brand with written permission or a verified licence on file.
+
+Update 2026-11-25: the owner asked for the platforms' own logos in AI & Search. They ship as unmodified local SVGs in `apps/extension/public/platforms/`, appear only beside factual status at 17–20 px, and never appear in store or marketing images. Sources and the per-brand terms are in `docs/branding/third-party-marks.md`. Permission from Google (Gemini), OpenAI, and Microsoft is still not on file, so keeping each logo for a store release is an owner decision. Removing a brand's entry from `platform-marks.config.ts` brings back its letter tile.
+
+## M11.6 — crawler accessibility (2026-11-25)
+
+There is still one robots.txt evaluator. `technical::robots_verdict` now follows RFC 9309: product tokens match exactly (case-insensitive, `/version` ignored) instead of by substring, all groups naming a token are merged, `*` applies only when no group names the token, `Allow` wins ties, paths are percent-normalized and include the query, `/robots.txt` is always allowed, and parsing stops at 500 KiB. `RULE_ROBOTS_TXT` (Googlebot) and Site Explorer's `crawl_permitted` (RankMiso) use the same function, so a group named `Google` no longer applies to Googlebot, and a `$`-anchored wildcard pattern now matches at the end of the path instead of the first occurrence.
+
+The crawler registry is TypeScript configuration, because it is product data with documentation links and review dates. The Rust engine receives only tokens and observations. Platforms and crawlers are separate lists; a platform names the crawlers it depends on, and preference tokens are marked as not crawling. Results keep three things apart: robots.txt crawl readings, indexing directives, and Microsoft content-use preferences.
+
+A failed request from the browser is "not measured", never "allowed". RFC 9309's 5xx rule is shown as a server error rather than folded into "disallowed", so the user sees the cause.
+
+## M11.5 — content readiness (2026-11-25)
+
+Readiness is a separate Rust analyzer (`seo-rules::readiness`, schema 1) that takes the page snapshot, calls the existing `analyze` once to reuse its checks by id, and adds `READY_*` rules. It does not touch `analyze_page`, the audit schema, saved audits, exports, MCP, or the score. Grouping existing checks instead of copying their logic keeps one rule per problem.
+
+There is no readiness score. Google says AI features have no extra requirements, so a number would suggest a measurement that does not exist. The view reports counts of what was checked, what may need review, and what could not be measured.
+
+M11.1 and M11.6 results are shared through a small in-memory store keyed by page URL (`services/ai-search-store.ts`, 20 entries). Readiness only reads it. Persisting these results was rejected for now: they describe a moment, and storing them would need staleness rules and size limits first.
+
+## M11.2 — redirect details permission (2026-11-25)
+
+The owner approved `webRequest` as an optional permission. Browsers hide redirect responses from `redirect: "manual"` fetches, and `redirect: "follow"` would let the browser follow redirects to unvalidated (including private) addresses. Reading each hop's status and Location with a non-blocking `onHeadersReceived` listener lets RankMiso validate and request every hop itself. Requests are attributed to RankMiso by `initiator` (Chrome) or `originUrl`/`documentUrl` (Firefox), or tab -1, because report pages run in tabs.
+
+## Discoverability section name (2026-11-25)
+
+The owner renamed the section "AI & Search" to **Discoverability**, with "Findable" as the short label in the popup rail and the sidebar. "AI Discover" was rejected because Google Discover is a separate Google surface that SEO users track, so the name would suggest Discover data RankMiso does not have. The internal id stays `ai-search`, so links such as `?section=ai-search`, saved state, and tests keep working.

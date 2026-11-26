@@ -91,19 +91,25 @@ fn hreflang_syntax(links: &[HreflangLink]) -> CheckResult {
             "No alternate links with hreflang were collected. This does not prove the page lacks translations.",
         );
     }
-    let invalid: Vec<String> = links
-        .iter()
-        .filter(|link| !link.valid_syntax)
-        .map(|link| format!("{} {}", link.lang, link.href))
-        .collect();
+    let mut invalid: Vec<String> = Vec::new();
+    for link in links {
+        if let Some(problem) = crate::lang_codes::hreflang_problem(&link.lang) {
+            invalid.push(format!("{} {} ({problem})", link.lang, link.href));
+        } else if !fully_qualified(&link.href) {
+            invalid.push(format!(
+                "{} {} (not a fully-qualified http(s) URL)",
+                link.lang, link.href
+            ));
+        }
+    }
     if invalid.is_empty() {
         crate::support::check(
             "RULE_HREFLANG_INVALID",
             Category::International,
             CheckStatus::Pass,
             1,
-            "Hreflang values use a recognizable tag",
-            "Each collected hreflang is x-default or matches a basic language-region pattern. This is not a registry lookup.",
+            "Hreflang annotations use supported codes",
+            "Each hreflang is x-default or an ISO 639-1 language with an optional ISO 15924 script and ISO 3166-1 alpha-2 region, and each alternate is a fully-qualified URL, as Google documents.",
         )
     } else {
         let mut check = crate::support::check(
@@ -111,12 +117,12 @@ fn hreflang_syntax(links: &[HreflangLink]) -> CheckResult {
             Category::International,
             CheckStatus::Error,
             1,
-            "Invalid hreflang values",
-            "Some hreflang values are empty of a valid language shape. Search engines may ignore those alternates.",
+            "Invalid hreflang annotations",
+            "Some hreflang values are not codes Google supports, or an alternate URL is not fully qualified. Google may ignore those alternates.",
         );
         check.evidence = bounded_evidence(&invalid, "hreflang");
         check.recommendation =
-            Some("Use ISO language codes, optional region subtags, or x-default.".to_string());
+            Some("Use an ISO 639-1 language, optionally a script and an ISO 3166-1 alpha-2 region (en-GB, not en-UK), or x-default, with absolute https:// URLs.".to_string());
         check.references.push(crate::support::reference(
             "Localized versions",
             "https://developers.google.com/search/docs/specialty/international/localized-versions",
@@ -290,19 +296,13 @@ fn self_reference(snapshot: &PageSnapshot, links: &[HreflangLink]) -> CheckResul
 }
 
 pub fn valid_lang(value: &str) -> bool {
-    if value.eq_ignore_ascii_case("x-default") {
-        return true;
-    }
-    let mut parts = value.split('-');
-    let Some(primary) = parts.next() else {
-        return false;
-    };
-    if !(2..=3).contains(&primary.len()) || !primary.chars().all(|ch| ch.is_ascii_alphabetic()) {
-        return false;
-    }
-    parts.all(|part| {
-        (2..=8).contains(&part.len()) && part.chars().all(|ch| ch.is_ascii_alphanumeric())
-    })
+    crate::lang_codes::hreflang_problem(value).is_none()
+}
+
+/// Google requires fully-qualified alternate URLs, including http or https.
+fn fully_qualified(href: &str) -> bool {
+    let href = href.trim().to_ascii_lowercase();
+    href.starts_with("https://") || href.starts_with("http://")
 }
 
 fn same_url(href: &str, page: &str) -> bool {

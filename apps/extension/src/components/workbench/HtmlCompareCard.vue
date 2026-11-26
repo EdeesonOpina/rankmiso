@@ -15,6 +15,7 @@ import {
   type SourceUnavailable,
 } from "../../services/rendering-engine";
 import { selectChecks } from "../../services/check-list";
+import { rememberRendering } from "../../services/ai-search-store";
 import { sitePermission } from "../../services/page-access";
 import type { MessageKey } from "../../locales/en";
 import { useI18n } from "../../composables/useI18n";
@@ -72,6 +73,8 @@ async function diagnose(
           }
         : source,
     );
+    // Content readiness reads this; it never repeats the comparison itself.
+    rememberRendering(url, report.value, new Date().toISOString());
   } catch {
     report.value = null;
   }

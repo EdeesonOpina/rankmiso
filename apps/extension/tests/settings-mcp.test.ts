@@ -181,16 +181,28 @@ describe("MCP permission waiting state", () => {
     wrapper.unmount();
   });
 
-  it("shows the optional Sponsors profile as a safe external link", async () => {
+  it("shows no support link", async () => {
     const wrapper = mount(SettingsView, {
       props: { audit: null },
       global: { provide: workbench() },
     });
     await flushPromises();
-    const link = wrapper.get("a.support-link");
-    expect(link.attributes("href")).toBe("https://github.com/sponsors/EdeesonOpina");
-    expect(link.attributes("target")).toBe("_blank");
+    expect(wrapper.find('a[href*="sponsors"]').exists()).toBe(false);
+    expect(wrapper.text()).not.toMatch(/sponsor/i);
+    wrapper.unmount();
+  });
+
+  it("links to the Miso Ecosystem website as a safe external link", async () => {
+    const wrapper = mount(SettingsView, {
+      props: { audit: null },
+      global: { provide: workbench() },
+    });
+    await flushPromises();
+    const link = wrapper.get("a.website-link");
+    expect(link.attributes("href")).toBe("https://misoecosystem.com");
     expect(link.attributes("rel")).toBe("noopener noreferrer");
+    expect(link.text()).toBe("misoecosystem.com");
+    expect(wrapper.text()).not.toContain("Part of the");
     wrapper.unmount();
   });
 
