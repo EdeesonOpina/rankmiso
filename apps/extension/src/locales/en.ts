@@ -471,9 +471,6 @@ export const messages = {
   "aiSearch.hero.text":
     "Review crawler rules, check content readiness, and record real AI citations, with each kind of evidence kept separate.",
   "aiSearch.hero.local": "On-device analysis",
-  "aiSearch.hero.ring": "Search & AI",
-  "aiSearch.hero.rules": "Crawler rules",
-  "aiSearch.hero.signals": "Content signals",
   "aiSearch.title": "Discoverability",
   "aiSearch.intro":
     "How this page presents itself to search engines and AI-assisted search: crawler rules, and observable content readiness.",
@@ -860,8 +857,6 @@ export const messages = {
     "Appearance settings and the saved PageSpeed API key were removed. Saved comparisons remain until you delete them.",
   "settings.privacy":
     "The core analysis runs in this browser. Page text is not saved. Comparison fields are saved only when you choose Save. Site checks and PageSpeed Insights run only after you start them and allow the requested access.",
-  "settings.ecosystem": "Part of the {ecosystem}.",
-  "settings.supportDevelopment": "View GitHub Sponsors profile",
   "links.internal": "Internal",
   "links.external": "External",
   "empty.checksBody": "Try another status, or clear the search.",
@@ -1796,6 +1791,7 @@ export const messages = {
   "pm.about": "About {name}",
   "pm.version": "Version",
   "pm.license": "License",
+  "pm.website": "Website",
   "pm.licenseValue": "MIT · Open source",
   "pm.h1Found": "{count} H1 found",
   "pm.extraH1": "Second H1",

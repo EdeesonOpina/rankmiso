@@ -497,6 +497,28 @@ svg.ic {
   font-size: 11px;
   font-weight: 780;
 }
+.website-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  color: var(--accent);
+  text-decoration: none;
+  border-radius: 6px;
+}
+.website-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.website-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.website-link .ic {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
 .hint {
   color: var(--muted);
   font-size: 11px;
@@ -2787,11 +2809,19 @@ textarea.field {
 .empty-history {
   align-items: center;
 }
-.empty-history img {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-  flex: 0 0 72px;
+.empty-history .empty-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accentsoft);
+  color: var(--accent);
+}
+.empty-history .empty-icon .ic {
+  width: 22px;
+  height: 22px;
 }
 /* Findings */
 .finding-fix {
@@ -6424,17 +6454,6 @@ html[data-theme="dark"] .pmark.mono img {
   color: #f8fbff;
   box-shadow: var(--hero-shadow);
 }
-.ax-hero::before {
-  content: "";
-  position: absolute;
-  right: -100px;
-  bottom: -180px;
-  width: 440px;
-  height: 440px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(236, 85, 64, 0.14), transparent 61%);
-  pointer-events: none;
-}
 html[data-theme="dark"] .ax-hero {
   background: linear-gradient(117deg, #1f2c44 4%, #24324d 66%, #34425c 100%);
 }
@@ -6507,93 +6526,64 @@ html[data-theme="dark"] .ax-hero {
   flex: none;
 }
 .ax-hero-art {
-  position: relative;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-}
-.ax-orbit {
-  position: relative;
-  width: 196px;
-  height: 196px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(224, 235, 245, 0.15);
-  border-radius: 50%;
-  box-shadow:
-    0 0 0 28px rgba(215, 231, 246, 0.035),
-    0 0 0 55px rgba(215, 231, 246, 0.025);
-}
-.ax-orbit::before,
-.ax-orbit::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-}
-.ax-orbit::before {
-  top: -5px;
-  left: 55px;
-  width: 10px;
-  height: 10px;
-  background: #fb765c;
-  box-shadow: 0 0 0 7px rgba(251, 118, 92, 0.1);
-}
-.ax-orbit::after {
-  right: 11px;
-  bottom: 15px;
-  width: 7px;
-  height: 7px;
-  background: #79ddbb;
-  box-shadow: 0 0 0 6px rgba(121, 221, 187, 0.1);
-}
-.ax-orbit-core {
-  width: 116px;
-  height: 116px;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  gap: 2px;
-  border: 1px solid rgba(226, 239, 249, 0.21);
-  border-radius: 50%;
-  background: linear-gradient(145deg, #32465a, #203147);
+  gap: 10px;
+  padding: 26px 28px 26px 0;
 }
-.ax-orbit-core .ic {
-  width: 26px;
-  height: 26px;
-  color: #ffa697;
+.ax-scope {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid rgba(226, 239, 249, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
 }
-.ax-orbit-core strong {
-  font-size: 30px;
-  line-height: 1.1;
-  letter-spacing: -1px;
+.ax-scope li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.ax-scope li + li {
+  border-top: 1px solid rgba(226, 239, 249, 0.1);
+}
+.ax-scope-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(255, 163, 145, 0.12);
+  color: #ffa391;
+}
+.ax-scope-icon .ic {
+  width: 16px;
+  height: 16px;
+}
+.ax-scope strong {
+  display: block;
   color: #fff;
+  font-size: 12px;
+  line-height: 1.3;
 }
-.ax-orbit-core span {
-  font-size: 9px;
+.ax-scope small {
+  display: block;
+  margin-top: 2px;
+  color: #b4c7d6;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.ax-scope-note {
+  margin: 0;
+  padding-left: 2px;
+  color: #9fb2c4;
+  font-size: 10px;
   font-weight: 750;
   letter-spacing: 1.2px;
   text-transform: uppercase;
-  color: #b6c8d8;
-}
-.ax-orbit-tag {
-  position: absolute;
-  padding: 6px 10px;
-  border: 1px solid #4a5f74;
-  border-radius: 50px;
-  background: #304357;
-  color: #d7e5ef;
-  font-size: 10px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.ax-orbit-tag.one {
-  top: 38px;
-  left: -18px;
-}
-.ax-orbit-tag.two {
-  right: -26px;
-  bottom: 36px;
 }
 /* Pill tabs: one bordered bar, the current view tinted. */
 .sx-tabs.ax-tabs {

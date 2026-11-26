@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { BarChart3, CircleCheck, Globe, ShieldCheck, Sparkles } from "lucide-vue-next";
+import { BarChart3, CircleCheck, Globe, ShieldCheck } from "lucide-vue-next";
 import { platforms } from "../../config/crawlers.config";
 import { useI18n } from "../../composables/useI18n";
 import { sitePermission } from "../../services/page-access";
@@ -17,6 +17,11 @@ const tabs = [
   { id: "readiness", key: "aiSearch.tab.readiness", short: "pa.tab.readiness", icon: CircleCheck },
   { id: "visibility", key: "aiSearch.tab.visibility", short: "pa.tab.visibility", icon: BarChart3 },
 ] as const;
+const scopeDetail = computed(() => ({
+  access: t("pa.platforms", { count: n(platforms.length) }),
+  readiness: t("pa.localObservations"),
+  visibility: t("pa.manual"),
+}));
 type Tab = (typeof tabs)[number]["id"];
 const active = ref<Tab>("access");
 const host = computed(
@@ -50,16 +55,19 @@ const host = computed(
           </span>
         </div>
       </div>
-      <div class="ax-hero-art" aria-hidden="true">
-        <div class="ax-orbit">
-          <div class="ax-orbit-core">
-            <Sparkles class="ic" />
-            <strong>AI</strong>
-            <span>{{ t("aiSearch.hero.ring") }}</span>
-          </div>
-          <span class="ax-orbit-tag one">{{ t("aiSearch.hero.rules") }}</span>
-          <span class="ax-orbit-tag two">{{ t("aiSearch.hero.signals") }}</span>
-        </div>
+      <div class="ax-hero-art">
+        <ul class="ax-scope" :aria-label="t('aiSearch.views')">
+          <li v-for="tab in tabs" :key="tab.id">
+            <span class="ax-scope-icon"
+              ><component :is="tab.icon" class="ic" aria-hidden="true"
+            /></span>
+            <span
+              ><strong>{{ t(tab.key) }}</strong
+              ><small>{{ scopeDetail[tab.id] }}</small></span
+            >
+          </li>
+        </ul>
+        <p class="ax-scope-note">{{ t("pa.noScore") }}</p>
       </div>
     </section>
     <nav class="sx-tabs ax-tabs" :aria-label="t('aiSearch.views')">
