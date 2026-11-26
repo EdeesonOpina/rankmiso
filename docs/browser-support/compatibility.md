@@ -9,6 +9,6 @@
 | Safari macOS          | Not built                    | Needs Apple's converter, signing, and distribution. A successful future build command would not mean store support.                                                                                                                              |
 | Safari iOS            | Not targeted                 | No feasible packaging in this version.                                                                                                                                                                                                           |
 
-APIs used: `storage`, `tabs`, `scripting.executeScript`, `sidePanel` or `sidebarAction` when present, optional host requests in both development builds, and the page performance timeline. `webRequest` is not used. A requestable permission is not an installed grant.
+APIs used: `storage`, `tabs`, `scripting.executeScript`, `sidePanel` or `sidebarAction` when present, optional host requests in both development builds, and the page performance timeline. `webRequest` is optional and requested only when the user chooses **Allow redirect details** (v0.7.1); it reads only RankMiso's own requests for the redirect trace. A requestable permission is not an installed grant.
 
 If neither sidebar API exists, the sidebar button is hidden. The dashboard remains available. Playwright currently automates the built Chromium popup smoke path; Firefox, Edge, and live-page behaviors remain manual checks.

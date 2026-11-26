@@ -14,7 +14,7 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-c42a20" />
-  <img alt="In stores: v0.5.1" src="https://img.shields.io/badge/in%20stores-v0.5.1-14161c" />
+  <img alt="Version: v0.7.1" src="https://img.shields.io/badge/version-v0.7.1-14161c" />
   <img alt="MCP companion: v0.5.1" src="https://img.shields.io/badge/MCP%20companion-v0.5.1-7a7f8c" />
   <img alt="Chrome, Edge and Firefox" src="https://img.shields.io/badge/browsers-Chrome%20·%20Edge%20·%20Firefox-f2a93b" />
   <img alt="Built with Rust and Vue" src="https://img.shields.io/badge/built%20with-Rust%20%2B%20Vue-5fd39a" />
@@ -35,7 +35,7 @@ It belongs to the Miso ecosystem, where the recipe is simple: powerful tools, le
 RankMiso is on the Chrome Web Store and Firefox Add-ons. Edge runs the Chromium build, sideloaded. Safari is not supported.
 
 > [!NOTE]
-> v0.5.1 is published in the Chrome Web Store and Firefox Add-ons. It includes optional audit sharing with Claude Code and Codex through the local MCP companion (current companion: v0.5.1). Marketplace plugins are versioned separately; see the [integration guide](docs/integrations/README.md). Historical release notes: [v0.5.0](docs/releases/v0.5.0-rc1.md), [v0.4.0](docs/releases/v0.4.0.md).
+> The current version is **v0.7.1**. The MCP companion (v0.5.1) and the Claude Code and Codex plugins are versioned separately; see the [integration guide](docs/integrations/README.md). Every version is in the [changelog](CHANGELOG.md).
 
 ## 🍜 What's in the bowl
 
@@ -50,25 +50,32 @@ The popup is the quick taste. The full report is one click away.
 | <img src="docs/assets/readme/social.jpg" alt="Social card preview" /> | <img src="docs/assets/readme/full-report.jpg" alt="Full report" /> |
 | **Social.** Approximate link and X cards, including the share image when it loads. | **Full report.** The same analysis, with room for the long tables. |
 
-The **overview** puts the essentials up front: score, title, description, counts, H1, canonical, robots, language, and schema types.
+The **overview** puts the essentials up front: the score, priority findings, category health, page essentials, your saved history, and a Discoverability summary.
 
-The full report adds metadata, content, technical details, performance observations, international tags, a small accessibility sample, and exports. JSON, CSV, and HTML download only after you confirm.
+The full report is a workspace with a section for each part of the page: Issues, Metadata, Content, Headings, Links, Images, Schema, Social, Technical, Performance, International, and Accessibility. Under **Site intelligence** sit Site Explorer, Sitemaps, and Discoverability, followed by History, Export, AI Integrations, and Settings. JSON, CSV, and HTML exports download only after you confirm.
 
 The little things are handled too. Counts use thousands separators, long addresses truncate, and web links open in a new tab. Light, dark, and system themes are all in the box.
 
 ## ✨ Fresh from the kitchen
 
-New in v0.4.0:
+New in v0.7.1:
 
-- **Automatic Website Checks.** Open the sidebar and the fox reads each page you switch to. This is opt-in. You grant optional website access first, and you can revoke it in your browser at any time.
-- **Individual Website Access.** Rather allow sites one at a time? Approve only the websites you pick.
-- **Smart Refresh.** Changed the page? Refresh takes a fresh look and re-scores it without reloading the website.
-- **A sidebar that keeps up.** It follows the active tab in its own window and drops stale results when you navigate.
-- **Site Explorer in Firefox.** The crawler that Chrome already had now runs in Firefox too.
+- **Discoverability.** See how a page presents itself to search engines and AI-assisted search, in three tabs:
+  - **Crawler access** reads robots.txt (RFC 9309) for 18 documented crawlers and tokens, from Google, Bing, DuckDuckGo, Brave, Apple, Yandex, and Baidu to ChatGPT, Gemini, Copilot, Claude, and Perplexity. It also reads indexing directives and Microsoft's AI training and grounding preferences. Nothing is fetched until you choose **Check access**.
+  - **Content readiness** groups structure, clarity, attribution, structured data, and accessibility checks that matter for AI-assisted discovery. There is no made-up "AI score".
+  - **Visibility** is your own log of AI answers you saw and recorded. RankMiso never queries AI services.
+- **JavaScript SEO.** Compare the initial HTML with the rendered page on seven signals: title, description, canonical, robots, H1, internal links, and JSON-LD types.
+- **Redirect trace.** Follow each redirect hop by hop. Detailed hops use an optional permission that is requested only when you choose **Allow redirect details**.
+- **Canonical and hreflang relationships** across the pages a Site Explorer crawl analyzed.
+- **Structured data checks** across JSON-LD, Microdata, and RDFa, with required properties taken from Google's documentation.
+
+The page score is unchanged by these new findings. Earlier releases added Site Explorer, saved history, automatic and per-site website access, and AI sharing; see the [changelog](CHANGELOG.md).
 
 ### 🔍 Site Explorer
 
-Point the fox at a website and press **Start crawl**. It stays on that one origin, follows robots.txt, and stops at 100 pages, depth 3, or two minutes. Watch the progress, open any page's findings, press **Stop** whenever you like, and export the results. Nothing crawls until you press Start, and your browsing history is never crawled. The v0.6.0 candidate adds site-wide summaries, duplicate metadata and internal-link observations; v0.7.0 adds on-device crawl history and comparisons with safeguards for partial coverage. The v0.7.0 feature candidate is undergoing release qualification and is not yet published.
+Point the fox at a website and press **Start crawl**. It stays on that one origin, follows robots.txt, and stops at 100 pages, depth 3, or two minutes. Watch the progress, press **Stop** whenever you like, and export the results.
+
+The crawl gives you site-wide views: an Overview, Issues grouped by rule with the affected pages, Pages, and Links. It flags duplicate titles and descriptions and checks canonical and hreflang relationships between the pages it analyzed. Crawls are saved on your device, so you can compare one crawl with an earlier one. Partial crawls are labeled so they are never compared as if they were complete. Nothing crawls until you press Start, and your browsing history is never crawled.
 
 ### 📈 History
 
@@ -104,7 +111,7 @@ Then ask your assistant to **Connect RankMiso** and approve the one-time setup. 
 Your AI assistant may send the audit content it reads to its model provider, under that client's settings. Details: [Claude Code](docs/integrations/claude-code.md), [Codex](docs/integrations/codex.md), [how the plugin works](docs/integrations/README.md). Advanced: [manual companion install](docs/mcp/INSTALL.md) from [GitHub Releases](https://github.com/EdeesonOpina/rankmiso/releases/tag/v0.5.1).
 
 > [!NOTE]
-> Firefox doesn't have everything yet. Standalone sitemap discovery, PageSpeed Insights, and some optional remote technical checks are Chromium only. See [browser compatibility](docs/browser-support/compatibility.md).
+> Firefox doesn't have everything yet. Standalone sitemap discovery, PageSpeed Insights, the live HTML comparison, and some optional remote technical checks are Chromium only. See [browser compatibility](docs/browser-support/compatibility.md).
 
 ## 🎯 A score you can trust
 
@@ -123,7 +130,9 @@ A missing measurement is shown as unavailable. The result includes a disclaimer:
 
 <br />
 
-Chromium builds can run explicit optional site checks, sitemap discovery, and Site Explorer. Firefox builds support user-started, same-origin Site Explorer crawling; other optional remote technical checks and standalone sitemap discovery remain unavailable there.
+Chromium builds can run explicit optional site checks, sitemap discovery, the live HTML comparison, and Site Explorer. Firefox builds support user-started, same-origin Site Explorer crawling, Discoverability crawler access checks, and the redirect trace, and can compare an HTML file you choose; other optional remote technical checks and standalone sitemap discovery remain unavailable there.
+
+Discoverability's **Check access** reads the site's robots.txt and the page once, from the same origin, without cookies. The redirect trace reads only RankMiso's own requests; the optional `webRequest` permission it uses is asked for only when you choose **Allow redirect details**.
 
 The report also has a Sitemaps section. In Chromium it can read the sitemap files named by robots.txt, two common paths, or a URL you enter, after you allow that site. It does not fetch a sitemap on another host, and it does not crawl the listed pages. Firefox imports XML locally; its Site Explorer can read sitemap URLs only as part of a crawl you explicitly start.
 
@@ -189,6 +198,9 @@ Store screenshots, promo tiles, and the images in this README come from the [mar
 ## 📚 Docs
 
 - [What the product includes](docs/features/overview.md)
+- Discoverability: [crawler access](docs/features/crawler-access.md), [content readiness](docs/features/content-readiness.md), and [AI answer visibility](docs/features/ai-visibility.md)
+- [JavaScript SEO](docs/features/javascript-seo.md), [redirects](docs/features/redirects.md), [canonical and hreflang](docs/features/canonical-hreflang.md), and [structured data](docs/features/structured-data.md)
+- [Site Explorer](docs/features/site-explorer.md), [sitemaps](docs/features/sitemaps.md), and [history](docs/features/history.md)
 - [How the pieces fit](docs/architecture/overview.md)
 - [Brand and the fox mark](docs/branding/overview.md)
 - [Browser support](docs/browser-support/compatibility.md) and [permissions](docs/browser-support/permissions.md)

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-archive_path="${1:-$repo_root/apps/extension/.output/release-candidate/rankmiso-v0.4.0-firefox-sources.zip}"
+archive_path="${1:-$repo_root/apps/extension/.output/release-candidate/rankmiso-v0.7.1-firefox-sources.zip}"
 
 python3 - "$repo_root" "$archive_path" <<'PY'
 from pathlib import Path
