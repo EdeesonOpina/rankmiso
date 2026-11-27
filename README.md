@@ -60,6 +60,8 @@ The little things are handled too. Counts use thousands separators, long address
 
 New in v0.7.1:
 
+<img src="docs/assets/readme/discoverability.jpg" alt="Discoverability platform snapshots: Google, Bing, DuckDuckGo, Brave, Apple, Yandex, Baidu, Yahoo, ChatGPT, Google AI, Gemini, Copilot, Claude, Perplexity, and DuckAssist, each with its robots.txt access status" width="300" align="right" />
+
 - **Discoverability.** See how a page presents itself to search engines and AI-assisted search, in three tabs:
   - **Crawler access** reads robots.txt (RFC 9309) for 18 documented crawlers and tokens, from Google, Bing, DuckDuckGo, Brave, Apple, Yandex, and Baidu to ChatGPT, Gemini, Copilot, Claude, and Perplexity. It also reads indexing directives and Microsoft's AI training and grounding preferences. Nothing is fetched until you choose **Check access**.
   - **Content readiness** groups structure, clarity, attribution, structured data, and accessibility checks that matter for AI-assisted discovery. There is no made-up "AI score".
