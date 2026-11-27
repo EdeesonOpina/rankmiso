@@ -2041,3 +2041,257 @@ html[data-theme="dark"] .app .rail-link[aria-current="page"] {
     0 0 0 1px #364158,
     0 3px 7px rgba(0, 0, 0, 0.25);
 }
+
+/* Discoverability popup screen (v0.7.1 concept). */
+.pmark {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+}
+.pmark img {
+  display: block;
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+}
+html[data-theme="dark"] .app .pmark {
+  background: #171e33;
+  border-color: #343b4e;
+}
+html[data-theme="dark"] .pmark.mono img {
+  filter: invert(1);
+}
+.pa-site {
+  padding: 17px 16px 14px;
+  background: linear-gradient(135deg, #162336, #223447 78%, #3c4253);
+}
+html[data-theme="dark"] .app .pa-site {
+  background: linear-gradient(135deg, #1f2c44, #26344e 78%, #3a4560);
+}
+.pa-site .kicker {
+  position: relative;
+  margin-bottom: 0;
+  color: #ffb5a4;
+}
+.pa-site-title {
+  position: relative;
+  margin: 8px 0 4px;
+  font-size: 19px;
+  line-height: 1.18;
+  letter-spacing: -0.6px;
+  color: #fff;
+}
+.pa-site-text {
+  position: relative;
+  max-width: 270px;
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: #bed0dd;
+}
+.pa-site-meta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 13px;
+  padding-top: 11px;
+  border-top: 1px solid #58657885;
+}
+.pa-domain {
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+.pa-pill {
+  flex: none;
+  padding: 4px 7px;
+  border-radius: 7px;
+  background: #2e4a45;
+  color: #a8e6c8;
+  font-size: 9px;
+  font-weight: 750;
+}
+.pa-tabs {
+  margin: 14px 0 4px;
+}
+.pa-gap {
+  margin-top: 12px;
+}
+.pa-list {
+  padding: 0 12px;
+}
+.pa-list .disclosure > summary {
+  gap: 9px;
+  padding: 11px 0;
+}
+.pa-name {
+  flex: 1;
+  min-width: 0;
+}
+.pa-list .disclosure > summary .badge {
+  flex: none;
+}
+.pa-evidence {
+  padding-left: 39px !important;
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.pa-evidence p {
+  margin: 0 0 6px;
+}
+.pa-evidence strong {
+  color: var(--ink);
+}
+.pa-evidence code {
+  display: block;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.pa-row {
+  align-items: center;
+}
+.pa-row > .row-title {
+  flex: 1;
+  min-width: 0;
+}
+.pa-callout {
+  padding: 13px;
+  border: 1px solid rgba(217, 59, 46, 0.1);
+  border-radius: 12px;
+  background: var(--red-soft);
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.pa-callout strong {
+  display: block;
+  font-size: 11px;
+}
+.pa-callout span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+}
+html[data-theme="dark"] .app .pa-callout {
+  background: #3d2733;
+  border-color: #5a3640;
+}
+
+/* Platform snapshots on the popup Overview. */
+.psnap {
+  margin: 0 0 10px;
+}
+.psnap-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.psnap-head strong {
+  display: block;
+  font-size: 12px;
+}
+.psnap-head span {
+  display: block;
+  margin-top: 2px;
+  font-size: 9.5px;
+  color: var(--muted);
+}
+.psnap-head button {
+  flex: none;
+}
+.psnap-message {
+  margin: -4px 0 10px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.psnap-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.psnap-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 9px 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  text-align: center;
+}
+html[data-theme="dark"] .app .psnap-tile {
+  background: #171e33;
+  border-color: #343b4e;
+}
+.psnap-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  width: 100%;
+}
+.psnap-text strong {
+  overflow: hidden;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.psnap-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 750;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.psnap-state i {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: #a0aeba;
+}
+.psnap-state.ok {
+  color: var(--green);
+}
+.psnap-state.ok i {
+  background: var(--green);
+}
+.psnap-state.warn {
+  color: var(--amber);
+}
+.psnap-state.warn i {
+  background: var(--amber);
+}
+html[data-theme="dark"] .app .psnap-state.ok {
+  color: #6fdfa1;
+}
+html[data-theme="dark"] .app .psnap-state.warn {
+  color: #ffd181;
+}

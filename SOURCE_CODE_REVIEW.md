@@ -1,6 +1,6 @@
-# Firefox source code review — RankMiso v0.4.0
+# Firefox source code review — RankMiso v0.7.1
 
-This source archive is for Mozilla review of the RankMiso v0.4.0 candidate. It is paired with `rankmiso-v0.4.0-firefox.zip`; it is not a store submission. The source includes the Rust workspace, generated-WASM build script, Vue/TypeScript extension, WXT configuration, `Cargo.lock`, `pnpm-lock.yaml`, and workspace package manifests. It excludes build caches, `node_modules`, Rust `target`, extension `.output`, credentials, and unrelated working-tree marketing changes.
+This source archive is for Mozilla review of the RankMiso v0.7.1 candidate. It is paired with `rankmiso-v0.7.1-firefox.zip`; it is not a store submission. The source includes the Rust workspace, generated-WASM build script, Vue/TypeScript extension, WXT configuration, `Cargo.lock`, `pnpm-lock.yaml`, and workspace package manifests. It excludes build caches, `node_modules`, Rust `target`, extension `.output`, credentials, and unrelated working-tree marketing changes.
 
 ## Tested environment
 
@@ -25,7 +25,7 @@ pnpm build:wasm
 pnpm --filter @rankmiso/extension exec wxt build -b firefox --mv3
 ```
 
-The extension output is `apps/extension/.output/firefox-mv3/`. Verify its `manifest.json` version is `0.4.0`, its Gecko ID remains `rankmiso@rankmiso.extension`, and its required host permissions remain absent. Firefox data collection remains `required: ["none"]`.
+The extension output is `apps/extension/.output/firefox-mv3/`. Verify its `manifest.json` version is `0.7.1`, its Gecko ID remains `rankmiso@rankmiso.extension`, and its required host permissions remain absent. Firefox data collection remains `required: ["none"]`.
 
 To generate WXT's Firefox extension archive:
 
@@ -36,7 +36,7 @@ pnpm --filter @rankmiso/extension exec wxt zip -b firefox --mv3
 For the complete Mozilla source archive, use the repository's source-packaging script from the isolated release snapshot (not from a developer's dirty checkout):
 
 ```sh
-bash scripts/package-firefox-sources.sh /tmp/rankmiso-v0.4.0-firefox-sources.zip
+bash scripts/package-firefox-sources.sh /tmp/rankmiso-v0.7.1-firefox-sources.zip
 ```
 
 The script includes the monorepo workspace and Rust inputs while excluding Git metadata, dependencies, build outputs, test artifacts, UX review screenshots, generated marketing captures, and environment files. The archive root is the repository root.

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { ArrowUpRight, Globe } from "lucide-vue-next";
 import { browser } from "wxt/browser";
 import type { AuditResult } from "../../types/audit";
 import { brandConfig } from "../../config/brand.config";
@@ -167,17 +168,18 @@ function revokeAccess() {
       <span>{{ t("wb.st.analytics") }}</span
       ><strong>{{ t("pm.noTelemetry") }}</strong>
     </div>
-    <div class="property">
-      <span>{{ brandConfig.identity.ecosystem }}</span>
-      <strong>{{ t("settings.ecosystem", { ecosystem: brandConfig.identity.ecosystem }) }}</strong>
+    <div v-if="brandConfig.links.website" class="property">
+      <span>{{ t("pm.website") }}</span
+      ><strong
+        ><a
+          class="website-link"
+          :href="brandConfig.links.website"
+          target="_blank"
+          rel="noopener noreferrer"
+          ><Globe class="ic" aria-hidden="true" />{{
+            brandConfig.links.website.replace(/^https?:\/\//, "")
+          }}<ArrowUpRight class="ic" aria-hidden="true" /></a
+      ></strong>
     </div>
   </div>
-  <a
-    v-if="brandConfig.links.support"
-    class="support-link"
-    :href="brandConfig.links.support"
-    target="_blank"
-    rel="noopener noreferrer"
-    >{{ t("settings.supportDevelopment") }}</a
-  >
 </template>

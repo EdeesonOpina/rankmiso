@@ -8,6 +8,7 @@ import PageHeading from "./PageHeading.vue";
 import WbCard from "./WbCard.vue";
 import DataRow from "./DataRow.vue";
 import HtmlCompareCard from "./HtmlCompareCard.vue";
+import RedirectTraceCard from "./RedirectTraceCard.vue";
 import RelatedChecks from "./RelatedChecks.vue";
 
 const props = defineProps<{ audit: AuditResult }>();
@@ -111,6 +112,8 @@ function sitemapLine(): string {
     </WbCard>
 
     <HtmlCompareCard :audit="audit" :network="supportsOptionalExternalChecks" />
+
+    <RedirectTraceCard :audit="audit" />
 
     <WbCard :title="t('wb.te.redirects')" flat>
       <div class="step-row">

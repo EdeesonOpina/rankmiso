@@ -285,3 +285,53 @@ Status: Chromium Playwright covers save, a same-crawl comparison with no confirm
 ## R7 automated evidence (2026-11-13)
 
 Fresh Chrome Playwright qualification passed 10/10 tests against the current `.output/chrome-mv3`: local audit and exports; crawl start/stop, non-HTML PDF classification, bounded counts, responsive views, theme switch, save/restore/delete and same-crawl comparison, changed-title comparison, formula-safe CSV and comparison JSON, stale-result invalidation, plus 100-page/20,000-link heap sampling. Firefox production manifest/build inspection passed, but no persistent signed Firefox installation or restart test was performed. Continue the manual permission grant/deny/revoke and Firefox runtime checks above using isolated profiles; do not treat automated Chromium coverage as native Firefox acceptance.
+
+## M11.1 — JavaScript SEO diagnostics (unreleased)
+
+Status values: Passed, Failed, Blocked, Not performed. Record browser, version, and profile.
+
+| Check                                                                                                                      | Chrome                                                       | Firefox                      |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------- |
+| Technical → Compare HTML on a static page: every row Passed or Not applicable                                              | Not performed                                                | n/a (fetch is Chromium only) |
+| Compare HTML on a client-rendered page (title or links added by script): Warning or Note rows with both values in Evidence | Passed in Playwright fixture only                            | n/a                          |
+| Compare an HTML file: diagnostics appear, file not saved                                                                   | Not performed                                                | Not performed                |
+| Deny the site-access prompt: every row "Not measured", none Passed                                                         | Not performed                                                | n/a                          |
+| Light and dark theme, keyboard open/close of Evidence, 768px and sidebar width                                             | Partly: Playwright light/dark screenshots, 768px no overflow | Not performed                |
+| Page score unchanged after a comparison                                                                                    | Not performed                                                | Not performed                |
+
+## M11.6 — Discoverability crawler access (unreleased)
+
+Status values: Passed, Failed, Blocked, Not performed. Record browser, version, and profile.
+
+| Check | Chrome | Firefox |
+| --- | --- | --- |
+| Fixture site: robots groups for GPTBot, OAI-SearchBot, Claude-SearchBot, `__usage_ai-training`, and `*`; meta and X-Robots-Tag scoped directives; exactly two requests | Passed (Playwright, Chromium 156) | Not performed |
+| Real site with a robots.txt that names AI crawlers: readings match the file by hand | Not performed | Not performed |
+| Deny the site-access prompt: "not granted", nothing fetched | Passed in Vitest only | Not performed |
+| robots.txt 404, 5xx, and unreachable: "No robots.txt rules", "server error", "Not measured" | Unit tests only | Not performed |
+| Cancel during a slow check | Not performed | Not performed |
+| Light and dark theme, 390 / 768 / 1024 px, sidebar 350 px, keyboard open of Evidence | Passed for layout (Playwright screenshots, no overflow); keyboard Not performed | Not performed |
+| Site Explorer still skips robots-disallowed pages | Passed (Playwright) | Not performed |
+
+## M11.5 — Content readiness (unreleased)
+
+Status values: Passed, Failed, Blocked, Not performed. Record browser, version, and the URL or fixture.
+
+| Scenario | Expected | Chrome | Firefox |
+| --- | --- | --- | --- |
+| Informational fixture (`/info`) | general page; main region and title/H1 no issue; author not applicable | Passed (Playwright fixture) | Not performed |
+| Missing metadata (`/bare`) | title-missing page check under Clarity, linked to Issues | Passed (Playwright fixture) | Not performed |
+| Article (`/article`) | article; author, dates, headline no issue; questions observed | Passed (Playwright fixture) | Not performed |
+| Product (`/product`) | product; author and dates not applicable | Passed (Playwright fixture) | Not performed |
+| Contradictions (`/contradict`) | headline and dates Review; organization names, generic heading and link text Opportunity | Passed (Playwright fixture) | Not performed |
+| JavaScript-rendered (`/spa`) | rendering Not measured, then Opportunity after Compare HTML | Passed (Playwright fixture) | Not performed (fetch is Chromium only) |
+| Crawler access not run, then run | Not measured, then reading from Check access | Passed (Playwright fixture) | Not performed |
+| Deep layout (`/deep`) | main region Not measured | Passed (Playwright fixture) | Not performed |
+| Real informational site | groups match the page by hand | Not performed | Not performed |
+| Real documentation site | as above | Not performed | Not performed |
+| Real article | as above | Not performed | Not performed |
+| Real product page | as above | Not performed | Not performed |
+| JavaScript-heavy real site | rendering result after Compare HTML | Not performed | Not performed |
+| Real site with blocked robots access | crawler finding after Check access | Not performed | Not performed |
+| Keyboard: tabs, Evidence, action buttons | reachable and operable | Not performed | Not performed |
+| Light and dark, 390 / 768 / 1024 px | no overflow | Passed for layout (Playwright) | Not performed |

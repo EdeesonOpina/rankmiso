@@ -34,6 +34,12 @@ export const permissionsConfig = {
       browsers: ["chromium", "firefox"],
     },
     {
+      name: "webRequest",
+      required: false,
+      purposeKey: "permissions.webRequest",
+      browsers: ["chromium", "firefox"],
+    },
+    {
       name: "sidePanel",
       required: false,
       purposeKey: "permissions.sidePanel",

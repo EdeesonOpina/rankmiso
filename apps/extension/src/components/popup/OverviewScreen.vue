@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import type { AuditResult, Category } from "../../types/audit";
+import { computed, ref, toRef } from "vue";
+import type { AuditResult, Category, PageSnapshot } from "../../types/audit";
 import { categoryLabelKey } from "../../services/category-label";
 import { useI18n } from "../../composables/useI18n";
+import { useDiscoverabilitySummary } from "../../composables/useDiscoverabilitySummary";
+import PlatformSnapshots from "../PlatformSnapshots.vue";
 
 defineOptions({ inheritAttrs: false });
-const props = defineProps<{ audit: AuditResult }>();
+const props = defineProps<{ audit: AuditResult; snapshot?: PageSnapshot | null }>();
 const emit = defineEmits<{ go: [id: string, check?: string] }>();
 const { t, n } = useI18n();
 const showCategories = ref(false);
+const { lines: discovery } = useDiscoverabilitySummary(() => props.audit, toRef(props, "snapshot"));
 
 const score = computed(() => props.audit.score);
 const measured = computed(() => score.value.available && score.value.value != null);
@@ -174,5 +177,27 @@ function paneFor(category: Category): string {
       </dd>
     </div>
   </dl>
+  <div class="title-row">
+    <h2>{{ t("nav.aiSearch") }}</h2>
+    <button type="button" class="text-btn" @click="emit('go', 'ai-search')">
+      {{ t("disc.open") }} ↗
+    </button>
+  </div>
+  <PlatformSnapshots :url="audit.page.url" button-class="button-sm red" />
+  <div class="surface pa-list">
+    <button
+      v-for="line in discovery"
+      :key="line.title"
+      type="button"
+      class="row go pa-row"
+      @click="emit('go', 'ai-search')"
+    >
+      <span class="row-content">
+        <strong class="row-title">{{ line.title }}</strong>
+        <span class="row-sub">{{ line.sub }}</span>
+      </span>
+      <span class="badge" :class="line.tone === 'gray' ? '' : line.tone">{{ line.badge }}</span>
+    </button>
+  </div>
   <p class="micro" style="margin: 12px 0 0">{{ t("pm.overviewNote") }}</p>
 </template>

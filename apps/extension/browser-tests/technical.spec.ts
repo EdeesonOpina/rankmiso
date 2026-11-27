@@ -75,11 +75,29 @@ test("rendered page compares with fetched HTML and shows structured data", async
       /Comparison ready|not granted|could not|not HTML|timed out|cancelled|cannot be fetched|larger than|not followed/,
       { timeout: 15_000 },
     );
-    await expect(compare.getByText("Source title").first()).toBeVisible();
-    await expect(compare.getByText("Rendered title").first()).toBeVisible();
-    await expect(compare.getByText("Changed").first()).toBeVisible();
-    await expect(compare.getByText("Added after rendering").first()).toBeVisible();
-    await report.screenshot({ path: "test-results/technical-compare-1280.png" });
+    const rows = compare.locator(".compare-rows");
+    await expect(rows.getByText("Source title").first()).toBeVisible();
+    await expect(rows.getByText("Rendered title").first()).toBeVisible();
+    await expect(rows.getByText("Changed").first()).toBeVisible();
+    await expect(rows.getByText("Added after rendering").first()).toBeVisible();
+    // JavaScript SEO diagnostics from the Rust engine, on the same fixture.
+    const diagnostics = compare.locator(".render-findings");
+    await expect(
+      diagnostics.getByRole("heading", { name: "JavaScript SEO diagnostics" }),
+    ).toBeVisible();
+    const finding = (title: string) => diagnostics.locator("li", { hasText: title });
+    await expect(finding("Canonical before and after rendering")).toContainText("Warning");
+    await expect(finding("Title before and after rendering")).toContainText("Note");
+    await expect(finding("JSON-LD types before and after rendering")).toContainText("Note");
+    await expect(finding("Robots directives before and after rendering")).toContainText("Passed");
+    const canonical = finding("Canonical before and after rendering");
+    await canonical.getByText("Evidence").click();
+    await expect(canonical.locator("dd").filter({ hasText: "/rendered" })).toBeVisible();
+    await expect(diagnostics).toContainText("not part of the SEO score");
+    await compare.screenshot({ path: "test-results/technical-compare-1280.png" });
+    await report.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    await compare.screenshot({ path: "test-results/technical-compare-dark-1280.png" });
+    await report.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
 
     await report.goto(
       `chrome-extension://${extensionId}/dashboard.html?tabId=${pageId}&section=schema`,

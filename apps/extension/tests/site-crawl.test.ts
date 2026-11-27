@@ -500,7 +500,7 @@ describe("site crawl", () => {
     );
 
     expect(result.status).toBeNull();
-    expect(result.error).toContain("redirect could not be checked");
+    expect(result.error).toContain("redirect could not be read");
   });
 
   it("omits credentials and referrers while manually validating redirects", async () => {

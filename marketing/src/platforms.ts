@@ -70,6 +70,20 @@ export const chromePromo = {
   marquee: { width: 1400, height: 560, file: "promo-marquee.png" },
 } as const;
 
+/**
+ * Chrome Web Store promo images may not show status or ranking words ("Free", "New", "#1",
+ * "Recommended", "Premium", ...). The store flagged "Free" on both tiles on 25 November 2026
+ * (violation reference "Red Nickel"). The extension is still free; the images just cannot say so.
+ */
+const storeStatusWords =
+  /(?:^|[^\p{L}\p{N}])(free|new|#1|no\.?\s*1|best|top|recommended|premium|popular|featured|trending)(?=$|[^\p{L}\p{N}])/iu;
+
+/** Returns the first status word in the visible text of a promo HTML body, if any. */
+export function storeStatusWord(html: string): string | undefined {
+  const text = html.replace(/<[^>]*>/g, " ");
+  return storeStatusWords.exec(text)?.[1];
+}
+
 /** Open Graph / X share image. 1200×630 (1.91:1), JPEG for the widest support across networks. */
 export const seoShare = { width: 1200, height: 630, dir: "seo" } as const;
 
