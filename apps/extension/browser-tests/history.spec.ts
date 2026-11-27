@@ -41,10 +41,10 @@ test("saved audits stay on this device and compare real measurements", async () 
     );
     await expect(report.getByRole("heading", { name: "SEO history" })).toBeVisible();
     await expect(report.getByText("Save the current audit to keep a measurement")).toBeVisible();
-    const emptyStateIcon = report.locator(".empty-history img");
-    await expect(emptyStateIcon).toHaveAttribute("src", "/brand/icon.png");
-    await expect(emptyStateIcon).toHaveAttribute("alt", "");
-    await expect(emptyStateIcon).toHaveCSS("width", "72px");
+    await expect(report.locator(".empty-history img")).toHaveCount(0);
+    const emptyStateIcon = report.locator(".empty-history .empty-icon svg");
+    await expect(emptyStateIcon).toHaveAttribute("aria-hidden", "true");
+    await expect(report.locator(".empty-history .empty-icon")).toHaveCSS("width", "44px");
     await report.screenshot({ path: "test-results/history-empty-1280.png" });
     await report.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
     await report.screenshot({ path: "test-results/history-empty-dark-1280.png" });

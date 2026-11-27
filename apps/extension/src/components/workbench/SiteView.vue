@@ -81,6 +81,8 @@ import { categoryIcon } from "./site-icons";
 import SiteComparePanel from "./SiteComparePanel.vue";
 import SiteCrawlConsole from "./SiteCrawlConsole.vue";
 import SxPanel from "./SxPanel.vue";
+import SiteRelationsPanel from "./SiteRelationsPanel.vue";
+import { hasRedirectDetails, observeRedirects } from "../../services/redirect-observer";
 import SxStat from "./SxStat.vue";
 
 const props = defineProps<{ audit: AuditResult }>();
@@ -472,6 +474,8 @@ async function start() {
   };
 
   browser.permissions.onRemoved.addListener(onPermissionRemoved);
+  // Follow same-origin redirects only when the optional redirect details permission is granted.
+  const redirects = (await hasRedirectDetails()) ? observeRedirects(permission.pattern) : null;
   try {
     let robotsBody = "";
     const next = await runSiteCrawl({
@@ -484,7 +488,8 @@ async function start() {
       },
       discoverSitemaps: (signal) => discoverSitemapUrls(page, signal, authorizedFetch),
       mayFetch: (path) => mayFetchPath(robotsBody, path),
-      fetchPage: (url, signal) => fetchCrawlPage(url, permission.origin, signal, authorizedFetch),
+      fetchPage: (url, signal) =>
+        fetchCrawlPage(url, permission.origin, signal, authorizedFetch, redirects),
       inspect: async (page, html) => {
         const extracted = extractCrawlPage(html, page.finalUrl || page.url);
         try {
@@ -556,6 +561,7 @@ async function start() {
     if (!disposed && !permissionRevoked) message.value = t("site.failed");
   } finally {
     browser.permissions.onRemoved.removeListener(onPermissionRemoved);
+    redirects?.stop();
     running.value = false;
     if (controller === crawlController) controller = null;
   }
@@ -1105,6 +1111,8 @@ function limitLabel(limit: CrawlLimitReason): string {
           </div>
         </SxPanel>
       </div>
+
+      <SiteRelationsPanel v-if="session" :session="session" />
 
       <div class="sx-foot-notes">
         <p v-if="siteAnalysis.summary.redirectAliases" class="sx-small">

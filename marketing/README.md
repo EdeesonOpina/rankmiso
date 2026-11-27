@@ -105,6 +105,7 @@ Safari images are compositions of that same interface at the Mac App Store size.
 28 October 2026.
 
 - Chrome Web Store images: screenshots 1280×800, small promo 440×280, marquee 1400×560. Square corners, full bleed, no alpha.
+- Chrome Web Store promo tiles: no status or ranking words ("Free", "New", "#1", "Premium", "Recommended", and similar). The store flagged "Free" on both tiles on 25 November 2026 (violation reference Red Nickel). `pnpm marketing:build` stops if a tile's visible text contains one; the list is `storeStatusWord` in `src/platforms.ts`.
 - Firefox listing guidance: 1280×800 at a 1.6:1 ratio.
 - Apple screenshot specifications: Mac 2880×1800 is an accepted 16:10 size. No alpha.
 - YouTube thumbnail: 1280×720, under 2 MB.

@@ -35,9 +35,10 @@ export const brandConfig: BrandConfig = {
     description: "A free, open-source SEO browser extension.",
   },
   links: {
-    website: null,
+    website: "https://misoecosystem.com",
     github: null,
     documentation: null,
+    // Funding destination for the README and FUNDING.yml; the extension UI never shows it.
     support: "https://github.com/sponsors/EdeesonOpina",
   },
   assets: {

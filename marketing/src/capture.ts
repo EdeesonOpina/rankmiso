@@ -180,11 +180,16 @@ export async function capture(): Promise<void> {
       });
       framed[name] = { height: 900, complete: true };
     };
-    const openSection = async (section: string, heading: string) => {
+    // Waits for a heading, or a button where the view has no page heading (v0.7.0 Site Explorer).
+    const openSection = async (
+      section: string,
+      name: string,
+      role: "heading" | "button" = "heading",
+    ) => {
       await report.goto(
         `chrome-extension://${extensionId}/dashboard.html?tabId=${id}&section=${section}`,
       );
-      await report.getByRole("heading", { name: heading }).first().waitFor({ timeout: 45_000 });
+      await report.getByRole(role, { name }).first().waitFor({ timeout: 45_000 });
     };
 
     await openSection("technical", "Diagnostic workspace");
@@ -200,10 +205,60 @@ export async function capture(): Promise<void> {
     await report.getByText(`${served.origin}/schedule.html`).first().waitFor({ timeout: 30_000 });
     await saveReport("report-sitemaps");
 
-    await openSection("site", "Site Explorer");
-    await report.getByRole("button", { name: "Start crawl" }).click();
-    await report.getByText("Complete", { exact: true }).first().waitFor({ timeout: 90_000 });
-    await saveReport("report-site");
+    // Site Explorer: crawl an earlier page.html (short title, missing alt text) and save it,
+    // then crawl the current version, so Compare shows a genuine change.
+    const noAlt = (html: string) => html.replace(/ alt="[^"]*"/, "");
+    const earlier = (html: string) =>
+      noAlt(html).replace(/<title>[^<]*<\/title>/, "<title>Notes</title>");
+    const complete = () => report.getByText("Complete", { exact: true }).first();
+    const crawl = async () => {
+      await report.getByRole("button", { name: "Start crawl" }).click();
+      // A small fixture can finish before the running state is observed.
+      await complete()
+        .waitFor({ state: "detached", timeout: 5_000 })
+        .catch(() => undefined);
+      await complete().waitFor({ timeout: 90_000 });
+    };
+    const siteViews = report.getByRole("navigation", { name: "Site Explorer views" });
+    const showView = async (view: string) => {
+      await siteViews.getByRole("button", { name: view }).first().click();
+      await siteViews.evaluate((nav) => nav.scrollIntoView({ block: "start" }));
+    };
+    await openSection("site", "Start crawl", "button");
+    served.state.edit = earlier;
+    await crawl();
+    await report.getByRole("button", { name: "Save for comparison" }).click();
+    await report.getByText("Crawl saved for comparison on this device.").first().waitFor();
+    served.state.edit = undefined;
+    await report.getByRole("button", { name: "Dismiss notification" }).click();
+    await crawl();
+    await report.evaluate(() => window.scrollTo(0, 0));
+    await saveReport("site-console");
+    await showView("Overview");
+    await saveReport("site-overview");
+    await report.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    await saveReport("site-dark");
+    await report.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
+    await showView("Issues");
+    await saveReport("site-issues");
+    await showView("Pages");
+    await saveReport("site-pages");
+    await showView("Links");
+    await saveReport("site-links");
+    await showView("Compare");
+    const baseline = report.getByLabel("Baseline crawl");
+    const saved = (await baseline.locator("option").allTextContents()).find((label) =>
+      /\d+ pages/.test(label),
+    );
+    if (!saved) throw new Error("The saved crawl is missing from the Compare baseline list.");
+    await baseline.selectOption({ label: saved });
+    await report.getByRole("button", { name: "Compare crawls" }).click();
+    await report
+      .getByText(/resolved/i)
+      .first()
+      .waitFor({ timeout: 20_000 });
+    await siteViews.evaluate((nav) => nav.scrollIntoView({ block: "start" }));
+    await saveReport("site-compare");
 
     // The sidebar docked beside the sample page, as the browser shows it.
     await fixture.setViewportSize({ width: 740, height: 900 });
@@ -227,12 +282,7 @@ export async function capture(): Promise<void> {
 
     // History: save three real measurements while earlier versions of the page are served.
     // Each version keeps the same measured checks so the saves stay comparable.
-    const noAlt = (html: string) => html.replace(/ alt="[^"]*"/, "");
-    const versions: Array<((html: string) => string) | undefined> = [
-      (html) => noAlt(html).replace(/<title>[^<]*<\/title>/, "<title>Notes</title>"),
-      noAlt,
-      undefined,
-    ];
+    const versions: Array<((html: string) => string) | undefined> = [earlier, noAlt, undefined];
     await openSection("reports", "SEO history");
     for (const [index, edit] of versions.entries()) {
       served.state.edit = edit;

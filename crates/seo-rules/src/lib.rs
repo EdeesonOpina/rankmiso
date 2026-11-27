@@ -3,17 +3,25 @@
 
 mod accessibility;
 mod content;
+pub mod crawler_access;
 mod headings;
 mod images;
 mod international;
+pub mod lang_codes;
 mod links;
 mod metadata;
 mod performance;
+pub mod readiness;
+pub mod redirects;
+pub mod rendering;
+pub mod sd_entities;
+pub mod site_relations;
 pub mod sitemap;
 mod social;
 mod structured_data;
 mod support;
 mod technical;
+pub mod visibility;
 
 pub use technical::rankmiso_may_fetch;
 

@@ -1,7 +1,7 @@
 import { inject, type InjectionKey, type Ref } from "vue";
 import type { ThemePreference } from "../../config/theme.config";
 import type { InspectionMode } from "../../adapters/storage";
-import type { Category } from "../../types/audit";
+import type { Category, PageSnapshot } from "../../types/audit";
 
 export type Surface = "sidebar" | "report";
 export type Tone = "good" | "warn" | "err" | "gray";
@@ -15,6 +15,8 @@ export interface IssueFocus {
 export interface WorkbenchContext {
   surface: Surface;
   tabId: Ref<number | undefined>;
+  /** The collected page snapshot behind the current audit; read by content readiness. */
+  snapshot?: Ref<PageSnapshot | null>;
   ready: Ref<boolean>;
   probing: Ref<boolean>;
   probeMessage: Ref<string>;

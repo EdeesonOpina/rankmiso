@@ -22,9 +22,9 @@ import {
   type MeasureChange,
   type SavedReport,
 } from "../../services/saved-reports";
+import { ChartLine } from "lucide-vue-next";
 import HistoryChart from "../HistoryChart.vue";
 import { useWorkbench } from "./context";
-import { brandConfig } from "../../config/brand.config";
 import PageHeading from "./PageHeading.vue";
 import WbCard from "./WbCard.vue";
 
@@ -331,7 +331,7 @@ function confirmExport() {
   <p v-if="reports.length >= MAX_SAVED_REPORTS" class="hint">{{ t("reports.cap") }}</p>
 
   <div v-if="pageReports.length === 0" class="callout empty-history">
-    <img :src="brandConfig.assets.icon" width="72" height="72" alt="" />
+    <span class="empty-icon"><ChartLine class="ic" aria-hidden="true" /></span>
     <div>
       <strong>{{ t("reports.timeline") }}</strong>
       <p>{{ t("reports.historyEmpty") }}</p>
